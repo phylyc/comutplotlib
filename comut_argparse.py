@@ -3,7 +3,8 @@ import argparse
 parser = argparse.ArgumentParser(
     prog="ComutPlot",
     description="Plotting",
-    epilog="Text at the bottom of help")
+    epilog="Text at the bottom of help",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.usage = 'use to...'
 
