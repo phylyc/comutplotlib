@@ -1,5 +1,5 @@
 #!/bin/bash
 
-python comut_argparse.py \
+python call.py \
   -o "Hello World" \
-  --genes TP53,CDKN2A \
+  --genes TP53,CDKN2A
