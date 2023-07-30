@@ -30,7 +30,7 @@ setuptools.setup(
     version="0.1",
     long_description=read("README.md"),
     author="Philipp Hähnel",
-    author_email="phahnel@broadinstitute.org",
+    author_email="phylyc.ai@gmail.com",
     license="MIT",
     url="",
     classifiers=[

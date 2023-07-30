@@ -2,33 +2,31 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import numpy as np
 import os
-import pandas as pd
 from typing import Iterable
 
 from src.palette import Palette
 
 
 class Plotter(object):
-    def __init__(self, out_dir: str = ".") -> None:
-        self.out_dir = out_dir
-        self.palette = Palette()
+
+    def __init__(self, output: str = "./plot.pdf", extra_palette: dict[str, tuple[float]] = None) -> None:
+        super().__init__()
+        self.out_dir, self.file_name = os.path.split(output)
+        self.palette = Palette() | Palette(dict=extra_palette)
 
     def mk_out_path(self, recursive_folder_list: Iterable[str] = ()) -> str:
         """Make folder hierarchy from recursive_folder_list in self.out_dir
         and return full path.
         """
-        path = self.out_dir
-        if not os.path.exists(path):
-            os.makedirs(path)
-        for folder in recursive_folder_list:
-            path = os.path.join(path, folder)
-            if not os.path.exists(path):
-                os.mkdir(path)
+        path = os.path.join(self.out_dir, *recursive_folder_list)
+        if len(path):
+            os.makedirs(path, exist_ok=True)
         return path
 
-    def save_figure(self, fig=None, ax=None, name="plot.pdf", recursive_folder_list=(), **kwargs):
-        _fig = ax.get_figure() if fig is None else fig
+    def save_figure(self, fig=None, ax=None, name=None, recursive_folder_list=(), **kwargs):
+        _fig = fig if fig is not None else ax.get_figure()
         path = self.mk_out_path(recursive_folder_list=recursive_folder_list)
+        name = name if name is not None else self.file_name
         _fig.savefig(os.path.join(path, name), **kwargs)
 
     @staticmethod
@@ -134,11 +132,3 @@ class Plotter(object):
             self.grid(ax=ax, axis=axis, which="minor", zorder=0.1, color=self.palette.white)
         ax.set_facecolor(self.palette.backgroundgrey)
         self.no_spines(ax)
-
-    @staticmethod
-    def get_sorted_columns(data_frame: pd.DataFrame, reference: str, ascending: bool = False) -> list[str]:
-        sorted_columns = data_frame.median(axis=0).sort_values(ascending=ascending).index
-        if reference in sorted_columns:
-            return [reference] + list(sorted_columns.drop(reference))
-        else:
-            return sorted_columns
