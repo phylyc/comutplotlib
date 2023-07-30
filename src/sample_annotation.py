@@ -18,6 +18,14 @@ class SampleAnnotation(object):
     protocol = "Protocol(s)"
     sex = "sex"
     sex_genotype = "SEX_GENOTYPE"
+
+    contamination = "contamination"
+    contamination_error = "contamination_error"
+    tumor_purity = "tumor_purity"
+    tumor_purity_error = "tumor_purity_error"
+    tmb = "tmb"
+    tmb_error = "tmb_error"
+
     age_p_dx = "age_p_dx"
     age_bm_dx = "age_bm_dx"
     age_death = "age_death"

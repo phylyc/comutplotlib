@@ -2,6 +2,15 @@ from typing import Iterable
 from src.mutation_annotation import MutationAnnotation as MutA
 
 
+def better_effect_legend(effect):
+    return (
+        effect
+        .replace("_", " ")
+        .replace("OutOfFrame", "ooF")
+        .replace("InFrame", "iF")
+    )
+
+
 def sort_functional_effects(effects: Iterable[str], ascending: bool = True) -> list[str]:
     """ Sort a list of functional effects based on a gain of function - loss of function scale.
     :param effects:

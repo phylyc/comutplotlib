@@ -1,12 +1,6 @@
 class MutationAnnotation(object):
     """Defines all mutation annotation column names and entry names."""
 
-    # columns to be added to the mutation annotation data
-    channel = "Mutation_Channel"
-    cropped_context = "Cropped_Context"
-
-    signature = "Signature"
-
     # mutation types
     snv = "SNP"  # single nucleotide polymorphism (variant)
     dnv = "DNP"  # double nucleotide polymorphism (variant)
@@ -195,7 +189,6 @@ class MutationAnnotation(object):
         patient,
         sample,
         gene_name,
-        gene_id,
         chromosome,
         start_pos,
         end_pos,
@@ -203,7 +196,7 @@ class MutationAnnotation(object):
         effect,
         ref_allele,
         alt_allele,
-        context,
+        protein_change,
     ]
 
     column_dtype = {
