@@ -26,6 +26,8 @@ class ComutData(object):
         seg_paths: list[str] = (),
         gistic_paths: list[str] = (),
 
+        mutsig_paths: list[str] = (),
+
         model_significances: list[str] = (),
         model_names: list[str] = (),
 
@@ -59,12 +61,16 @@ class ComutData(object):
         self.gistic = join_gistics([Gistic.from_file(path_to_file=gistic) for gistic in gistic_paths])
         self.cnv = None
 
+        self.mutsig = pd.concat(
+            [pd.read_csv(path_to_file, index_col=0, sep="\t") for path_to_file in mutsig_paths]
+        ) if mutsig_paths is not None else None
+
         self.model_significance = pd.DataFrame.from_dict(
             {
                 name: pd.read_csv(path_to_file, index_col=0, sep="\t")
                 for name, path_to_file in zip(model_names, model_significances)
             }
-        )
+        ) if model_significances is not None else None
         self.model_names = model_names
 
         self.sif = join_sifs([SIF.from_file(path_to_file=sif) for sif in sif_paths])
@@ -122,6 +128,8 @@ class ComutData(object):
             self.snv.reindex(columns=self.columns)
             self.cnv.reindex(columns=self.columns)
             self.meta.reindex(columns=self.columns)
+            if self.mutsig is not None:
+                self.mutsig = self.mutsig.reindex(index=self.columns)
             if self.tmb is not None:
                 self.tmb = self.tmb.reindex(index=self.columns)
 

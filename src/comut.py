@@ -16,6 +16,8 @@ class Comut(object):
         seg: list[str] = (),
         gistic: list[str] = (),
 
+        mutsig: list[str] = (),
+
         model_significances: list[str] = (),
         model_names: list[str] = (),
 
@@ -56,6 +58,7 @@ class Comut(object):
             maf_pool_as=maf_pool_as,
             seg_paths=seg,
             gistic_paths=gistic,
+            mutsig_paths=mutsig,
             model_significances=model_significances,
             model_names=model_names,
             sif_paths=sif,
@@ -83,6 +86,7 @@ class Comut(object):
         self.tmb_cmap = self.plotter.palette.get_tmb_cmap(self.data)
         self.snv_cmap = self.plotter.palette.get_snv_cmap(self.data)
         self.cnv_cmap, self.cnv_names = self.plotter.palette.get_cnv_cmap(self.data)
+        self.mutsig_cmap = self.plotter.palette.get_mutsig_cmap(self.data)
         self.meta_cmaps = self.plotter.palette.get_meta_cmaps(self.data)
 
         self.layout = ComutLayout(
@@ -95,6 +99,7 @@ class Comut(object):
             tmb_cmap=self.tmb_cmap,
             snv_cmap=self.snv_cmap,
             cnv_cmap=self.cnv_cmap,
+            mutsig_cmap=self.mutsig_cmap,
             meta_cmaps=self.meta_cmaps,
         )
 
@@ -112,7 +117,7 @@ class Comut(object):
 
         self.layout.set_plot_func("comutation", plot_comut)
 
-        self.layout.set_plot_func("mutational signatures", self.plotter.plot_mut_sig)
+        self.layout.set_plot_func("mutational signatures", self.plotter.plot_mutsig, mutsig=self.data.mutsig, mutsig_cmap=self.mutsig_cmap)
         self.layout.set_plot_func("tmb", self.plotter.plot_tmb, tmb=self.data.tmb, ytickpad=0, fontsize=6)
         # self.layout.set_plot_func("tmb legend", self.plotter.plot_legend, cmap=self.tmb_cmap)
 
@@ -125,6 +130,7 @@ class Comut(object):
         self.layout.set_plot_func("recurrence", self.plotter.plot_recurrence, mut_protein_data=self.data.snv.get_recurrence(index=self.data.genes), genes=self.data.genes, snv_recurrence_threshold=self.data.snv_recurrence_threshold)
 
         self.layout.set_plot_func("model significance", self.plotter.plot_model_significance, model_significance=self.data.model_significance)
+        self.layout.set_plot_func("mutsig legend", self.plotter.plot_legend, cmap=self.mutsig_cmap, title="Mutational Signatures")
         self.layout.set_plot_func("snv legend", self.plotter.plot_legend, cmap=self.snv_cmap, title="Short Nucleotide Alteration")
         self.layout.set_plot_func("cnv legend", self.plotter.plot_legend, cmap=self.cnv_cmap, names=self.cnv_names, title="Copy Number Alteration")
         self.layout.set_plot_func("model annotation legend", self.plotter.plot_model_annotation_legend, names=self.data.model_names, title="Significant by Model")

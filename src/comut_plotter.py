@@ -402,8 +402,29 @@ class ComutPlotter(Plotter):
             # ax.spines["bottom"].set_visible(True)
             self.grid(ax=ax, axis="y", which="major", zorder=0.5)
 
-    def plot_mut_sig(self, ax):
-        pass
+    def plot_mutsig(self, ax, mutsig, mutsig_cmap, ytickpad=0, fontsize=6):
+        fractions = mutsig / mutsig.sum(axis=1).to_numpy()[:, None]
+        fractions = fractions[fractions.columns[::-1]]
+        fractions.plot.bar(
+            stacked=True,
+            width=1,
+            color=mutsig_cmap,
+            ax=ax,
+            legend=False,
+        )
+        ax.set_xlim([-0.5, fractions.shape[0] - 0.5])
+        ax.set_ylim([0, 1])
+        ax.set_xticks([])
+        ax.set_xlabel("")
+        ax.set_yticks([0, 1])
+        ax.set_ylabel(
+            ylabel="Exposure\nFraction",
+            fontdict=dict(fontsize=fontsize),
+        )
+        ax.tick_params(axis="y", labelsize=5)
+        for tick in ax.yaxis.get_major_ticks():
+            tick.set_pad(ytickpad)
+        self.no_spines(ax)
 
     def plot_cnv_heatmap(self, ax, cnv, cnv_cmap, inter_heatmap_linewidth, aspect_ratio):
         for (x, y), val in np.ndenumerate(cnv.T):

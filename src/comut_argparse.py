@@ -1,5 +1,8 @@
 import argparse
+
+
 def parse_args():
+
     parser = argparse.ArgumentParser(
         prog="ComutPlot",
         description="Plotting",
@@ -142,6 +145,10 @@ def parse_args():
     parser.add_argument("--maf", type=str, required=False, default=None, action='append', help="Path to the MAF input file.")
     parser.add_argument("--sif", type=str, required=False, default=None, action='append', help="Path to the SIF input file.")
     parser.add_argument("--gistic", type=str, required=False, default=None, action='append', help="Path to the MAF input file.")
+    parser.add_argument("--mutsig", type=str, required=False, default=None, action='append', help="Path to mutational signatures input file.")
+
+    parser.add_argument("--model_names", type=str, required=False, default="SNV burden model,CNV burden model", help="names of models.")
+    parser.add_argument("--model_significances", type=str, required=False, default=None, action="append", help="Path to the model significances input file.")
 
     parser.add_argument("--by", type=str, choices=["Sample", "Patient"], required=False, default="Patient")
     parser.add_argument("--label_columns", type=bool, required=False, default=True, help="labels at the bottom of plot")
@@ -153,36 +160,33 @@ def parse_args():
     parser.add_argument("--meta_data_rows_per_sample", type=str, required=False,
                         default="Sample Type,Material,Contamination,Tumor Purity,Platform",
                         help="Comma separated list of SIF columns to plot per sample.")
-    parser.add_argument("--genes", type=str, required=False, default=None, help="Comma separated list of genes.")
+
+    parser.add_argument("--interesting_gene", type=str, required=False, default=None, help="Interesting gene.")
+    parser.add_argument("--interesting_gene_comut_percent_threshold", type=float, required=False, default=None,
+                        help="threshold of significance for interesting genes")
+    parser.add_argument("--interesting_genes", type=str, required=False, default=None, help="Comma separated list of genes.")
     parser.add_argument("--snv_interesting_genes", type=str, required=False, default=None,
                         help="Comma separated list of snv genes.")
     parser.add_argument("--cnv_interesting_genes", type=str, required=False, default=None,
                         help="Comma separated list of cnv genes")
-    parser.add_argument("--interesting_gene_comut_threshold_percent", type=float, required=False, default=None,
-                        help="threshold of significance for interesting genes")
+    parser.add_argument("--total_prevalence_threshold", type=float, required=False, default=None,
+                        help="Minimum percentage of patients to have a mutation in this gene to be plotted")
     parser.add_argument("--ground_truth_genes", type=str, required=False, default=None, action="append",
-                        help="dictionary of genes to compare to")
+                        help="dictionary of color in palette as keys with list of genes to be colored as values")
+
     parser.add_argument("--low_amp_threshold", type=int, required=False, default=1, help="threshold for low amplification")
     parser.add_argument("--high_amp_threshold", type=int, required=False, default=2, help="threshold for high amplification")
     parser.add_argument("--low_del_threshold", type=int, required=False, default=-1, help="threshold for low deletion")
     parser.add_argument("--high_del_threshold", type=int, required=False, default=-2, help="threshold for high deletion")
-    parser.add_argument("--total_prevalence_threshold", type=float, required=False, default=None,
-                        help="threshold for total prevalence")
-    parser.add_argument("--model_names", type=str, required=False, default="SNV burden model,CNV burden model", help="names of models.")
-    parser.add_argument("--panels_to_plot", type=str, required=False, default="tmb,recurrence,prevalence,total prevalence,total prevalence overall,cytoband,gene names,model annotation,comutation,snv legend,cnv legend,model annotation legend,meta data,meta data legend", help="parts to be plotted")
-    parser.add_argument("--max_xfigsize", type=int, required=False, default=None, help="maximum x figure size")
-    parser.add_argument("--yfigsize", type=int, required=False, default=None, help ="y figure size")
-    parser.add_argument("--sub_folders", type=str, required=False, default=None, help="sub folders")
-    parser.add_argument("--file_name_prefix", type=str, required=False, default="", help="file name prefix")
-    parser.add_argument("--file_name_suffix", type=str, required=False, default="", help="file name suffix")
-    parser.add_argument("--regions", type=str, required=False, default=None, help="Path to the covered regions input file.")
-    parser.add_argument("--mutsig", type=str, required=False, default=None, help="Path to mutational signatures input file.")
-    parser.add_argument("--cytoband", type=str, required=False, default=None, help="Path to the MAF input file.")
-    parser.add_argument("--tmb", type=str, required=False, default=None, help="Path to the TMB input file.")
-    parser.add_argument("--prev", type=str, required=False, default=None, help="Path to the prevalence input file.")
+
+    parser.add_argument("--panels_to_plot", type=str, required=False, default="tmb,mutational signatures,recurrence,prevalence,total prevalence,total prevalence overall,cytoband,gene names,model annotation,comutation,mutsig legend,snv legend,cnv legend,model annotation legend,meta data,meta data legend", help="parts to be plotted")
+    parser.add_argument("--max_xfigsize", type=int, required=False, default=None, help="maximum x figure size; central comutation plot will be scaled to fit this size")
+
     args = parser.parse_args()
-    if args.genes is not None:
-        args.genes = args.genes.split(",")
+    validate_flags(args)
+
+    if args.interesting_genes is not None:
+        args.interesting_genes = args.interesting_genes.split(",")
     if args.snv_interesting_genes is not None:
         args.snv_interesting_genes = args.snv_interesting_genes.split(",")
     if args.cnv_interesting_genes is not None:
@@ -191,9 +195,9 @@ def parse_args():
         args.ground_truth_genes = {
             k: v.split(",") for k, v in [x.split(":") for x in args.ground_truth_genes]
         }
-
-    args = validate_flags(args)
-
     args.meta_data_rows = args.meta_data_rows.split(",")
     args.meta_data_rows_per_sample = args.meta_data_rows_per_sample.split(",")
     args.model_names = args.model_names.split(",")
+    args.panels_to_plot = args.panels_to_plot.split(",")
+
+    return args

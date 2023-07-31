@@ -11,7 +11,7 @@ class ComutLayout(Layout):
         n_genes: int, n_samples: int, n_meta: int = 0, pad: int = 1,
         xfigsize: float = None, max_xfigsize: float = None, yfigsize: float = None,
         label_columns=False,
-        tmb_cmap=(), snv_cmap=(), cnv_cmap=(), meta_cmaps={}
+        tmb_cmap=(), snv_cmap=(), cnv_cmap=(), mutsig_cmap=(), meta_cmaps={}
     ):
         self.panels_to_plot = panels_to_plot
 
@@ -24,11 +24,12 @@ class ComutLayout(Layout):
 
         # HEIGHTS
         tmb_height = 7
-        mut_sig_height = 7
+        mut_sig_height = 5
         comut_height = n_genes
         tmb_legend_height = len(tmb_cmap)
         snv_legend_height = len(snv_cmap)
         cnv_legend_height = len(cnv_cmap)
+        mutsig_legend_height = len(mutsig_cmap)
         model_annotation_legend_height = 2
         meta_height = n_meta
         meta_legend_continuous_height = 4
@@ -66,7 +67,7 @@ class ComutLayout(Layout):
             left_of_comut_width += model_annotation_width
 
         non_heatmap_width = left_of_comut_width
-        if any([part in panels_to_plot for part in ["tmb legend", "snv legend", "cnv legend", "model annotation legend"]]):
+        if any([part in panels_to_plot for part in ["tmb legend", "snv legend", "cnv legend", "mutsig legend", "model annotation legend"]]):
             non_heatmap_width += self.small_inter_legend_width + legend_width
         if "model significance" in panels_to_plot:
             non_heatmap_width += model_significance_width
@@ -76,7 +77,7 @@ class ComutLayout(Layout):
             else n_samples
         )
         right_of_comut_width = 0
-        if any([part in panels_to_plot for part in ["tmb legend", "snv legend", "cnv legend", "model annotation legend"]]):
+        if any([part in panels_to_plot for part in ["tmb legend", "snv legend", "cnv legend", "mutsig legend", "model annotation legend"]]):
             right_of_comut_width += self.small_inter_legend_width + legend_width
         if "model significance" in panels_to_plot:
             right_of_comut_width += model_significance_width
@@ -116,6 +117,7 @@ class ComutLayout(Layout):
                 "recurrence": [snv_recurrence_width, comut_height],
 
                 "model significance": [model_significance_width, comut_height],
+                "mutsig legend": [legend_width, mutsig_legend_height],
                 "snv legend": [legend_width, snv_legend_height],
                 "cnv legend": [legend_width, cnv_legend_height],
                 "model annotation legend": [legend_width, model_annotation_legend_height],
@@ -162,31 +164,45 @@ class ComutLayout(Layout):
             p_ref = self.add_panel(name="mutational signatures", above=p_ref)
         if "tmb" in self.panels_to_plot:
             p_ref = self.add_panel(name="tmb", above=p_ref)
-            if "tmb legend" in self.panels_to_plot:
-                self.add_panel(name="tmb legend", right_of=p_ref, pad=self.small_inter_legend_width, align="top")
 
         # RIGHT PANELS
         p_ref = p_comut
         if "model significance" in self.panels_to_plot:
             p_ref = self.add_panel(name="model significance", right_of=p_ref)
 
-        def first_legend_panel(name):
+        def first_legend_panel(name, p_ref):
             return self.add_panel(name=name, right_of=p_ref, pad=self.small_inter_legend_width, align="top")
 
         def other_legend_panel(name, p_ref):
             return self.add_panel(name=name, below=p_ref, pad=self.inter_legend_height, align="left")
 
+        if "tmb legend" in self.panels_to_plot:
+            p_ref = self.panels.get("tmb", p_ref)
+            p_ref = first_legend_panel(name="tmb legend", p_ref=p_ref)
+        if "mutsig legend" in self.panels_to_plot:
+            p_ref = self.panels.get("mutational signatures", p_ref)
+            p_ref = self.panels.get("tmb", p_ref)
+            p_ref = self.panels.get("tmb legend", p_ref)
+            p_ref = (
+                first_legend_panel(name="mutsig legend", p_ref=p_ref)
+                if p_ref.name != "tmb legend"
+                else other_legend_panel(name="mutsig legend", p_ref=p_ref)
+            )
         if "snv legend" in self.panels_to_plot:
-            p_ref = first_legend_panel(name="snv legend")
+            p_ref = (
+                first_legend_panel(name="snv legend", p_ref=p_ref)
+                if p_ref.name == "comutation"
+                else other_legend_panel(name="snv legend", p_ref=p_ref)
+            )
         if "cnv legend" in self.panels_to_plot:
             p_ref = (
-                first_legend_panel(name="cnv legend")
+                first_legend_panel(name="cnv legend", p_ref=p_ref)
                 if p_ref.name == "comutation"
                 else other_legend_panel(name="cnv legend", p_ref=p_ref)
             )
         if "model annotation legend" in self.panels_to_plot:
             p_ref = (
-                first_legend_panel(name="model annotation legend")
+                first_legend_panel(name="model annotation legend", p_ref=p_ref)
                 if p_ref.name == "comutation"
                 else other_legend_panel(name="model annotation legend", p_ref=p_ref)
             )
