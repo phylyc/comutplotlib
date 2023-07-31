@@ -28,7 +28,7 @@ class Plotter(object):
         path = self.mk_out_path(recursive_folder_list=recursive_folder_list)
         name = name if name is not None else self.file_name
         if name.endswith(".png"):
-            kwargs["dpi"] = kwargs.get("dpi", 300)
+            kwargs["dpi"] = kwargs.get("dpi", 600)
         _fig.savefig(os.path.join(path, name), **kwargs)
 
     @staticmethod
