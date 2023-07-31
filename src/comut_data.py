@@ -63,7 +63,7 @@ class ComutData(object):
 
         self.mutsig = pd.concat(
             [pd.read_csv(path_to_file, index_col=0, sep="\t") for path_to_file in mutsig_paths]
-        )
+        ) if mutsig_paths is not None else None
 
         self.model_significance = pd.DataFrame.from_dict(
             {
@@ -128,7 +128,8 @@ class ComutData(object):
             self.snv.reindex(columns=self.columns)
             self.cnv.reindex(columns=self.columns)
             self.meta.reindex(columns=self.columns)
-            self.mutsig = self.mutsig.reindex(index=self.columns)
+            if self.mutsig is not None:
+                self.mutsig = self.mutsig.reindex(index=self.columns)
             if self.tmb is not None:
                 self.tmb = self.tmb.reindex(index=self.columns)
 

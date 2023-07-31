@@ -325,14 +325,15 @@ class Palette(UserDict):
         tmb_cmap = {
             better_effect_legend(effect): self.get(effect, self.grey)
             for effect in reversed(data.tmb.columns)
-        }
+        } if data.tmb is not None else {}
         return tmb_cmap
 
     def get_mutsig_cmap(self, data):
-        return {
+        mutsig_cmap = {
             sig: self.get(sig, color)
             for sig, color in zip(data.mutsig.columns, sns.color_palette("husl", n_colors=len(data.mutsig.columns)))
-        }
+        } if data.mutsig is not None else {}
+        return mutsig_cmap
 
     def get_meta_cmaps(self, data):
         meta_cmaps = {}

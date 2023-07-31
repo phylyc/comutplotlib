@@ -1,7 +1,7 @@
 class SampleAnnotation(object):
 
-    sample = "sample_id"
-    patient = "clinical_id"
+    sample = "sample_id"  # necessary
+    patient = "clinical_id"  # necessary
     platform = "platform"
     platform_abv = "Platform"
     data_type = "data_type"
