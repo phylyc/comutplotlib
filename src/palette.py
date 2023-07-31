@@ -166,6 +166,12 @@ class Palette(UserDict):
                 "[>*]": self.orange,
                 "[*>]": self.blue,
 
+                # MUTATIONAL SIGNATURES
+                "Ageing": self.brown,
+                "Smoking": self.cyan,
+                "UV": self.orange,
+                "Chemotherapy": self.green,
+
                 # SAMPLE TYPE
                 "BM": self.pink,  # brain metastasis
                 "cfDNA": self.violet,  # cell-free DNA
@@ -321,6 +327,12 @@ class Palette(UserDict):
             for effect in reversed(data.tmb.columns)
         }
         return tmb_cmap
+
+    def get_mutsig_cmap(self, data):
+        return {
+            sig: self.get(sig, color)
+            for sig, color in zip(data.mutsig.columns, sns.color_palette("husl", n_colors=len(data.mutsig.columns)))
+        }
 
     def get_meta_cmaps(self, data):
         meta_cmaps = {}
