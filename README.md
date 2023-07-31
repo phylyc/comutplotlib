@@ -35,14 +35,17 @@ There are three main inputs to provide. Most of them are direct outputs of other
 
 #### EXAMPLES:
 
-- Generate a plot with a single MAF file and specific output path: 
-`python comut_argparse.py --maf file1.maf --output output_plot.png`
+- Generate a plot with a single MAF file and specific output path:   
+`python comut_argparse.py --maf file1.maf --output output_plot.png`  
 
-- Use multiple input files (MAF, SIF, GISTIC) and set additional options: 
-`python comut_argparse.py --maf file1.maf --sif file2.sif --gistic file3.gistic --by Sample --label_columns True --output output_plot.png`
+- Use multiple input files (MAF, SIF, GISTIC) and set additional options:   
+`python comut_argparse.py --maf file1.maf --sif file2.sif --gistic file3.gistic --by Sample --label_columns True --output output_plot.png`  
 
-- Provide multiple interesting genes and customize the plot layout: 
-`python comut_argparse.py --genes geneA,geneB,geneC --snv_interesting_genes geneX,geneY --parts_to_plot mutation burden,comutations,cytoband --output output_plot.png`
+- Provide multiple interesting genes and customize the plot layout:   
+`python comut_argparse.py --genes geneA,geneB,geneC --snv_interesting_genes geneX,geneY --parts_to_plot mutation burden,comutations,cytoband --output output_plot.png`  
+
+- For more complicated demo figures, please run the code in bash/call_comut.sh:  
+`bash call_comut.sh`
 
 Contribution Guidelines (don't need): 
 if want to suggest new features, create a new issue; 
