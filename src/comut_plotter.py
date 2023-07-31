@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import colors, patches, ticker
 import numpy as np
 
+from src.functional_effect import sort_functional_effects
 from src.plotter import Plotter
 from src.math import decompose_rectangle_into_polygons
 from src.sample_annotation import SampleAnnotation as SA
@@ -97,11 +98,20 @@ class ComutPlotter(Plotter):
                 va="top",
             )
 
-    def plot_prevalence(self, ax, mut_prevalence_counter, cna, cna_counter, num_effects, genes, columns, snv_cmap, cnv_cmap, amp_thresholds, del_thresholds, pad=0.1):
+    def plot_prevalence(self, ax, mut_prevalence_counter, cna, cna_counter, num_effects, genes, columns, cnv_cmap, amp_thresholds, del_thresholds, pad=0.1):
         max_comut = mut_prevalence_counter.apply(
             lambda c: max(c.values()) if isinstance(c, Counter) else 1
         ).max()
         max_xlim = 1.1 * max_comut
+
+        effects = sort_functional_effects(
+            {
+                effect
+                for counter in [c for c in mut_prevalence_counter.values if isinstance(c, Counter)]
+                for effect, _ in counter.items()
+            },
+            ascending=False
+        )
 
         for row, gene_name in enumerate(genes):
             # paint background rectangle showing area of each gene
@@ -119,14 +129,13 @@ class ComutPlotter(Plotter):
             if not isinstance(counter, Counter):
                 continue
 
-            for i, (effect, color) in enumerate(reversed(snv_cmap.items())):
+            for i, effect in enumerate(effects):
                 if effect in counter:
-                    value = counter.get(effect)
                     rect = patches.Rectangle(
                         xy=(0, row + pad / 2 + i * (1 - pad) / num_effects),
-                        width=value,
+                        width=counter.get(effect),
                         height=(1 - pad) / num_effects,
-                        facecolor=color,
+                        facecolor=self.palette.get(effect, self.palette.grey),
                         edgecolor=None,
                         zorder=0.9,
                     )

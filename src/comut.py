@@ -121,7 +121,7 @@ class Comut(object):
         self.layout.set_plot_func("cytoband", self.plotter.plot_cytoband, cytobands=self.data.cnv.gistic.cytoband)
         self.layout.set_plot_func("total prevalence", self.plotter.plot_total_prevalence, total_prevalence_per_gene=self.data.get_total_prevalence(), pad=0.01)
         self.layout.set_plot_func("total prevalence overall", self.plotter.plot_total_prevalence_overall, total_prevalence_overall=self.data.get_total_prevalence_overall(), pad=0.01)
-        self.layout.set_plot_func("prevalence", self.plotter.plot_prevalence, self.data.snv.get_effect_prevalence().reindex(index=self.data.genes), self.data.cnv.df, self.data.cnv.get_prevalence(), self.data.snv.num_effects, self.data.genes, self.data.columns, self.snv_cmap, self.cnv_cmap, [self.data.high_amp_threshold, self.data.low_amp_threshold], [self.data.high_del_threshold, self.data.low_del_threshold])
+        self.layout.set_plot_func("prevalence", self.plotter.plot_prevalence, self.data.snv.get_effect_prevalence().reindex(index=self.data.genes), self.data.cnv.df, self.data.cnv.get_prevalence(), self.data.snv.num_effects, self.data.genes, self.data.columns, self.cnv_cmap, [self.data.high_amp_threshold, self.data.low_amp_threshold], [self.data.high_del_threshold, self.data.low_del_threshold])
         self.layout.set_plot_func("recurrence", self.plotter.plot_recurrence, mut_protein_data=self.data.snv.get_recurrence(index=self.data.genes), genes=self.data.genes, snv_recurrence_threshold=self.data.snv_recurrence_threshold)
 
         self.layout.set_plot_func("model significance", self.plotter.plot_model_significance, model_significance=self.data.model_significance)
