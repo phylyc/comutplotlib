@@ -181,7 +181,6 @@ class ComutLayout(Layout):
             p_ref = first_legend_panel(name="tmb legend", p_ref=p_ref)
         if "mutsig legend" in self.panels_to_plot:
             p_ref = self.panels.get("mutational signatures", p_ref)
-            p_ref = self.panels.get("tmb", p_ref)
             p_ref = self.panels.get("tmb legend", p_ref)
             p_ref = (
                 first_legend_panel(name="mutsig legend", p_ref=p_ref)
