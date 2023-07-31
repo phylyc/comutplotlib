@@ -2,7 +2,7 @@
 
 python make_data.py
 python ../call.py \
-  -o "comut_test.pdf" \
+  -o "comut_test.png" \
   --maf "test.maf.tsv" \
   --gistic "test.all_thresholded.by_genes.txt" \
   --sif "test.sif.tsv" \
