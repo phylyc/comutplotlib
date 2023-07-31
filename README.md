@@ -4,7 +4,7 @@ Comutation plots are a widely used visualization method to explore co-occurrence
 of genomic alterations, such as mutations, copy number variations (CNVs), and other genetic 
 events, across multiple samples or patients.
 
-![Sample Comut Plot Output](https://github.com/phylyc/comut_plot/assets/86932344/aed454e6-2b1b-49d7-a3f8-a4efe1727364)
+![Sample Comut Plot Output](https://github.com/phylyc/comut_plot/blob/main/demo/comut_test.pdf)
 
 ### DESCRIPTION:
 ComutPlot is a tool for plotting and visualizing genomic data. It offers
