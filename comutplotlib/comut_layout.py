@@ -154,7 +154,7 @@ class ComutLayout(Layout):
         if "total prevalence" in self.panels_to_plot:
             p_ref = self.add_panel(name="total prevalence", left_of=p_ref)
             if "total prevalence overall" in self.panels_to_plot:
-                self.add_panel(name="total prevalence overall", below=p_ref)
+                self.add_panel(name="total prevalence overall", below=p_ref, pad=0)
         if "prevalence" in self.panels_to_plot:
             p_ref = self.add_panel(name="prevalence", left_of=p_ref)
         if "recurrence" in self.panels_to_plot:
