@@ -2,7 +2,7 @@ from collections import Counter
 from itertools import chain
 import numpy as np
 
-from src.functional_effect import sort_functional_effects
+from comutplotlib.functional_effect import sort_functional_effects
 
 
 class SNV(object):

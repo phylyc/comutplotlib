@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from tqdm import tqdm
 
-from src.mutation_annotation import MutationAnnotation as MutA
+from comutplotlib.mutation_annotation import MutationAnnotation as MutA
 
 
 def join_gistics(gistics: list["Gistic"]):
@@ -44,10 +44,29 @@ class Gistic(object):
             data if data is not None
             else pd.DataFrame(None, index=pd.Index([], name=MutA.gene_name), columns=pd.Index([self._locus_id, self._cytoband]))
         )
+        self._standardize_gene_names()
 
     def _standardize_gene_names(self):
-        # self.data.index.str.rename()
-        pass
+        gene_name_map = {
+            "MLL2": "KMT2D",
+            "HIST1H3A": "H3C1",
+            "HIST1H3B": "H3C2",
+            "HIST1H3C": "H3C3",
+            "HIST1H3D": "H3C4",
+            "HIST1H3E": "H3C6",
+            "HIST1H3F": "H3C7",
+            "HIST1H3G": "H3C8",
+            "HIST1H3H": "H3C10",
+            "HIST1H3I": "H3C11",
+            "HIST1H3J": "H3C12",
+            "HIST2H3D": "H3C13",
+            "HIST2H3C": "H3C14",
+            "HIST2H3A": "H3C15",
+        }
+
+        for gene_name, replacement in gene_name_map.items():
+            if gene_name in self.data.index:
+                self.data.rename(index={gene_name: replacement}, inplace=True)
 
     @property
     def genes(self):
@@ -82,18 +101,18 @@ class Gistic(object):
         return self.sample_table.shape[1]
 
     def select_genes(self, genes: list[str], inplace=True) -> "Gistic":
-        index = [g for g in genes if g in self.genes]
+        data = self.data.reindex(index=genes)
         if inplace:
-            self.data = self.data.loc[index]
+            self.data = data
             return self
-        return Gistic(data=self.data.loc[index])
+        return Gistic(data=data)
 
     def select_samples(self, samples: list[str], inplace=True) -> "Gistic":
-        columns = [self._locus_id, self._cytoband] + [s for s in samples if s in self.samples]
+        columns = [self._locus_id, self._cytoband] + list(samples)
         if inplace:
-            self.data = self.data[columns]
+            self.data = self.data.reindex(columns=columns)
             return self
-        return Gistic(data=self.data[columns])
+        return Gistic(data=self.data.reindex(columns=columns))
 
     def copy(self) -> "Gistic":
         gistic = Gistic()
@@ -102,5 +121,6 @@ class Gistic(object):
         return gistic
 
     def join(self, other: "Gistic") -> "Gistic":
-        joined = self.data.join(other.sample_table, how="outer")
+        other_samples = [s for s in other.sample_table.columns if s not in self.sample_table.columns]
+        joined = self.data.join(other.sample_table[other_samples], how="outer")
         return Gistic(data=joined)

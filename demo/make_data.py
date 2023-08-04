@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 
-from src.gistic import Gistic
-from src.maf import MAF
-from src.sif import SIF
+from comutplotlib.gistic import Gistic
+from comutplotlib.maf import MAF
+from comutplotlib.sif import SIF
 
 
 np.random.seed(21)

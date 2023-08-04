@@ -4,8 +4,8 @@ import pandas as pd
 from tqdm import tqdm
 from typing import Callable, Optional, Union
 
-from src.annotation_table import AnnotationTable
-from src.sample_annotation import SampleAnnotation
+from comutplotlib.annotation_table import AnnotationTable
+from comutplotlib.sample_annotation import SampleAnnotation
 
 
 def join_sifs(sifs: list["SIF"]):

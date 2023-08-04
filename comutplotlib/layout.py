@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from src.panel import Panel
+from comutplotlib.panel import Panel
 
 
 class Layout(object):

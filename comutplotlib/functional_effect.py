@@ -1,5 +1,6 @@
 from typing import Iterable
-from src.mutation_annotation import MutationAnnotation as MutA
+
+from comutplotlib.mutation_annotation import MutationAnnotation as MutA
 
 
 def better_effect_legend(effect):

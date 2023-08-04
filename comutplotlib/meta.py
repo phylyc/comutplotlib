@@ -68,7 +68,10 @@ class Meta(object):
         if self.sif.tmb in self.sif.data.columns:
             tmb = self.sif.data.groupby(by=[self.by]).agg({self.sif.tmb: np.mean})
             if self.sif.tmb_error in self.sif.data.columns:
-                tmb_error = self.sif.data.groupby(by=[self.by]).agg({self.sif.tmb_error: np.mean})
-                tmb = tmb.join(tmb_error)
+                tmb = tmb.join(self.sif.data.groupby(by=[self.by]).agg({self.sif.tmb_error: lambda e: np.sqrt(np.sum(e ** 2))}))
+            if self.sif.n_vars in self.sif.data.columns:
+                tmb = tmb.join(self.sif.data.groupby(by=[self.by]).agg({self.sif.n_vars: np.sum}))
+            if self.sif.n_bases in self.sif.data.columns:
+                tmb = tmb.join(self.sif.data.groupby(by=[self.by]).agg({self.sif.n_bases: np.sum}))
             return tmb
         return None

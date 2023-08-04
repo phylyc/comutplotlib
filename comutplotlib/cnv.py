@@ -35,11 +35,11 @@ class CNV(object):
 
     @property
     def has_high_amp(self):
-        return ~self.df.isna() & self.df.ge(self.high_amp_threshold)
+        return ~self.df.isna() & self.df.fillna(0).ge(self.high_amp_threshold)
 
     @property
     def has_high_del(self):
-        return ~self.df.isna() & self.df.le(self.high_del_threshold)
+        return ~self.df.isna() & self.df.fillna(0).le(self.high_del_threshold)
 
     @property
     def has_high_cnv(self):
@@ -47,11 +47,11 @@ class CNV(object):
 
     @property
     def has_low_amp(self):
-        return ~self.df.isna() & self.df.ge(self.low_amp_threshold) & ~self.has_high_amp
+        return ~self.df.isna() & self.df.fillna(0).ge(self.low_amp_threshold) & ~self.has_high_amp
 
     @property
     def has_low_del(self):
-        return ~self.df.isna() & self.df.le(self.low_del_threshold) & ~self.has_high_del
+        return ~self.df.isna() & self.df.fillna(0).le(self.low_del_threshold) & ~self.has_high_del
 
     @property
     def has_low_cnv(self):

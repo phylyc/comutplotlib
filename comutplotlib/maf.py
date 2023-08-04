@@ -7,10 +7,10 @@ from tqdm import tqdm
 from typing import Any, Callable, Dict, Optional, Union, Literal
 import warnings
 
-from src.annotation_table import AnnotationTable
-from src.maf_encoding import MAFEncoding
-from src.mutation_annotation import MutationAnnotation
-import src.pandas_util as pd_util
+from comutplotlib.annotation_table import AnnotationTable
+from comutplotlib.maf_encoding import MAFEncoding
+from comutplotlib.mutation_annotation import MutationAnnotation
+import comutplotlib.pandas_util as pd_util
 
 
 def join_mafs(mafs: list["MAF"]):

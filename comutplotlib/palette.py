@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-from src.functional_effect import better_effect_legend
-from src.mutation_annotation import MutationAnnotation as MutA
+from comutplotlib.functional_effect import better_effect_legend
+from comutplotlib.mutation_annotation import MutationAnnotation as MutA
 
 
 class Palette(UserDict):

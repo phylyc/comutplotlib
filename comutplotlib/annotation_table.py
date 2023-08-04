@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from typing import Callable, Optional, Union
 
-import src.pandas_util as pd_util
+import comutplotlib.pandas_util as pd_util
 
 
 class AnnotationTable(object):

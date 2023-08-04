@@ -1,7 +1,7 @@
 import pandas as pd
 
-from src.mutation_annotation import MutationAnnotation as MutA
-# from src.nucleotide_context import NucleotideContext
+from comutplotlib.mutation_annotation import MutationAnnotation as MutA
+# from comutplotlib.nucleotide_context import NucleotideContext
 
 
 class MAFEncoding(object):

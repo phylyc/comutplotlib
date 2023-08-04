@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
-from matplotlib import rcParams
+from matplotlib import rcParams, ticker
 import numpy as np
 import os
 from typing import Iterable
 
-from src.palette import Palette
+from comutplotlib.palette import Palette
 
 
 class Plotter(object):
@@ -118,6 +118,29 @@ class Plotter(object):
         # ylim is being adjusted if something is being plotted until the edge.
         ax.set_xlim(ax.get_xlim())
         ax.set_ylim(ax.get_ylim())
+
+    @staticmethod
+    def set_integer_ticks(ax, xlim, xmin=None, n_major=3, n_minor=4):
+        ax.set_xlim(xlim)
+        ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=n_major, steps=[1, 2, 3, 4, 5], integer=True))
+        if xmin is not None:
+            ax.set_xticks([t for t in ax.get_xticks() if t >= xmin])
+            ax.set_xlim(xlim)
+        if np.max(np.abs(xlim)) >= 2:
+            # get minor tick interval as integer divisible of the major tick interval
+            # that is closest to 4, first checking 5, then 3, then 6, then 2, etc.
+            major_tick_interval = ax.get_xticks()[1]
+            n = n_minor
+            i = 0
+            while True:
+                if major_tick_interval % n == 0:
+                    break
+                i += 1
+                n += i * (-1) ** (i + 1)
+            ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(n=n))
+            if xmin is not None:
+                ax.xaxis.set_minor_locator(ticker.FixedLocator([t for t in ax.xaxis.get_minorticklocs() if t >= xmin]))
+            ax.xaxis.set_minor_formatter(ticker.NullFormatter())
 
     @staticmethod
     def set_spines(ax, **kwargs):

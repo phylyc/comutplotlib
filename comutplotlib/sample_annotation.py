@@ -25,6 +25,8 @@ class SampleAnnotation(object):
     tumor_purity_error = "tumor_purity_error"
     tmb = "tmb"
     tmb_error = "tmb_error"
+    n_vars = "n_vars"
+    n_bases = "n_bases"
 
     age_p_dx = "age_p_dx"
     age_bm_dx = "age_bm_dx"

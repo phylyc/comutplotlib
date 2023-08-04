@@ -4,11 +4,12 @@ from collections import Counter
 import matplotlib.pyplot as plt
 from matplotlib import colors, patches, ticker
 import numpy as np
+import scipy.stats as st
 
-from src.functional_effect import sort_functional_effects
-from src.plotter import Plotter
-from src.math import decompose_rectangle_into_polygons
-from src.sample_annotation import SampleAnnotation as SA
+from comutplotlib.functional_effect import sort_functional_effects
+from comutplotlib.plotter import Plotter
+from comutplotlib.math import decompose_rectangle_into_polygons
+from comutplotlib.sample_annotation import SampleAnnotation as SA
 
 
 class ComutPlotter(Plotter):
@@ -49,7 +50,7 @@ class ComutPlotter(Plotter):
                     ax.hlines(y=pos, xmin=0, xmax=value, color=color, linewidth=0.5)
                 )
                 objects.append(ax.scatter(value, pos, color=color, s=0.5))
-                if value > snv_recurrence_threshold + 1 / 6 * (max_comut - snv_recurrence_threshold):
+                if value > snv_recurrence_threshold:
                     potential_annotations.append(
                         ax.text(
                             value,
@@ -141,16 +142,10 @@ class ComutPlotter(Plotter):
                     )
                     ax.add_patch(rect)
 
-        ax.set_xlim([-max_xlim, max_xlim])
-        ax.set_xticks([t for t in ax.get_xticks() if t >= 0])
-        ax.set_xlim([-max_xlim, max_xlim])
+        self.set_integer_ticks(ax=ax, xlim=[-max_xlim, max_xlim], xmin=0, n_major=3, n_minor=4)
         ax.xaxis.set_ticks_position("top")
         ax.xaxis.set_label_position("top")
         ax.set_xlabel("  SNV", fontdict=dict(fontsize=5), loc="left")
-        if max_xlim >= 2:
-            ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(n=int(min(4, max_xlim))))
-            ax.xaxis.set_minor_locator(ticker.FixedLocator([t for t in ax.xaxis.get_minorticklocs() if t >= 0]))
-            ax.xaxis.set_minor_formatter(ticker.NullFormatter())
 
         ax.set_yticks([])
         ax.set_ylim([0, len(genes)])
@@ -170,8 +165,8 @@ class ComutPlotter(Plotter):
         ax.xaxis.set_label_position("top")
 
         # get maximum number of amp or del
-        max_num_amp = (cna > 0).sum(axis=1).max()
-        max_num_del = (cna < 0).sum(axis=1).max()
+        max_num_amp = (cna > np.min(amp_thresholds)).sum(axis=1).max()
+        max_num_del = (cna < np.max(del_thresholds)).sum(axis=1).max()
         max_comut = max(max_num_amp, max_num_del, 1)
         max_xlim = 1.1 * max_comut
 
@@ -209,15 +204,10 @@ class ComutPlotter(Plotter):
                     cna_ax.add_patch(rect)
                     pos += value
 
-        cna_ax.set_xlim([-max_xlim, max_xlim])
-        cna_ax.set_xticks([t for t in cna_ax.get_xticks() if t > 0])
-        cna_ax.set_xlim([-max_xlim, max_xlim])
+        self.set_integer_ticks(ax=cna_ax, xlim=[-max_xlim, max_xlim], xmin=0.1, n_major=3, n_minor=4)
         cna_ax.xaxis.set_ticks_position("top")
         cna_ax.xaxis.set_label_position("top")
         cna_ax.set_xlabel("CNV  ", fontdict=dict(fontsize=5), loc="right")
-        cna_ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(n=int(min(4, max_xlim))))
-        cna_ax.xaxis.set_minor_locator(ticker.FixedLocator([t for t in cna_ax.xaxis.get_minorticklocs() if t >= 0]))
-        cna_ax.xaxis.set_minor_formatter(ticker.NullFormatter())
 
         cna_ax.set_yticks([])
         cna_ax.set_ylim([0, len(genes)])
@@ -369,15 +359,44 @@ class ComutPlotter(Plotter):
 
     def plot_tmb(self, ax, tmb: pd.DataFrame, tmb_threshold=10, ytickpad=0, fontsize=6, aspect_ratio=1):
         if SA.tmb in tmb.columns:
+            ymin = 5 * 1e-1
+            ymax = max(1e2, min(tmb[SA.tmb].max(), 5 * 1e2))
+            if SA.n_vars in tmb.columns and SA.n_bases in tmb.columns:
+                # test if tmb is significantly higher than threshold:
+                # Jeffrey's prior
+                n_vars = tmb[SA.n_vars].to_numpy()
+                n_bases = tmb[SA.n_bases].to_numpy()
+                dist = st.beta(a=n_vars + 1/2, b=n_bases - n_vars + 1/2)
+                yerr_lower = [np.max([ymin, y]) for y in 1e6 * (dist.mean() - dist.ppf(0.05))]
+                yerr_upper = [np.min([y, ymax]) for y in 1e6 * (dist.ppf(0.95) - dist.mean())]
+                p = dist.cdf(tmb_threshold * 1e-6)
+                color = [self.palette.darkred if q < 0.05 else self.palette.grey for q in p]
+                bar_kwargs = {
+                    "yerr": [yerr_lower, yerr_upper],
+                    "error_kw": dict(ecolor=self.palette.black, lw=np.sqrt(aspect_ratio) * 0.5),
+                }
+            elif SA.tmb_error in tmb.columns:
+                # test if tmb is significantly higher than threshold:
+                mean = tmb[SA.tmb]
+                var = (tmb[SA.tmb_error] ** 2)
+                a = mean * (mean * (1 - mean) / var - 1)
+                b = (1 - mean) * (mean * (1 - mean) / var - 1)
+                p = st.beta(a, b).cdf(tmb_threshold * 1e6)
+                color = [self.palette.darkred if q < 0.05 else self.palette.grey for q in p],
+                bar_kwargs = {
+                    "yerr": tmb[SA.tmb_error],
+                    "error_kw": dict(ecolor=self.palette.black, lw=np.sqrt(aspect_ratio) * 0.5),
+                }
+            else:
+                color = [self.palette.darkred if t >= tmb_threshold else self.palette.grey for t in tmb[SA.tmb]]
+            perc_high_tmb = np.sum([c == self.palette.darkred for c in color]) / len(color)
             ax.bar(
                 x=np.arange(tmb.shape[0]),
                 height=tmb[SA.tmb],
-                yerr=tmb[SA.tmb_error],
+                color=color,
                 align="center",
-                color=[self.palette.darkgrey if t < tmb_threshold else self.palette.darkred for t in tmb[SA.tmb]],
-                # color=self.palette.darkgrey,
                 alpha=1,
-                error_kw=dict(ecolor=self.palette.black, lw=aspect_ratio * 0.5),
+                **bar_kwargs
             )
             ax.set_ylabel(ylabel="TMB [/Mb]", fontdict=dict(fontsize=fontsize))
         else:  # columns are a list of functional effects
@@ -390,10 +409,12 @@ class ComutPlotter(Plotter):
             )
             ax.set_ylabel(ylabel="Mutation\nBurden", fontdict=dict(fontsize=fontsize))
         ax.set_xlim([-0.5, tmb.shape[0] - 0.5])
-        ax.set_ylim([0, ax.get_ylim()[1]])
+        ax.set_yscale("log")
+        ax.set_ylim([ymin, ymax])
         ax.set_xticks([])
         ax.set_xlabel("")
-        ax.yaxis.set_major_formatter(ticker.EngFormatter(sep=""))
+        ax.yaxis.set_minor_locator(ticker.NullLocator())
+        ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _: "{:g}".format(y)))
         ax.tick_params(axis="y", labelsize=5)
         for tick in ax.yaxis.get_major_ticks():
             tick.set_pad(ytickpad)
@@ -401,6 +422,18 @@ class ComutPlotter(Plotter):
         if SA.tmb in tmb.columns:
             # ax.spines["bottom"].set_visible(True)
             self.grid(ax=ax, axis="y", which="major", zorder=0.5)
+            ax.axhline(y=tmb_threshold, color=self.palette.darkred, linewidth=0.5, ls="--", zorder=1)
+            # create yticklabel on the right for the TMB threshold and label it with perc_high_tmb
+            ax2 = ax.twinx()
+            self.no_spines(ax2)
+            ax2.set_ylim(ax.get_ylim())
+            ax2.set_yscale("log")
+            ax2.set_yticks([tmb_threshold])
+            ax2.yaxis.set_minor_locator(ticker.NullLocator())
+            ax2.tick_params(axis="y", pad=0, length=0, labelsize=5, labelcolor=self.palette.darkred, labelrotation=90)
+            ax2.set_yticklabels([" {:.0f}%".format(perc_high_tmb * 100)], fontdict=dict(verticalalignment="bottom"))
+            for tick in ax2.yaxis.get_major_ticks():
+                tick.set_pad(ytickpad)
 
     def plot_mutsig(self, ax, mutsig, mutsig_cmap, ytickpad=0, fontsize=6):
         fractions = mutsig / mutsig.sum(axis=1).to_numpy()[:, None]

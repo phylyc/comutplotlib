@@ -1,13 +1,13 @@
 import pandas as pd
 import re
 
-from src.gistic import Gistic, join_gistics
-from src.maf import MAF, join_mafs
-from src.seg import SEG, join_segs
-from src.sif import SIF, join_sifs
-from src.snv import SNV
-from src.cnv import CNV
-from src.meta import Meta
+from comutplotlib.gistic import Gistic, join_gistics
+from comutplotlib.maf import MAF, join_mafs
+from comutplotlib.seg import SEG, join_segs
+from comutplotlib.sif import SIF, join_sifs
+from comutplotlib.snv import SNV
+from comutplotlib.cnv import CNV
+from comutplotlib.meta import Meta
 
 
 class ComutData(object):
@@ -46,6 +46,7 @@ class ComutData(object):
         snv_interesting_genes: set = None,
         cnv_interesting_genes: set = None,
         total_prevalence_threshold: float = None,
+        snv_recurrence_threshold: int = 5,
 
         low_amp_threshold: int | float = 1,
         high_amp_threshold: int | float = 2,
@@ -88,7 +89,7 @@ class ComutData(object):
         self.interesting_genes = set(interesting_genes) if interesting_genes is not None else set()
         self.ground_truth_genes = ground_truth_genes
         self.total_prevalence_threshold = total_prevalence_threshold
-        self.snv_recurrence_threshold = 5
+        self.snv_recurrence_threshold = snv_recurrence_threshold
 
         self.low_amp_threshold = low_amp_threshold
         self.high_amp_threshold = high_amp_threshold
@@ -191,6 +192,7 @@ class ComutData(object):
     def sort_genes(self):
         sorted_features = (
             (self.snv.has_snv.astype(int) + self.cnv.has_high_cnv.astype(int))
+            .fillna(0)
             .sum(axis=1)
             .to_frame("mut_count")
             .join(self.snv.has_snv.any(axis=1).to_frame("has_snv"))
@@ -205,7 +207,7 @@ class ComutData(object):
             genes += [self.interesting_gene]
 
         # group genes in the same cytoband together since they are co-amplified or co-deleted.
-        cytobands = self.cnv.gistic.cytoband.loc[genes]
+        cytobands = self.cnv.gistic.cytoband.reindex(index=genes).fillna("")
         cytoband_groups = cytobands[::-1].drop_duplicates().values
         cytoband_key = {cb: i for i, cb in enumerate(cytoband_groups)}
 
@@ -251,14 +253,15 @@ class ComutData(object):
                 + 2 * self.cnv.has_high_amp.astype(int)
                 + self.cnv.has_high_del.astype(int)
             )
-            has_burden = self.tmb.gt(0).any(axis=1).astype(int).to_frame("burden").T
+            has_burden = self.tmb[SIF.tmb].gt(0).astype(int).to_frame("has_burden").T
             has_any_cnv = self.cnv.has_cnv.any(axis=0).astype(int).to_frame("has_cnv").T
             has_low_cnv = (
                 + 2 * self.cnv.has_low_amp.astype(int)
                 + self.cnv.has_low_del.astype(int)
             )
+            burden = self.tmb[[SIF.tmb]].T
             columns = (
-                pd.concat([has_low_cnv, has_any_cnv, has_burden, has_high_mut])
+                pd.concat([burden, has_low_cnv, has_any_cnv, has_burden, has_high_mut])
                 .T
                 .apply(lambda x: tuple(reversed(tuple(x))), axis=1)
                 .sort_values(ascending=False)

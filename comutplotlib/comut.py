@@ -1,7 +1,7 @@
-from src.comut_data import ComutData
-from src.comut_layout import ComutLayout
-from src.comut_plotter import ComutPlotter
-from src.mutation_annotation import MutationAnnotation as MutA
+from comutplotlib.comut_data import ComutData
+from comutplotlib.comut_layout import ComutLayout
+from comutplotlib.comut_plotter import ComutPlotter
+from comutplotlib.mutation_annotation import MutationAnnotation as MutA
 
 
 class Comut(object):
@@ -16,7 +16,7 @@ class Comut(object):
         seg: list[str] = (),
         gistic: list[str] = (),
 
-        mutsig: list[str] = (),
+        mutsig: list[str] = None,
 
         model_significances: list[str] = (),
         model_names: list[str] = (),
@@ -36,6 +36,7 @@ class Comut(object):
         snv_interesting_genes: set = None,
         cnv_interesting_genes: set = None,
         total_prevalence_threshold: float = None,
+        snv_recurrence_threshold: int = 5,
 
         low_amp_threshold: int = 1,
         high_amp_threshold: int = 2,
@@ -74,6 +75,7 @@ class Comut(object):
             snv_interesting_genes=snv_interesting_genes,
             cnv_interesting_genes=cnv_interesting_genes,
             total_prevalence_threshold=total_prevalence_threshold,
+            snv_recurrence_threshold=snv_recurrence_threshold,
             low_amp_threshold=low_amp_threshold,
             high_amp_threshold=high_amp_threshold,
             low_del_threshold=low_del_threshold,
@@ -117,8 +119,9 @@ class Comut(object):
 
         self.layout.set_plot_func("comutation", plot_comut)
 
+        # self.layout.set_plot_func("coverage", self.plotter.plot_coverage)
         self.layout.set_plot_func("mutational signatures", self.plotter.plot_mutsig, mutsig=self.data.mutsig, mutsig_cmap=self.mutsig_cmap)
-        self.layout.set_plot_func("tmb", self.plotter.plot_tmb, tmb=self.data.tmb, ytickpad=0, fontsize=6)
+        self.layout.set_plot_func("tmb", self.plotter.plot_tmb, tmb=self.data.tmb, ytickpad=0, fontsize=6, aspect_ratio=self.layout.aspect_ratio)
         # self.layout.set_plot_func("tmb legend", self.plotter.plot_legend, cmap=self.tmb_cmap)
 
         self.layout.set_plot_func("model annotation", self.plotter.plot_model_annotation, model_annotation=self.data.get_model_annotation())

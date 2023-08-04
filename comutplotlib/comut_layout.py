@@ -1,6 +1,6 @@
 import pandas as pd
 
-from src.layout import Layout
+from comutplotlib.layout import Layout
 
 
 class ComutLayout(Layout):
@@ -25,6 +25,7 @@ class ComutLayout(Layout):
         # HEIGHTS
         tmb_height = 7
         mut_sig_height = 5
+        coverage_height = 5
         comut_height = n_genes
         tmb_legend_height = len(tmb_cmap)
         snv_legend_height = len(snv_cmap)
@@ -105,6 +106,7 @@ class ComutLayout(Layout):
                 "comutation": [comut_width, comut_height],
 
                 "mutational signatures": [comut_width, mut_sig_height],
+                "coverage": [comut_width, coverage_height],
                 "tmb": [comut_width, tmb_height],
                 "tmb legend": [legend_width, tmb_legend_height],
 
@@ -162,6 +164,8 @@ class ComutLayout(Layout):
         p_ref = p_comut
         if "mutational signatures" in self.panels_to_plot:
             p_ref = self.add_panel(name="mutational signatures", above=p_ref)
+        if "coverage" in self.panels_to_plot:
+            p_ref = self.add_panel(name="coverage", above=p_ref)
         if "tmb" in self.panels_to_plot:
             p_ref = self.add_panel(name="tmb", above=p_ref)
 
