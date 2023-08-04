@@ -65,21 +65,16 @@ class ComutPlotter(Plotter):
                 annotations += potential_annotations
 
         min_xlim = -0.02 * max_xlim  # add enough space for the vertical line at 0 to appear
-        ax.set_xlim([min_xlim, max_xlim])
-        ax.set_xticks([int(t) for t in ax.get_xticks() if t >= 0])
-        ax.set_xlim([min_xlim, max_xlim])
+        self.set_integer_ticks(ax=ax, xlim=[min_xlim, max_xlim], xmin=0, n_major=3, n_minor=4)
         ax.xaxis.set_ticks_position("top")
         ax.xaxis.set_label_position("top")
         ax.set_xlabel("Recurrence", fontdict=dict(fontsize=5), loc="right")
-        ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(n=int(np.min([5, max_xlim]))))
-        ax.xaxis.set_minor_locator(ticker.FixedLocator([t for t in ax.xaxis.get_minorticklocs() if t >= 0]))
-        ax.xaxis.set_minor_formatter(ticker.NullFormatter())
 
         ax.set_yticks([])
         ax.set_ylim([0, len(genes)])
         ax.yaxis.set_major_locator(ticker.NullLocator())
 
-        ax.tick_params(axis="both", labelsize=4)
+        ax.tick_params(axis="both", labelsize=4, pad=1)
         ax.axvline(0, lw=0.7, color=self.palette.black)
         self.grid(ax=ax, axis="x", which="major", zorder=0.5, linewidth=0.5)
         self.grid(ax=ax, axis="x", which="minor", zorder=0.1, linewidth=0.3, color=self.palette.white)
@@ -145,22 +140,20 @@ class ComutPlotter(Plotter):
         self.set_integer_ticks(ax=ax, xlim=[-max_xlim, max_xlim], xmin=0, n_major=3, n_minor=4)
         ax.xaxis.set_ticks_position("top")
         ax.xaxis.set_label_position("top")
-        ax.set_xlabel("  SNV", fontdict=dict(fontsize=5), loc="left")
 
         ax.set_yticks([])
         ax.set_ylim([0, len(genes)])
         ax.yaxis.set_major_locator(ticker.NullLocator())
 
-        ax.tick_params(axis="both", labelsize=4)
+        ax.tick_params(axis="both", labelsize=4, pad=1)
         ax.axvline(0, lw=0.7, color=self.palette.black)
         self.grid(ax=ax, axis="x", which="major", zorder=0.5, linewidth=0.5)
         self.grid(ax=ax, axis="x", which="minor", zorder=0.1, linewidth=0.3, color=self.palette.white)
         self.no_spines(ax=ax)
         ax.invert_xaxis()
 
-        ax.set_title("Prevalence", fontsize=8)
-
         cna_ax = ax.twiny()
+        label_ax = ax.twiny()
         ax.xaxis.set_ticks_position("top")
         ax.xaxis.set_label_position("top")
 
@@ -175,45 +168,54 @@ class ComutPlotter(Plotter):
             if not len(non_nan_counter):
                 continue
 
-            pos = 0
-            for threshold in amp_thresholds:
-                if threshold in non_nan_counter:
-                    value = non_nan_counter[threshold]
-                    rect = patches.Rectangle(
-                        xy=(pos, row + 1 / 2),
-                        width=value,
-                        height=(1 - pad) / 2,
-                        facecolor=cnv_cmap[threshold],
-                        edgecolor=None,
-                        zorder=0.9,
+            def make_rects_with_prevalence_text(thresholds, ypad):
+                pos = 0
+                prevalence = {}
+                for threshold in thresholds:
+                    if threshold in non_nan_counter:
+                        value = non_nan_counter[threshold]
+                        rect = patches.Rectangle(
+                            xy=(pos, row + pad / 2 + ypad),
+                            width=value,
+                            height=(1 - pad) / 2,
+                            facecolor=cnv_cmap[threshold],
+                            edgecolor=None,
+                            zorder=0.9,
+                        )
+                        cna_ax.add_patch(rect)
+                        pos += value
+                        prevalence[threshold] = pos
+                cna_ax.text(
+                    0.11 * max_xlim,
+                    row + 1 / 4 + pad / 8 + ypad,
+                    f"{round(100 * prevalence.get(thresholds[0], 0) / len(columns)):.1f}%",
+                    fontsize=1.5,
+                    horizontalalignment="left",
+                    verticalalignment="center",
+                )
+                if len(thresholds) > 1:
+                    cna_ax.text(
+                        0.9 * max_xlim,
+                        row + 1 / 4 + pad / 8 + ypad,
+                        f"({round(100 * prevalence.get(thresholds[1], 0) / len(columns)):.1f}%)",
+                        fontsize=1.5,
+                        color=self.palette.grey,
+                        horizontalalignment="right",
+                        verticalalignment="center",
                     )
-                    cna_ax.add_patch(rect)
-                    pos += value
-            pos = 0
-            for threshold in del_thresholds:
-                if threshold in non_nan_counter:
-                    value = non_nan_counter[threshold]
-                    rect = patches.Rectangle(
-                        xy=(pos, row + pad / 2),
-                        width=value,
-                        height=(1 - pad) / 2,
-                        facecolor=cnv_cmap[threshold],
-                        edgecolor=None,
-                        zorder=0.9,
-                    )
-                    cna_ax.add_patch(rect)
-                    pos += value
+
+            make_rects_with_prevalence_text(amp_thresholds, ypad=(1 - pad) / 2)
+            make_rects_with_prevalence_text(del_thresholds, ypad=0)
 
         self.set_integer_ticks(ax=cna_ax, xlim=[-max_xlim, max_xlim], xmin=0.1, n_major=3, n_minor=4)
         cna_ax.xaxis.set_ticks_position("top")
         cna_ax.xaxis.set_label_position("top")
-        cna_ax.set_xlabel("CNV  ", fontdict=dict(fontsize=5), loc="right")
 
         cna_ax.set_yticks([])
         cna_ax.set_ylim([0, len(genes)])
         cna_ax.yaxis.set_major_locator(ticker.NullLocator())
 
-        cna_ax.tick_params(axis="both", labelsize=4)
+        cna_ax.tick_params(axis="both", labelsize=4, pad=1)
         cna_ax.axvline(0, lw=0.7, color=self.palette.black)
         self.grid(ax=cna_ax, axis="x", which="major", zorder=0.5, linewidth=0.4)
         self.grid(
@@ -236,17 +238,28 @@ class ComutPlotter(Plotter):
             percent_ax.xaxis.set_ticks_position("bottom")
             percent_ax.xaxis.set_label_position("bottom")
             percent_ax.set_xticklabels(
-                [f"{100 * t / len(columns):.2g}%" for t in percent_ax.get_xticks()]
+                [f"{round(100 * t / len(columns))}%" for t in percent_ax.get_xticks()]
             )
-            percent_ax.tick_params(axis="both", labelsize=4)
+            percent_ax.tick_params(axis="both", labelsize=4, pad=2)
             percent_ax.xaxis.set_minor_locator(_ax.xaxis.get_minor_locator())
             percent_ax.xaxis.set_minor_formatter(ticker.NullFormatter())
-            percent_ax.set_xlabel(xlabel, fontdict=dict(fontsize=6))
+            percent_ax.set_xlabel(xlabel, fontdict=dict(fontsize=4), labelpad=2)
             self.no_spines(ax=percent_ax)
 
         _by = "Patients"  # if by == MutA.patient else "Samples"
         add_percentage_ticks(ax, xlabel=f"of {_by}")
         add_percentage_ticks(cna_ax)
+
+        label_ax.set_xticks([])
+        label_ax.set_yticks([])
+        label_ax.xaxis.set_ticks_position("top")
+        label_ax.xaxis.set_label_position("top")
+        self.no_spines(ax=label_ax)
+
+        ax.set_title("Prevalence", fontsize=8)
+        ax.set_xlabel("  SNV", fontdict=dict(fontsize=5), loc="left", labelpad=9)
+        cna_ax.set_xlabel("CNV  ", fontdict=dict(fontsize=5), loc="right", labelpad=9)
+        label_ax.set_xlabel("Number of Patients", fontdict=dict(fontsize=4), labelpad=11)
 
         return cna_ax
 
