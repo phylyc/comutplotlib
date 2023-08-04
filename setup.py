@@ -20,12 +20,12 @@ def get_packages():
     return [
         package
         for package in setuptools.find_packages()
-        if package.startswith("comut_plot")
+        if package.startswith("comutplotlib")
     ]
 
 
 setuptools.setup(
-    name="comut_plot",
+    name="comutplotlib",
     description="Creation of Comutation Plots.",
     version="0.1",
     long_description=read("README.md"),

@@ -1,5 +1,5 @@
-from src.comut_argparse import parse_args
-from src.comut import Comut
+from comutplotlib.comut_argparse import parse_args
+from comutplotlib.comut import Comut
 
 
 args = parse_args()
