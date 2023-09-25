@@ -396,7 +396,7 @@ class ComutPlotter(Plotter):
                 a = mean * (mean * (1 - mean) / var - 1)
                 b = (1 - mean) * (mean * (1 - mean) / var - 1)
                 p = st.beta(a, b).cdf(tmb_threshold * 1e6)
-                color = [self.palette.darkred if q < 0.05 else self.palette.grey for q in p],
+                color = [self.palette.darkred if q < 0.05 else self.palette.grey for q in p]
                 bar_kwargs = {
                     "yerr": tmb[SA.tmb_error],
                     "error_kw": dict(ecolor=self.palette.black, lw=np.sqrt(aspect_ratio) * 0.5),
