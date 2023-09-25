@@ -62,6 +62,10 @@ class Gistic(object):
             "HIST2H3D": "H3C13",
             "HIST2H3C": "H3C14",
             "HIST2H3A": "H3C15",
+            "FYB": "FYB1",
+            "IL8": "CXCL8",
+            "C10orf54": "VSIR",
+            "IGHG3": "HDC",
         }
 
         for gene_name, replacement in gene_name_map.items():

@@ -134,8 +134,8 @@ class Comut(object):
 
         self.layout.set_plot_func("model significance", self.plotter.plot_model_significance, model_significance=self.data.model_significance)
         self.layout.set_plot_func("mutsig legend", self.plotter.plot_legend, cmap=self.mutsig_cmap, title="Mutational Signatures")
-        self.layout.set_plot_func("snv legend", self.plotter.plot_legend, cmap=self.snv_cmap, title="Short Nucleotide Alteration")
-        self.layout.set_plot_func("cnv legend", self.plotter.plot_legend, cmap=self.cnv_cmap, names=self.cnv_names, title="Copy Number Alteration")
+        self.layout.set_plot_func("snv legend", self.plotter.plot_legend, cmap=self.snv_cmap, title="Short Nucleotide Variations")
+        self.layout.set_plot_func("cnv legend", self.plotter.plot_legend, cmap=self.cnv_cmap, names=self.cnv_names, title="Copy Number Variations")
         self.layout.set_plot_func("model annotation legend", self.plotter.plot_model_annotation_legend, names=self.data.model_names, title="Significant by Model")
 
         self.layout.set_plot_func("meta data", self.plotter.plot_meta_data, meta_data=self.data.meta.df, meta_data_color=meta_data_color, legend_titles=self.data.meta.legend_titles, inter_heatmap_linewidth=self.layout.inter_heatmap_linewidth, aspect_ratio=self.layout.aspect_ratio, labelbottom=self.layout.show_patient_names)

@@ -370,10 +370,11 @@ class ComutPlotter(Plotter):
         ax.set_yticks([])
         self.no_spines(ax)
 
-    def plot_tmb(self, ax, tmb: pd.DataFrame, tmb_threshold=10, ytickpad=0, fontsize=6, aspect_ratio=1):
+    def plot_tmb(self, ax, tmb: pd.DataFrame, tmb_threshold=10, ytickpad=0, fontsize=6, aspect_ratio=1, ymin=5 * 1e-1, ymax=5 * 1e2):
         if SA.tmb in tmb.columns:
-            ymin = 5 * 1e-1
-            ymax = max(1e2, min(tmb[SA.tmb].max(), 5 * 1e2))
+            # fit y axis to data
+            ymin = min(10 ** np.floor(np.log10(tmb[SA.tmb].quantile(0.15))), 5 * 1e-1)
+            ymax = max(1e2, min(tmb[SA.tmb].max(), ymax))
             if SA.n_vars in tmb.columns and SA.n_bases in tmb.columns:
                 # test if tmb is significantly higher than threshold:
                 # Jeffrey's prior

@@ -401,7 +401,7 @@ class SIF(SampleAnnotation, AnnotationTable):
         if self.platform in sif.data.columns:
             sif.data.loc[sif.data[self.platform].isna(), self.platform] = "NA"
 
-        if self.platform_abv not in sif.data.columns and self.platform in sif.data.columns or self.center in sif.data.columns:
+        if self.platform_abv not in sif.data.columns and (self.platform in sif.data.columns or self.center in sif.data.columns):
             sif.data[self.platform_abv] = sif.data.apply(
                 lambda s: get_platform(s.get(self.platform, ""), s.get(self.center, "")),
                 axis=1,
