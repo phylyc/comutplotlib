@@ -195,6 +195,10 @@ def parse_args():
         args.ground_truth_genes = {
             k: v.split(",") for k, v in [x.split(":") for x in args.ground_truth_genes]
         }
+    if args.column_order is not None:
+        args.column_order = args.column_order.split(",")
+    if args.index_order is not None:
+        args.index_order = args.index_order.split(",")
     args.meta_data_rows = args.meta_data_rows.split(",")
     args.meta_data_rows_per_sample = args.meta_data_rows_per_sample.split(",")
     args.model_names = args.model_names.split(",")

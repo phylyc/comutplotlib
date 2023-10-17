@@ -82,6 +82,7 @@ class Comut(object):
             high_del_threshold=high_del_threshold,
         )
         self.data.preprocess()
+        self.data.save(out_dir=self.plotter.out_dir, name=self.plotter.file_name)
 
         n_genes, n_samples, n_meta = self.data.get_dimensions()
 

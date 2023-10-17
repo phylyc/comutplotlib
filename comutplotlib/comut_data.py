@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import re
 
@@ -121,6 +122,15 @@ class ComutData(object):
         self.sort_columns()
         self.reindex_data()
 
+    def save(self, out_dir, name):
+        # Write columns and genes to file, each comma separated
+        # This can be read into the bash script using
+        # --column_order $(cat <filename>.columns.txt) --index_order $(cat <filename>.genes.txt)
+        with open(os.path.join(out_dir, f"{name}.columns.txt"), "w+") as f:
+            f.write(",".join(self.columns))
+        with open(os.path.join(out_dir, f"{name}.genes.txt"), "w+") as f:
+            f.write(",".join(self.genes))
+
     def reindex_data(self):
         if self.genes is not None:
             self.snv.reindex(index=self.genes)
@@ -135,8 +145,6 @@ class ComutData(object):
                 self.tmb = self.tmb.reindex(index=self.columns)
 
     def get_columns(self):
-        if self.col_order is not None:
-            return self.col_order
         if not self.sif.empty:
             if self.by == MAF.sample:
                 columns = pd.Index(self.sif.samples, name=SIF.sample)
@@ -190,58 +198,61 @@ class ComutData(object):
             return tmb.reindex(index=self.columns).fillna(0)
 
     def sort_genes(self):
-        sorted_features = (
-            (self.snv.has_snv.astype(int) + self.cnv.has_high_cnv.astype(int))
-            .fillna(0)
-            .sum(axis=1)
-            .to_frame("mut_count")
-            .join(self.snv.has_snv.any(axis=1).to_frame("has_snv"))
-            .join(self.cnv.has_low_cnv.any(axis=1).to_frame("has_low_cnv"))
-            .join(self.cnv.has_low_cnv.astype(int).sum(axis=1).to_frame("low_cnv_count"))
-            .sort_values(by=["mut_count", "has_snv", "has_low_cnv", "low_cnv_count"], ascending=True)
-        )
-        genes = sorted_features.index.to_list()
-        # bring the interesting gene to the front if the heatmap:
-        if self.interesting_gene is not None:
-            genes.pop(genes.index(self.interesting_gene))
-            genes += [self.interesting_gene]
-
-        # group genes in the same cytoband together since they are co-amplified or co-deleted.
-        cytobands = self.cnv.gistic.cytoband.reindex(index=genes).fillna("")
-        cytoband_groups = cytobands[::-1].drop_duplicates().values
-        cytoband_key = {cb: i for i, cb in enumerate(cytoband_groups)}
-
-        gene_key = {}
-        feature_count = 0
-        previous_row_tuple = None
-        for gene, row in sorted_features.loc[genes[::-1]].iterrows():
-            row_tuple = tuple(row)
-            if previous_row_tuple is None or row_tuple != previous_row_tuple:
-                feature_count += 1
-            gene_key[gene] = feature_count
-            previous_row_tuple = row_tuple
-
-        genes = cytobands.reset_index().set_axis(genes, axis=0).apply(
-            lambda row: (cytoband_key[row[Gistic._cytoband]], gene_key[row[MAF.gene_name]], row[MAF.gene_name]),
-            axis=1
-        ).sort_values(ascending=False).index.to_list()
-
-        # bring the interesting gene to the front (again):
-        # and remove genes in the same or neighboring cytobands
-        if self.interesting_gene is not None:
-            # genes.pop(genes.index(interesting_gene))
-            sorted_cytoband_groups = sorted(
-                cytoband_groups,
-                key=lambda cytoband: [c if i % 2 else int(c) for i, c in enumerate(re.split('(\d+)', cytoband)[1:-1])]
+        if self.idx_order is not None:
+            self.genes = pd.Index([c for c in self.idx_order if c in self.genes], name=self.genes.name)
+        else:
+            sorted_features = (
+                (self.snv.has_snv.astype(int) + self.cnv.has_high_cnv.astype(int))
+                .fillna(0)
+                .sum(axis=1)
+                .to_frame("mut_count")
+                .join(self.snv.has_snv.any(axis=1).to_frame("has_snv"))
+                .join(self.cnv.has_low_cnv.any(axis=1).to_frame("has_low_cnv"))
+                .join(self.cnv.has_low_cnv.astype(int).sum(axis=1).to_frame("low_cnv_count"))
+                .sort_values(by=["mut_count", "has_snv", "has_low_cnv", "low_cnv_count"], ascending=True)
             )
-            sorted_cytoband_key = {cb: i for i, cb in enumerate(sorted_cytoband_groups)}
-            cytoband_diff = cytobands.apply(lambda c: sorted_cytoband_key[c]) - sorted_cytoband_key[cytobands.loc[self.interesting_gene]]
-            close_genes = cytoband_diff.abs() < 5
-            for g in close_genes.loc[close_genes].index:
-                genes.pop(genes.index(g))
-            genes += [self.interesting_gene]
+            genes = sorted_features.index.to_list()
+            # bring the interesting gene to the front if the heatmap:
+            if self.interesting_gene is not None:
+                genes.pop(genes.index(self.interesting_gene))
+                genes += [self.interesting_gene]
 
-        self.genes = pd.Index(genes, name=MAF.gene_name)
+            # group genes in the same cytoband together since they are co-amplified or co-deleted.
+            cytobands = self.cnv.gistic.cytoband.reindex(index=genes).fillna("")
+            cytoband_groups = cytobands[::-1].drop_duplicates().values
+            cytoband_key = {cb: i for i, cb in enumerate(cytoband_groups)}
+
+            gene_key = {}
+            feature_count = 0
+            previous_row_tuple = None
+            for gene, row in sorted_features.loc[genes[::-1]].iterrows():
+                row_tuple = tuple(row)
+                if previous_row_tuple is None or row_tuple != previous_row_tuple:
+                    feature_count += 1
+                gene_key[gene] = feature_count
+                previous_row_tuple = row_tuple
+
+            genes = cytobands.reset_index().set_axis(genes, axis=0).apply(
+                lambda row: (cytoband_key[row[Gistic._cytoband]], gene_key[row[MAF.gene_name]], row[MAF.gene_name]),
+                axis=1
+            ).sort_values(ascending=False).index.to_list()
+
+            # bring the interesting gene to the front (again):
+            # and remove genes in the same or neighboring cytobands
+            if self.interesting_gene is not None:
+                # genes.pop(genes.index(interesting_gene))
+                sorted_cytoband_groups = sorted(
+                    cytoband_groups,
+                    key=lambda cytoband: [c if i % 2 else int(c) for i, c in enumerate(re.split('(\d+)', cytoband)[1:-1])]
+                )
+                sorted_cytoband_key = {cb: i for i, cb in enumerate(sorted_cytoband_groups)}
+                cytoband_diff = cytobands.apply(lambda c: sorted_cytoband_key[c]) - sorted_cytoband_key[cytobands.loc[self.interesting_gene]]
+                close_genes = cytoband_diff.abs() < 5
+                for g in close_genes.loc[close_genes].index:
+                    genes.pop(genes.index(g))
+                genes += [self.interesting_gene]
+
+            self.genes = pd.Index(genes, name=MAF.gene_name)
 
     def sort_columns(self):
         if self.col_order is not None:

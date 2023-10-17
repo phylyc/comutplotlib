@@ -13,6 +13,7 @@ class Plotter(object):
         super().__init__()
         self.out_dir, self.file_name = os.path.split(output)
         self.palette = Palette() | Palette(dict=extra_palette)
+        self.mk_out_path()
 
     def mk_out_path(self, recursive_folder_list: Iterable[str] = ()) -> str:
         """Make folder hierarchy from recursive_folder_list in self.out_dir
