@@ -40,7 +40,9 @@ class MAFEncoding(object):
                 "cons46": MutA.conservation,
             }
         else:
-            return {}
+            return {
+                "HGNC_Ensembl_gene_ID": MutA.gene_id,
+            }
 
     @property
     def column_names_from_default(self):
@@ -63,16 +65,15 @@ class MAFEncoding(object):
 
     def rename_types(self, data: pd.DataFrame) -> None:
         if self.from_source == self.funcotator:
-            data.get(MutA.type).replace(
+            data[MutA.type] = data[MutA.type].replace(
                 {
                     "ONP": MutA.mnv,
                 },
-                inplace=True,
             )
 
     def rename_effects(self, data: pd.DataFrame) -> None:
         if self.from_source == self.funcotator:
-            data.get(MutA.effect).replace(
+            data[MutA.effect] = data[MutA.effect].replace(
                 {
                     "DE_NOVO_START_OUT_FRAME": MutA.de_novo_start_out_of_frame,
                     "DE_NOVO_START_IN_FRAME": MutA.de_novo_start_in_frame,
@@ -81,10 +82,9 @@ class MAFEncoding(object):
                     "START_CODON_DEL": MutA.start_codon_del,
                     "COULD_NOT_DETERMINE": None,
                 },
-                inplace=True,
             )
         elif self.from_source == self.tumorportal:
-            data.get(MutA.effect).replace(
+            data[MutA.effect] = data[MutA.effect].replace(
                 {
                     "Missense": MutA.missense,
                     "Nonsense": MutA.nonsense,
@@ -94,7 +94,6 @@ class MAFEncoding(object):
                     "Splice_Site_Del": MutA.splice_site,
                     "Splice_Site_SNP": MutA.splice_site,
                 },
-                inplace=True,
             )
 
     # def stringify_context(self, data: pd.DataFrame) -> None:
