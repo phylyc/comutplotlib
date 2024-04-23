@@ -46,5 +46,10 @@ class SampleAnnotation(object):
 
     default_columns = [patient, sample]
 
+    column_dtype = {
+        patient: str,
+        sample: str,
+    }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

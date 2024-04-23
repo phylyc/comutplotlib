@@ -26,7 +26,7 @@ def parse_args():
                              [--high_amp_threshold HIGH_AMP_THRESHOLD]
                              [--low_del_threshold LOW_DEL_THRESHOLD]
                              [--high_del_threshold HIGH_DEL_THRESHOLD]
-                             [--total_prevalence_threshold TOTAL_PREVALENCE_THRESHOLD]
+                             [--total_recurrence_threshold TOTAL_RECURRENCE_THRESHOLD]
                              [--model_names MODEL_NAMES]
                              [--panels_to_plot PANELS_TO_PLOT]
                              [--max_xfigsize MAX_XFIGSIZE] [--yfigsize YFIGSIZE]
@@ -98,8 +98,8 @@ def parse_args():
       --high_del_threshold HIGH_DEL_THRESHOLD
           Threshold for high deletion.
 
-      --total_prevalence_threshold TOTAL_PREVALENCE_THRESHOLD
-          Threshold for total prevalence.
+      --total_recurrence_threshold TOTAL_RECURRENCE_THRESHOLD
+          Threshold for total recurrence.
 
       --model_names MODEL_NAMES
           Comma separated list of names of models.
@@ -156,7 +156,7 @@ def parse_args():
     parser.add_argument("--index_order", type=str, required=False, default=None, help="order of the index on plot")
 
     parser.add_argument("--meta", type=str, required=False, default=None, help="Path to the meta input file.")
-    parser.add_argument("--meta_data_rows", type=str, required=False, default="Sample Type,Material,Contamination,Tumor Purity,Platform,has_matched_N,Sex,Histology", help="Comma separated list of SIF columns to plot.")
+    parser.add_argument("--meta_data_rows", type=str, required=False, default="Sample Type,Material,Contamination,Tumor Purity,Platform,has matched N,Sex,Histology", help="Comma separated list of SIF columns to plot.")
     parser.add_argument("--meta_data_rows_per_sample", type=str, required=False,
                         default="Sample Type,Material,Contamination,Tumor Purity,Platform",
                         help="Comma separated list of SIF columns to plot per sample.")
@@ -169,7 +169,7 @@ def parse_args():
                         help="Comma separated list of snv genes.")
     parser.add_argument("--cnv_interesting_genes", type=str, required=False, default=None,
                         help="Comma separated list of cnv genes")
-    parser.add_argument("--total_prevalence_threshold", type=float, required=False, default=None,
+    parser.add_argument("--total_recurrence_threshold", type=float, required=False, default=None,
                         help="Minimum percentage of patients to have a mutation in this gene to be plotted")
     parser.add_argument("--ground_truth_genes", type=str, required=False, default=None, action="append",
                         help="dictionary of color in palette as keys with list of genes to be colored as values")
@@ -179,7 +179,7 @@ def parse_args():
     parser.add_argument("--low_del_threshold", type=int, required=False, default=-1, help="threshold for low deletion")
     parser.add_argument("--high_del_threshold", type=int, required=False, default=-2, help="threshold for high deletion")
 
-    parser.add_argument("--panels_to_plot", type=str, required=False, default="tmb,mutational signatures,recurrence,prevalence,total prevalence,total prevalence overall,cytoband,gene names,model annotation,comutation,mutsig legend,snv legend,cnv legend,model annotation legend,meta data,meta data legend", help="parts to be plotted")
+    parser.add_argument("--panels_to_plot", type=str, required=False, default="tmb,mutational signatures,recurrence,total recurrence,total recurrence overall,cytoband,gene names,model annotation,comutation,mutsig legend,snv legend,cnv legend,model annotation legend,meta data,meta data legend", help="parts to be plotted")
     parser.add_argument("--max_xfigsize", type=int, required=False, default=None, help="maximum x figure size; central comutation plot will be scaled to fit this size")
 
     args = parser.parse_args()

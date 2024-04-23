@@ -26,6 +26,8 @@ class Meta(object):
             sif_meta_data["Platform"] = sif_meta_data[self.sif.platform_abv]
         if "Paired" in sif_meta_data.columns:
             sif_meta_data["has matched N"] = sif_meta_data["Paired"].replace(True, "yes").replace(False, "no")
+        if "Norwegian" in sif_meta_data.columns:
+            sif_meta_data["Norwegian"] = sif_meta_data["Norwegian"].replace(True, "yes").replace(False, "no")
         if self.sif.sex in sif_meta_data.columns:
             sif_meta_data["Sex"] = sif_meta_data[self.sif.sex]
         if self.sif.histology in sif_meta_data.columns:
@@ -66,12 +68,12 @@ class Meta(object):
 
     def get_tmb(self):
         if self.sif.tmb in self.sif.data.columns:
-            tmb = self.sif.data.groupby(by=[self.by]).agg({self.sif.tmb: np.mean})
+            tmb = self.sif.data.groupby(by=[self.by]).agg({self.sif.tmb: "mean"})
             if self.sif.tmb_error in self.sif.data.columns:
                 tmb = tmb.join(self.sif.data.groupby(by=[self.by]).agg({self.sif.tmb_error: lambda e: np.sqrt(np.sum(e ** 2))}))
             if self.sif.n_vars in self.sif.data.columns:
-                tmb = tmb.join(self.sif.data.groupby(by=[self.by]).agg({self.sif.n_vars: np.sum}))
+                tmb = tmb.join(self.sif.data.groupby(by=[self.by]).agg({self.sif.n_vars: "sum"}))
             if self.sif.n_bases in self.sif.data.columns:
-                tmb = tmb.join(self.sif.data.groupby(by=[self.by]).agg({self.sif.n_bases: np.sum}))
+                tmb = tmb.join(self.sif.data.groupby(by=[self.by]).agg({self.sif.n_bases: "sum"}))
             return tmb
         return None

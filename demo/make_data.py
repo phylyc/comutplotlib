@@ -15,15 +15,15 @@ def make_sif():
     n_patients = 100
     for i in range(1, n_patients + 1):
         histology = np.random.choice(["BRCA", "LUAD", "MEL", "RCC"], p=[0.4, 0.2, 0.2, 0.2])
-        sex = np.random.choice(["Male", "Female"], p=[0.4, 0.6])
+        sex = np.random.choice(["Male", "Female", "unknown"], p=[0.4, 0.5, 0.1])
         n_samples = np.random.choice([1, 2, 3, 4], p=[0.8, 0.18, 0.015, 0.005])
         Paired = np.random.choice([True, False], p=[0.7, 0.3])
         for j in range(1, n_samples + 1):
             sample_type = np.random.choice(["BM", "EM"], p=[0.7, 0.3])
-            material = np.random.choice(["FFPE", "FF"], p=[0.6, 0.4])
+            material = np.random.choice(["FFPE", "FF", "cfDNA"], p=[0.5, 0.3, 0.2])
             contamination = np.random.beta(i + 1, n_patients * 10)
             tumor_purity = np.random.beta(3, 3)
-            tmb = 13 ** (i / n_patients) + 0.1 * j
+            tmb = 19 ** (i / n_patients) + 0.1 * j
             tmb_error = np.abs(np.random.normal(0, 0.1 * tmb))
             entries.append([f"Sample {i}.{j}", f"Patient {i}", sample_type, sex, material, histology, contamination, tumor_purity, Paired, tmb, tmb_error])
 

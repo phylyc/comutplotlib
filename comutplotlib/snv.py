@@ -105,9 +105,20 @@ class SNV(object):
     def get_recurrence(self, index):
         mut_recurrence = (
             self.maf.drop_patient_duplicates()
-            .data[[self.maf.gene_name, self.maf.effect, self.maf.protein_change]]
+            .assign_column(
+                name="__residue",
+                value=self.maf.data[[self.maf.chromosome, self.maf.start_pos, self.maf.protein_change]].apply(
+                    lambda row: (
+                        f"{row[self.maf.chromosome]}:{row[self.maf.start_pos]}"
+                        if isinstance(row[self.maf.protein_change], float) and np.isnan(row[self.maf.protein_change]) or row[self.maf.protein_change] == ""
+                        else row[self.maf.protein_change]
+                    ),
+                    axis=1
+                )
+            )
+            .data[[self.maf.gene_name, self.maf.effect, "__residue"]]
             .replace(np.nan, "NaN")
-            .groupby([self.maf.gene_name, self.maf.effect, self.maf.protein_change])
+            .groupby([self.maf.gene_name, self.maf.effect, "__residue"])
             .agg("size")
         )
         return {

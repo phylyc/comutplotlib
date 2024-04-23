@@ -6,6 +6,7 @@ from typing import Callable, Optional, Union
 
 from comutplotlib.annotation_table import AnnotationTable
 from comutplotlib.sample_annotation import SampleAnnotation
+from comutplotlib import pandas_util as pd_util
 
 
 def join_sifs(sifs: list["SIF"]):
@@ -43,7 +44,14 @@ class SIF(SampleAnnotation, AnnotationTable):
         super().__init__(data=data)
         if data is None:
             self.data = pd.DataFrame(data=None, columns=self.default_columns)
+        self.enforce_dtype()
         self.select(selection=selection, complement=complement, inplace=True)
+
+    def enforce_dtype(self):
+        for key, dtype in self.column_dtype.items():
+            if key in self.data.columns:
+                with pd_util.PandasChainedAssignmentWarnHandler():
+                    self.data[key] = self.data[key].astype(dtype)
 
     def join(self, other: "SIF"):
         joined = pd.concat([self.data, other.data], ignore_index=True)

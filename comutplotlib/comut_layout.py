@@ -42,9 +42,8 @@ class ComutLayout(Layout):
 
         # WIDTHS
         snv_recurrence_width = 4
-        snv_prevalence_width = 3
-        cnv_prevalence_width = snv_prevalence_width
-        total_prevalence_width = 2
+        cnv_recurrence_width = snv_recurrence_width
+        total_recurrence_width = 2
         cytoband_width = 2
         gene_label_width = 6
         model_annotation_width = 2
@@ -55,11 +54,9 @@ class ComutLayout(Layout):
 
         left_of_comut_width = 0
         if "recurrence" in panels_to_plot:
-            left_of_comut_width += snv_recurrence_width + pad
-        if "prevalence" in panels_to_plot:
-            left_of_comut_width += snv_prevalence_width + cnv_prevalence_width + pad
-        if "total prevalence" in panels_to_plot:
-            left_of_comut_width += total_prevalence_width + pad
+            left_of_comut_width += snv_recurrence_width + cnv_recurrence_width + pad
+        if "total recurrence" in panels_to_plot:
+            left_of_comut_width += total_recurrence_width + pad
         if "cytoband" in panels_to_plot:
             left_of_comut_width += cytoband_width
         if "gene names" in panels_to_plot:
@@ -113,10 +110,9 @@ class ComutLayout(Layout):
                 "model annotation": [model_annotation_width, comut_height],
                 "gene names": [gene_label_width, comut_height],
                 "cytoband": [cytoband_width, comut_height],
-                "total prevalence": [total_prevalence_width, comut_height],
-                "total prevalence overall": [total_prevalence_width, 1],
-                "prevalence": [snv_prevalence_width + cnv_prevalence_width, comut_height],
-                "recurrence": [snv_recurrence_width, comut_height],
+                "total recurrence": [total_recurrence_width, comut_height],
+                "total recurrence overall": [total_recurrence_width, 1],
+                "recurrence": [snv_recurrence_width + cnv_recurrence_width, comut_height],
 
                 "model significance": [model_significance_width, comut_height],
                 "mutsig legend": [legend_width, mutsig_legend_height],
@@ -151,12 +147,10 @@ class ComutLayout(Layout):
             p_ref = self.add_panel(name="gene names", left_of=p_ref, pad=0)
         if "cytoband" in self.panels_to_plot:
             p_ref = self.add_panel(name="cytoband", left_of=p_ref, pad=0)
-        if "total prevalence" in self.panels_to_plot:
-            p_ref = self.add_panel(name="total prevalence", left_of=p_ref)
-            if "total prevalence overall" in self.panels_to_plot:
-                self.add_panel(name="total prevalence overall", below=p_ref, pad=0)
-        if "prevalence" in self.panels_to_plot:
-            p_ref = self.add_panel(name="prevalence", left_of=p_ref)
+        if "total recurrence" in self.panels_to_plot:
+            p_ref = self.add_panel(name="total recurrence", left_of=p_ref)
+            if "total recurrence overall" in self.panels_to_plot:
+                self.add_panel(name="total recurrence overall", below=p_ref, pad=0)
         if "recurrence" in self.panels_to_plot:
             p_ref = self.add_panel(name="recurrence", left_of=p_ref)
 

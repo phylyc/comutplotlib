@@ -36,6 +36,8 @@ class ComutData(object):
         meta_data_rows: list[str] = (),
         meta_data_rows_per_sample: list[str] = (),
 
+        drop_empty_columns: bool = False,
+
         by: str = MAF.patient,
         column_order: tuple[str] = None,
         index_order: tuple[str] = None,
@@ -46,12 +48,14 @@ class ComutData(object):
         ground_truth_genes: dict[str, list[str]] = None,
         snv_interesting_genes: set = None,
         cnv_interesting_genes: set = None,
-        total_prevalence_threshold: float = None,
+        total_recurrence_threshold: float = None,
         snv_recurrence_threshold: int = 5,
 
         low_amp_threshold: int | float = 1,
+        mid_amp_threshold: int | float = 1.5,
         high_amp_threshold: int | float = 2,
         low_del_threshold: int | float = -1,
+        mid_del_threshold: int | float = -1.5,
         high_del_threshold: int | float = -2,
     ):
         self.maf = join_mafs([MAF.from_file(path_to_file=maf) for maf in maf_paths])
@@ -83,18 +87,22 @@ class ComutData(object):
 
         self.tmb = None
 
+        self.drop_empty_columns = drop_empty_columns
+
         self.interesting_gene = interesting_gene
         self.interesting_gene_comut_percent_threshold = interesting_gene_comut_percent_threshold
         self.snv_interesting_genes = set(snv_interesting_genes) if snv_interesting_genes is not None else set()
         self.cnv_interesting_genes = set(cnv_interesting_genes) if cnv_interesting_genes is not None else set()
         self.interesting_genes = set(interesting_genes) if interesting_genes is not None else set()
         self.ground_truth_genes = ground_truth_genes
-        self.total_prevalence_threshold = total_prevalence_threshold
+        self.total_recurrence_threshold = total_recurrence_threshold
         self.snv_recurrence_threshold = snv_recurrence_threshold
 
         self.low_amp_threshold = low_amp_threshold
+        self.mid_amp_threshold = mid_amp_threshold
         self.high_amp_threshold = high_amp_threshold
         self.low_del_threshold = low_del_threshold
+        self.mid_del_threshold = mid_del_threshold
         self.high_del_threshold = high_del_threshold
 
         self.by = by
@@ -112,11 +120,15 @@ class ComutData(object):
     def preprocess(self):
         self.columns = self.get_columns()
         self.snv = SNV(maf=self.maf, by=self.by)
-        self.cnv = CNV(seg=self.seg, gistic=self.gistic, low_amp_threshold=self.low_amp_threshold, high_amp_threshold=self.high_amp_threshold, low_del_threshold=self.low_del_threshold, high_del_threshold=self.high_del_threshold)
+        self.cnv = CNV(seg=self.seg, gistic=self.gistic,
+                       low_amp_threshold=self.low_amp_threshold, mid_amp_threshold=self.mid_amp_threshold, high_amp_threshold=self.high_amp_threshold,
+                       low_del_threshold=self.low_del_threshold, mid_del_threshold=self.mid_del_threshold, high_del_threshold=self.high_del_threshold)
         self.meta = Meta(sif=self.sif, by=self.columns.name, rows=self.meta_data_rows, rows_per_sample=self.meta_data_rows_per_sample)
         self.genes = self.get_genes()
         self.tmb = self.get_tmb()
         self.reindex_data()
+        if self.drop_empty_columns:
+            self._drop_empty_columns()
         self.sort_genes()
         self.reindex_data()
         self.sort_columns()
@@ -130,6 +142,11 @@ class ComutData(object):
             f.write(",".join(self.columns))
         with open(os.path.join(out_dir, f"{name}.genes.txt"), "w+") as f:
             f.write(",".join(self.genes))
+
+    def _drop_empty_columns(self):
+        not_empty = self.snv.has_snv.any(axis=0) | ~self.cnv.isna.all(axis=0)
+        self.columns = self.columns[not_empty]
+        self.reindex_data()
 
     def reindex_data(self):
         if self.genes is not None:
@@ -156,7 +173,7 @@ class ComutData(object):
 
     def get_genes(self):
         if self.interesting_gene is not None:
-            has_mut = self.snv.has_snv | self.cnv.has_high_cnv
+            has_mut = self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv
             has_mut_in_gene = has_mut.loc[self.interesting_gene]
             total_mut_in_gene = has_mut_in_gene.sum()
             good_genes = has_mut.apply(
@@ -174,20 +191,20 @@ class ComutData(object):
         #     for _, ground_truth_gene_list in ground_truth_genes.items():
         #         self.interesting_genes |= set(ground_truth_gene_list)
 
-        if self.total_prevalence_threshold is not None:
-            prevalence = self.get_total_prevalence()
-            prevalence = prevalence.loc[prevalence >= self.total_prevalence_threshold]
-            self.interesting_genes = {g for g in self.interesting_genes if g in prevalence.index}
+        if self.total_recurrence_threshold is not None:
+            recurrence = self.get_total_recurrence()
+            recurrence = recurrence.loc[recurrence >= self.total_recurrence_threshold]
+            self.interesting_genes = {g for g in self.interesting_genes if g in recurrence.index}
 
         return pd.Index(self.interesting_genes, name=MAF.gene_name)
 
-    def get_total_prevalence(self):
-        has_mut = (self.snv.has_snv | self.cnv.has_high_cnv).fillna(False)
+    def get_total_recurrence(self):
+        has_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv).fillna(False)
         return has_mut.astype(int).sum(axis=1) / len(self.columns)
 
-    def get_total_prevalence_overall(self):
-        has_mut = self.snv.has_snv | self.cnv.has_high_cnv
-        return has_mut.any(axis=0).astype(int).sum() / len(self.columns)
+    def get_total_recurrence_overall(self):
+        has_mut = self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv
+        return has_mut.any(axis=0).astype(int).sum(), len(self.columns)
 
     def get_tmb(self):
         meta_tmb = self.meta.get_tmb()
@@ -202,7 +219,7 @@ class ComutData(object):
             self.genes = pd.Index([c for c in self.idx_order if c in self.genes], name=self.genes.name)
         else:
             sorted_features = (
-                (self.snv.has_snv.astype(int) + self.cnv.has_high_cnv.astype(int))
+                (self.snv.has_snv.astype(int) + self.cnv.has_high_cnv.astype(int) + self.cnv.has_mid_cnv.astype(int))
                 .fillna(0)
                 .sum(axis=1)
                 .to_frame("mut_count")
@@ -259,10 +276,12 @@ class ComutData(object):
             self.columns = pd.Index([c for c in self.col_order if c in self.columns], name=self.columns.name)
         else:
             has_high_mut = (
-                4 * self.snv.has_snv.astype(int)
+                + 4 * self.snv.has_snv.astype(int)
                 + 3 * (self.snv.has_snv & ~self.cnv.has_high_cnv).fillna(False).astype(int)
                 + 2 * self.cnv.has_high_amp.astype(int)
+                + 1.5 * self.cnv.has_mid_amp.astype(int)
                 + self.cnv.has_high_del.astype(int)
+                + 0.5 * self.cnv.has_mid_del.astype(int)
             )
             has_burden = self.tmb[SIF.tmb].gt(0).astype(int).to_frame("has_burden").T
             has_any_cnv = self.cnv.has_cnv.any(axis=0).astype(int).to_frame("has_cnv").T

@@ -254,6 +254,15 @@ class Palette(UserDict):
 
                 "hd": self.white,  # healthy donor
 
+                # Hormone Receptor Status
+                "HR+": self.yellow,
+                "HER2+": self.red,
+                "HR+/HER2+": self.yellow,
+                "HR-/HER2+": self.red,
+                "HR+/HER2-": self.blue,
+                "HR-/HER2-": self.darkviolet,
+                "TN": self.darkviolet,
+
                 # PLATFORM
                 "Agilent": self.lightred,
                 "CCGD": self.lightorange,
@@ -301,16 +310,20 @@ class Palette(UserDict):
     def get_cnv_cmap(self, data):
         _cnv_cmap = {
             data.high_amp_threshold: self.red,
+            data.mid_amp_threshold: self.adjust_lightness(self.lightred, 1),
             data.low_amp_threshold: self.adjust_lightness(self.lightred, 1.16),
             0: self.backgroundgrey,
             data.low_del_threshold: self.adjust_lightness(self.lightblue, 1.16),
+            data.mid_del_threshold: self.adjust_lightness(self.lightblue, 1),
             data.high_del_threshold: self.blue,
         }
         _cnv_names = [
             "High Amplification",
+            "Amplification",
             "Low Amplification",
             "Baseline",
             "Low Deletion",
+            "Deletion",
             "High Deletion",
         ]
         cnv_cmap = {}
@@ -370,7 +383,9 @@ class Palette(UserDict):
         add_cmap("Material")
         add_cmap("Platform", order=["Agilent", "CCGD", "ICE", "TWIST", "TRACERx", "WGS"])
         add_cmap("has matched N", order=["yes", "no"])
+        add_cmap("Norwegian", order=["yes", "no"])
         add_cmap("Sex", order=["Female", "Male"])
+        add_cmap("HR Status", order=["HR+", "HER2+", "HR+/HER2+", "HR-/HER2+", "HR+/HER2-", "HR-/HER2-", "TN", "N/A", "NA", "unknown"])
         add_cmap("Histology")
         add_cont_cmap("Contamination", plt.cm.get_cmap("nipy_spectral"), 0.2, 0.95)
         add_cont_cmap("Tumor Purity", plt.cm.get_cmap("nipy_spectral_r"), 0.05, 0.8)
