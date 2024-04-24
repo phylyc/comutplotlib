@@ -42,13 +42,9 @@ class ComutPlotter(Plotter):
                 gene_prot_aggregate = df.sort_values(ascending=True)
                 positions = np.linspace(start=row + pad / 2, stop=row + 1 - pad / 2, num=df.size + 2)[1:-1]
                 potential_annotations = []
-                for pos, ((effect, protein_change), value) in zip(
-                        positions, gene_prot_aggregate.items()
-                ):
+                for pos, ((effect, protein_change), value) in zip(positions, gene_prot_aggregate.items()):
                     color = self.palette.get(effect, self.palette.grey)
-                    objects.append(
-                        _ax.hlines(y=pos, xmin=0, xmax=value, color=color, linewidth=0.5)
-                    )
+                    objects.append(_ax.hlines(y=pos, xmin=0, xmax=value, color=color, linewidth=0.5))
                     objects.append(_ax.scatter(value, pos, color=color, s=0.5))
                     if value >= snv_recurrence_threshold:
                         potential_annotations.append(
@@ -87,12 +83,11 @@ class ComutPlotter(Plotter):
             if len(annotations) > 1:
                 adjust_text(
                     annotations,
-                    add_objects=objects,
+                    # objects=objects,
                     ax=_ax,
+                    avoid_self=True,
+                    ensure_inside_axes=False,
                     arrowprops=dict(arrowstyle="-", color=self.palette.black, lw=0.3),
-                    force_objects=1,
-                    ha="right",
-                    va="top",
                 )
 
         # def make_snv_prevalence(_ax):
