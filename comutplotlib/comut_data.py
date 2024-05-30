@@ -124,6 +124,7 @@ class ComutData(object):
                        low_amp_threshold=self.low_amp_threshold, mid_amp_threshold=self.mid_amp_threshold, high_amp_threshold=self.high_amp_threshold,
                        low_del_threshold=self.low_del_threshold, mid_del_threshold=self.mid_del_threshold, high_del_threshold=self.high_del_threshold)
         self.meta = Meta(sif=self.sif, by=self.columns.name, rows=self.meta_data_rows, rows_per_sample=self.meta_data_rows_per_sample)
+        self.reindex_data()
         self.genes = self.get_genes()
         self.tmb = self.get_tmb()
         self.reindex_data()
@@ -152,6 +153,11 @@ class ComutData(object):
         if self.genes is not None:
             self.snv.reindex(index=self.genes)
             self.cnv.reindex(index=self.genes)
+        else:
+            genes = self.snv.df.index.union(self.cnv.df.index)
+            self.snv.reindex(index=genes)
+            self.cnv.reindex(index=genes)
+
         if self.columns is not None:
             self.snv.reindex(columns=self.columns)
             self.cnv.reindex(columns=self.columns)
@@ -160,6 +166,15 @@ class ComutData(object):
                 self.mutsig = self.mutsig.reindex(index=self.columns)
             if self.tmb is not None:
                 self.tmb = self.tmb.reindex(index=self.columns)
+        else:
+            columns = self.snv.df.columns.union(self.cnv.df.columns).union(self.meta.df.columns)
+            self.snv.reindex(columns=columns)
+            self.cnv.reindex(columns=columns)
+            self.meta.reindex(columns=columns)
+            if self.mutsig is not None:
+                self.mutsig = self.mutsig.reindex(index=columns)
+            if self.tmb is not None:
+                self.tmb = self.tmb.reindex(index=columns)
 
     def get_columns(self):
         if not self.sif.empty:
@@ -260,7 +275,7 @@ class ComutData(object):
                 # genes.pop(genes.index(interesting_gene))
                 sorted_cytoband_groups = sorted(
                     cytoband_groups,
-                    key=lambda cytoband: [c if i % 2 else int(c) for i, c in enumerate(re.split('(\d+)', cytoband)[1:-1])]
+                    key=lambda cytoband: [c if i % 2 else int(c) for i, c in enumerate(re.split(r'(\d+)', cytoband)[1:-1])]
                 )
                 sorted_cytoband_key = {cb: i for i, cb in enumerate(sorted_cytoband_groups)}
                 cytoband_diff = cytobands.apply(lambda c: sorted_cytoband_key[c]) - sorted_cytoband_key[cytobands.loc[self.interesting_gene]]
