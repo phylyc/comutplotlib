@@ -310,11 +310,11 @@ class Palette(UserDict):
     def get_cnv_cmap(self, data):
         _cnv_cmap = {
             data.high_amp_threshold: self.red,
-            data.mid_amp_threshold: self.adjust_lightness(self.lightred, 1),
+            data.mid_amp_threshold: self.adjust_lightness(self.lightred, 0.8),
             data.low_amp_threshold: self.adjust_lightness(self.lightred, 1.16),
-            0: self.backgroundgrey,
+            data.baseline: self.backgroundgrey,
             data.low_del_threshold: self.adjust_lightness(self.lightblue, 1.16),
-            data.mid_del_threshold: self.adjust_lightness(self.lightblue, 1),
+            data.mid_del_threshold: self.adjust_lightness(self.lightblue, 0.8),
             data.high_del_threshold: self.blue,
         }
         _cnv_names = [
