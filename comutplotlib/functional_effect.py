@@ -12,14 +12,8 @@ def better_effect_legend(effect):
     )
 
 
-def sort_functional_effects(effects: Iterable[str], ascending: bool = True) -> list[str]:
-    """ Sort a list of functional effects based on a gain of function - loss of function scale.
-    :param effects:
-    :param ascending: Sort loss of function first, then towards gain of function.
-    :return: Sorted list of functional effects.
-    """
-
-    function_values = {
+class FunctionalEffect(object):
+    values_map = {
         MutA.gain_of_function: 1000,
         MutA.missense: 100,
         MutA.in_frame_ins: 52,
@@ -63,4 +57,11 @@ def sort_functional_effects(effects: Iterable[str], ascending: bool = True) -> l
         MutA.deletion: 6
     }
 
-    return list(sorted(effects, key=lambda e: function_values.get(e, 0), reverse=ascending))
+
+def sort_functional_effects(effects: Iterable[str], ascending: bool = True) -> list[str]:
+    """ Sort a list of functional effects based on a gain of function - loss of function scale.
+    :param effects:
+    :param ascending: Sort loss of function first, then towards gain of function.
+    :return: Sorted list of functional effects.
+    """
+    return list(sorted(effects, key=lambda e: FunctionalEffect.values_map.get(e, 0), reverse=ascending))
