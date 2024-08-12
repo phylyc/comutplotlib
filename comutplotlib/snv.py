@@ -2,7 +2,7 @@ from collections import Counter
 from itertools import chain
 import numpy as np
 
-from comutplotlib.functional_effect import sort_functional_effects
+from comutplotlib.functional_effect import FunctionalEffect, sort_functional_effects
 
 
 class SNV(object):
@@ -38,6 +38,13 @@ class SNV(object):
     def effects(self):
         effects = set(chain.from_iterable([l for _, l in np.ndenumerate(self.df) if isinstance(l, list)]))
         return sort_functional_effects(effects)
+
+    @property
+    def deleteriousness_score(self):
+        return self.df.map(
+            lambda effect_list: - (np.min([FunctionalEffect.values_map.get(e, 0) for e in effect_list]) / 1000 + 1) / 2
+            if isinstance(effect_list, list) else 0
+        )
 
     @property
     def num_effects(self):
