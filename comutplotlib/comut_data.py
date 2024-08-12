@@ -1,3 +1,4 @@
+from functools import reduce
 import os
 import pandas as pd
 import re
@@ -54,9 +55,11 @@ class ComutData(object):
         low_amp_threshold: int | float = 1,
         mid_amp_threshold: int | float = 1.5,
         high_amp_threshold: int | float = 2,
+        baseline: int | float = 0,
         low_del_threshold: int | float = -1,
         mid_del_threshold: int | float = -1.5,
         high_del_threshold: int | float = -2,
+        hide_low_level_cnvs: bool = False,
     ):
         self.maf = join_mafs([MAF.from_file(path_to_file=maf) for maf in maf_paths])
         self.maf.pool_annotations(pool_as=maf_pool_as, inplace=True)
@@ -65,6 +68,13 @@ class ComutData(object):
 
         self.seg = join_segs([SEG.from_file(path_to_file=seg) for seg in seg_paths])
         self.gistic = join_gistics([Gistic.from_file(path_to_file=gistic) for gistic in gistic_paths])
+        if hide_low_level_cnvs:
+            self.gistic.data = (
+                self.gistic.data
+                .replace([low_del_threshold, low_amp_threshold], baseline)
+                .replace([high_amp_threshold], mid_amp_threshold)
+                .replace([high_del_threshold], mid_del_threshold)
+            )
         self.cnv = None
 
         self.mutsig = pd.concat(
@@ -101,6 +111,7 @@ class ComutData(object):
         self.low_amp_threshold = low_amp_threshold
         self.mid_amp_threshold = mid_amp_threshold
         self.high_amp_threshold = high_amp_threshold
+        self.baseline = baseline
         self.low_del_threshold = low_del_threshold
         self.mid_del_threshold = mid_del_threshold
         self.high_del_threshold = high_del_threshold
@@ -290,23 +301,35 @@ class ComutData(object):
         if self.col_order is not None:
             self.columns = pd.Index([c for c in self.col_order if c in self.columns], name=self.columns.name)
         else:
-            has_high_mut = (
-                + 4 * self.snv.has_snv.astype(int)
-                + 3 * (self.snv.has_snv & ~self.cnv.has_high_cnv).fillna(False).astype(int)
-                + 2 * self.cnv.has_high_amp.astype(int)
-                + 1.5 * self.cnv.has_mid_amp.astype(int)
-                + self.cnv.has_high_del.astype(int)
-                + 0.5 * self.cnv.has_mid_del.astype(int)
-            )
+            # ORDER BY:
+            # 1. has SNV
+            # 2. has SNV and no high CNV
+            # 3. todo: SNV type
+            # 4. has high amplification
+            # 5. has mid-level amplification
+            # 6. has high deletion
+            # 7. has mid-level deletion
+            def get_score(criterion_list):
+                log_weights = range(len(criterion_list), 0, -1)
+                return reduce(lambda a, b: a + b, [10 ** w * c for w, c in zip(log_weights, criterion_list)])
+
+            has_high_mut = get_score([
+                self.snv.has_snv.astype(int),
+                (self.snv.has_snv & ~(self.cnv.has_high_cnv | self.cnv.has_mid_cnv)).fillna(False).astype(int),
+                self.cnv.has_high_amp.astype(int),
+                self.cnv.has_mid_amp.astype(int),
+                self.cnv.has_high_del.astype(int),
+                self.cnv.has_mid_del.astype(int),
+            ])
             has_burden = self.tmb[SIF.tmb].gt(0).astype(int).to_frame("has_burden").T
             has_any_cnv = self.cnv.has_cnv.any(axis=0).astype(int).to_frame("has_cnv").T
-            has_low_cnv = (
-                + 2 * self.cnv.has_low_amp.astype(int)
-                + self.cnv.has_low_del.astype(int)
-            )
+            has_low_cnv = get_score([
+                self.cnv.has_low_amp.astype(int),
+                self.cnv.has_low_del.astype(int),
+            ])
             burden = self.tmb[[SIF.tmb]].T
             columns = (
-                pd.concat([burden, has_low_cnv, has_any_cnv, has_burden, has_high_mut])
+                pd.concat([self.snv.deleteriousness_score, burden, has_low_cnv, has_any_cnv, has_burden, has_high_mut])
                 .T
                 .apply(lambda x: tuple(reversed(tuple(x))), axis=1)
                 .sort_values(ascending=False)

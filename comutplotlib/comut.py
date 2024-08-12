@@ -47,6 +47,7 @@ class Comut(object):
             high_amp_threshold: int = 2,
             low_del_threshold: int = -1,
             high_del_threshold: int = -2,
+            hide_low_level_cnvs: bool = False,
 
             panels_to_plot: list = None,
             palette: dict[str, tuple[float]] = None,
@@ -86,6 +87,7 @@ class Comut(object):
             high_amp_threshold=high_amp_threshold,
             low_del_threshold=low_del_threshold,
             high_del_threshold=high_del_threshold,
+            hide_low_level_cnvs=hide_low_level_cnvs,
         )
         self.data.preprocess()
         self.data.save(out_dir=self.plotter.out_dir, name=self.plotter.file_name)
