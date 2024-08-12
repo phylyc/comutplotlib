@@ -90,64 +90,6 @@ class ComutPlotter(Plotter):
                     arrowprops=dict(arrowstyle="-", color=self.palette.black, lw=0.3),
                 )
 
-        # def make_snv_prevalence(_ax):
-        #     max_comut = mut_prevalence_counter.apply(
-        #         lambda c: max(c.values()) if isinstance(c, Counter) else 1
-        #     ).max()
-        #     max_xlim = 1.1 * max_comut
-        #
-        #     effects = sort_functional_effects(
-        #         {
-        #             effect
-        #             for counter in [c for c in mut_prevalence_counter.values if isinstance(c, Counter)]
-        #             for effect, _ in counter.items()
-        #         },
-        #         ascending=False
-        #     )
-        #
-        #     for row, gene_name in enumerate(genes):
-        #         # paint background rectangle showing area of each gene
-        #         rect = patches.Rectangle(
-        #             xy=(-max_xlim, row + pad / 2),
-        #             width=2 * max_xlim,
-        #             height=1 - pad,
-        #             facecolor=self.palette.backgroundgrey,
-        #             edgecolor=None,
-        #             zorder=0.05,
-        #         )
-        #         _ax.add_patch(rect)
-        #
-        #     for row, (gene_name, counter) in enumerate(mut_prevalence_counter.items()):
-        #         if not isinstance(counter, Counter):
-        #             continue
-        #
-        #         for i, effect in enumerate(effects):
-        #             if effect in counter:
-        #                 rect = patches.Rectangle(
-        #                     xy=(0, row + pad / 2 + i * (1 - pad) / num_effects),
-        #                     width=counter.get(effect),
-        #                     height=(1 - pad) / num_effects,
-        #                     facecolor=self.palette.get(effect, self.palette.grey),
-        #                     edgecolor=None,
-        #                     zorder=0.9,
-        #                 )
-        #                 _ax.add_patch(rect)
-        #
-        #     self.set_integer_ticks(ax=_ax, xlim=[-max_xlim, max_xlim], xmin=0, n_major=3, n_minor=4)
-        #     _ax.xaxis.set_ticks_position("top")
-        #     _ax.xaxis.set_label_position("top")
-        #
-        #     _ax.set_yticks([])
-        #     _ax.set_ylim([0, len(genes)])
-        #     _ax.yaxis.set_major_locator(ticker.NullLocator())
-        #
-        #     _ax.tick_params(axis="both", labelsize=4, pad=1)
-        #     _ax.axvline(0, lw=0.7, color=self.palette.black)
-        #     self.grid(ax=_ax, axis="x", which="major", zorder=0.5, linewidth=0.5)
-        #     self.grid(ax=_ax, axis="x", which="minor", zorder=0.1, linewidth=0.3, color=self.palette.white)
-        #     self.no_spines(ax=_ax)
-        #     _ax.invert_xaxis()
-
         def make_cnv_recurrence(_ax):
             # get maximum number of amp or del
             max_num_amp = (cna > np.min(amp_thresholds)).sum(axis=1).max()
@@ -181,7 +123,9 @@ class ComutPlotter(Plotter):
                             pos += value
                             prevalence[threshold] = value
                         # Add percentage text for the first and last threshold
+                        added_text = False
                         if threshold == amp_thresholds[0] or threshold == del_thresholds[0]:
+                            added_text = True
                             _ax.text(
                                 0.11 * max_xlim,
                                 row + 1 / 4 + pad / 8 + ypad,
@@ -191,6 +135,7 @@ class ComutPlotter(Plotter):
                                 verticalalignment="center",
                             )
                         if threshold == amp_thresholds[-1] or threshold == del_thresholds[-1]:
+                            added_text = True
                             _ax.text(
                                 0.91 * max_xlim,
                                 row + 1 / 4 + pad / 8 + ypad,
@@ -198,6 +143,15 @@ class ComutPlotter(Plotter):
                                 fontsize=1.5,
                                 color=self.palette.grey,
                                 horizontalalignment="right",
+                                verticalalignment="center",
+                            )
+                        if not added_text and (threshold == amp_thresholds[1] or threshold == del_thresholds[1]):
+                            _ax.text(
+                                0.11 * max_xlim,
+                                row + 1 / 4 + pad / 8 + ypad,
+                                f"{100 * prevalence.get(threshold, 0) / len(columns):.1f}%",
+                                fontsize=1.5,
+                                horizontalalignment="left",
                                 verticalalignment="center",
                             )
 
