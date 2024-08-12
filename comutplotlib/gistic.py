@@ -66,6 +66,8 @@ class Gistic(object):
             "IL8": "CXCL8",
             "C10orf54": "VSIR",
             "IGHG3": "HDC",
+            "DIET1": "MALRD1",
+            "MLL3": "KMT2C",
         }
 
         for gene_name, replacement in gene_name_map.items():
@@ -104,14 +106,14 @@ class Gistic(object):
     def num_samples(self):
         return self.sample_table.shape[1]
 
-    def select_genes(self, genes: list[str], inplace=True) -> "Gistic":
+    def select_genes(self, genes: list[str], inplace=False) -> "Gistic":
         data = self.data.reindex(index=genes)
         if inplace:
             self.data = data
             return self
         return Gistic(data=data)
 
-    def select_samples(self, samples: list[str], inplace=True) -> "Gistic":
+    def select_samples(self, samples: list[str], inplace=False) -> "Gistic":
         columns = [self._locus_id, self._cytoband] + list(samples)
         if inplace:
             self.data = self.data.reindex(columns=columns)
