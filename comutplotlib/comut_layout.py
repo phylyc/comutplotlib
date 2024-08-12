@@ -23,7 +23,7 @@ class ComutLayout(Layout):
         self.inter_heatmap_linewidth = 0.05
 
         # HEIGHTS
-        tmb_height = 7
+        tmb_height = 5
         mut_sig_height = 5
         coverage_height = 5
         comut_height = n_genes
