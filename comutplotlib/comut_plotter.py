@@ -35,7 +35,8 @@ class ComutPlotter(Plotter):
                 )
                 _ax.add_patch(rect)
 
-            for row, (gene_name, df) in enumerate(mut_protein_data.items()):
+            for row, gene_name in enumerate(genes):
+                df = mut_protein_data.get(gene_name)
                 if df is None:
                     continue
 
@@ -331,11 +332,12 @@ class ComutPlotter(Plotter):
         ax.set_yticks([])
         self.no_spines(ax)
 
-    def plot_tmb(self, ax, tmb: pd.DataFrame, tmb_threshold=10, ytickpad=0, fontsize=6, aspect_ratio=1, ymin=5 * 1e-1, ymax=5 * 1e2):
+    def plot_tmb(self, ax, tmb: pd.DataFrame, tmb_threshold=10, ytickpad=0, fontsize=6, aspect_ratio=1, ymin=5 * 1e-1, ymax=1e4):
         if SA.tmb in tmb.columns:
+            ymax = 500
             # fit y axis to data
             ymin = min(10 ** np.floor(np.log10(tmb[SA.tmb].quantile(0.15))), 5 * 1e-1)
-            ymax = max(1e2, min(tmb[SA.tmb].max(), ymax))
+            ymax = np.clip(tmb[SA.tmb].max(), a_min=1e2, a_max=ymax)
             if SA.n_vars in tmb.columns and SA.n_bases in tmb.columns:
                 # test if tmb is significantly higher than threshold:
                 # Jeffrey's prior
@@ -372,6 +374,8 @@ class ComutPlotter(Plotter):
             )
             ax.set_ylabel(ylabel="TMB [/Mb]", fontdict=dict(fontsize=fontsize))
         else:  # columns are a list of functional effects
+            ymax = 1e4
+            ymax = np.clip(tmb.sum(axis=1).max(), a_min=1e2, a_max=ymax)
             tmb.plot.bar(
                 stacked=True,
                 width=0.9,
