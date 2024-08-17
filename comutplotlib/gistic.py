@@ -22,6 +22,7 @@ class Gistic(object):
 
     # Column names of Gistic output files
     _gene_symbol = "Gene Symbol"
+    _gene_id = "Gene ID"
     _locus_id = "Locus ID"
     _cytoband = "Cytoband"
 
@@ -48,7 +49,10 @@ class Gistic(object):
 
     def _standardize_gene_names(self):
         gene_name_map = {
-            "MLL2": "KMT2D",
+            "C10orf54": "VSIR",
+            "C15orf2": "NPAP1",
+            "DIET1": "MALRD1",
+            "FYB": "FYB1",
             "HIST1H3A": "H3C1",
             "HIST1H3B": "H3C2",
             "HIST1H3C": "H3C3",
@@ -62,11 +66,9 @@ class Gistic(object):
             "HIST2H3D": "H3C13",
             "HIST2H3C": "H3C14",
             "HIST2H3A": "H3C15",
-            "FYB": "FYB1",
             "IL8": "CXCL8",
-            "C10orf54": "VSIR",
             "IGHG3": "HDC",
-            "DIET1": "MALRD1",
+            "MLL2": "KMT2D",
             "MLL3": "KMT2C",
         }
 
@@ -79,6 +81,10 @@ class Gistic(object):
         return self.data.index
 
     @property
+    def gene_id(self):
+        return self.data[self._gene_id]
+
+    @property
     def locus_id(self):
         return self.data[self._locus_id]
 
@@ -88,7 +94,8 @@ class Gistic(object):
 
     @property
     def sample_table(self):
-        return self.data.drop([self._locus_id, self._cytoband], axis=1).rename_axis(MutA.sample, axis=1)
+        drop_cols = [c for c in [self._gene_id, self._locus_id, self._cytoband] if c in self.data.columns]
+        return self.data.drop(drop_cols, axis=1).rename_axis(MutA.sample, axis=1)
 
     @property
     def gene_names(self):
@@ -130,3 +137,14 @@ class Gistic(object):
         other_samples = [s for s in other.sample_table.columns if s not in self.sample_table.columns]
         joined = self.data.join(other.sample_table[other_samples], how="outer")
         return Gistic(data=joined)
+
+    def to_csv(self, path_to_file: str, **kwargs) -> None:
+        self.data.rename_axis(self._gene_symbol, axis="index").to_csv(
+            path_or_buf=path_to_file,
+            header=True,
+            index=True,
+            sep="\t",
+            na_rep="nan",
+            mode="w+",
+            **kwargs,
+        )
