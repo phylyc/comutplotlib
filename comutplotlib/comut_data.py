@@ -59,7 +59,7 @@ class ComutData(object):
         low_del_threshold: int | float = -1,
         mid_del_threshold: int | float = -1.5,
         high_del_threshold: int | float = -2,
-        hide_low_level_cnvs: bool = False,
+        show_low_level_cnvs: bool = False,
     ):
         self.maf = join_mafs([MAF.from_file(path_to_file=maf) for maf in maf_paths])
         self.maf.pool_annotations(pool_as=maf_pool_as, inplace=True)
@@ -68,7 +68,7 @@ class ComutData(object):
 
         self.seg = join_segs([SEG.from_file(path_to_file=seg) for seg in seg_paths])
         self.gistic = join_gistics([Gistic.from_file(path_to_file=gistic) for gistic in gistic_paths])
-        if hide_low_level_cnvs:
+        if not show_low_level_cnvs:
             self.gistic.data = (
                 self.gistic.data
                 .replace([low_del_threshold, low_amp_threshold], baseline)
@@ -321,13 +321,17 @@ class ComutData(object):
                 self.cnv.has_high_del.astype(int),
                 self.cnv.has_mid_del.astype(int),
             ])
-            has_burden = self.tmb[SIF.tmb].gt(0).astype(int).to_frame("has_burden").T
+            if SIF.tmb in self.tmb:
+                has_burden = self.tmb[SIF.tmb].gt(0).astype(int).to_frame("has_burden").T
+                burden = self.tmb[[SIF.tmb]].T
+            else:
+                has_burden = self.tmb.sum(axis=1).gt(0).astype(int).to_frame("has_burden").T
+                burden = self.tmb.sum(axis=1).to_frame(SIF.tmb).T
             has_any_cnv = self.cnv.has_cnv.any(axis=0).astype(int).to_frame("has_cnv").T
             has_low_cnv = get_score([
                 self.cnv.has_low_amp.astype(int),
                 self.cnv.has_low_del.astype(int),
             ])
-            burden = self.tmb[[SIF.tmb]].T
             columns = (
                 pd.concat([self.snv.deleteriousness_score, burden, has_low_cnv, has_any_cnv, has_burden, has_high_mut])
                 .T
