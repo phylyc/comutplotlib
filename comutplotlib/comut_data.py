@@ -260,6 +260,9 @@ class ComutData(object):
                 genes.pop(genes.index(self.interesting_gene))
                 genes += [self.interesting_gene]
 
+            if not len(genes):
+                return None
+
             # group genes in the same cytoband together since they are co-amplified or co-deleted.
             cytobands = self.cnv.gistic.cytoband.reindex(index=genes).fillna("")
             cytoband_groups = cytobands[::-1].drop_duplicates().values
@@ -332,14 +335,16 @@ class ComutData(object):
                 self.cnv.has_low_amp.astype(int),
                 self.cnv.has_low_del.astype(int),
             ])
-            columns = (
-                pd.concat([self.snv.deleteriousness_score, burden, has_low_cnv, has_any_cnv, has_burden, has_high_mut])
-                .T
-                .apply(lambda x: tuple(reversed(tuple(x))), axis=1)
-                .sort_values(ascending=False)
-                .index
-            )
-            self.columns = pd.Index(columns, name=self.columns.name)
+            features = [df for df in [self.snv.deleteriousness_score, burden, has_low_cnv, has_any_cnv, has_burden, has_high_mut] if not df.empty]
+            if len(features):
+                columns = (
+                    pd.concat(features)
+                    .T
+                    .apply(lambda x: tuple(reversed(tuple(x))), axis=1)
+                    .sort_values(ascending=False)
+                    .index
+                )
+                self.columns = pd.Index(columns, name=self.columns.name)
 
     def get_model_annotation(self):
         return pd.DataFrame(
