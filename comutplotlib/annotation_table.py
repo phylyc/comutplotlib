@@ -27,18 +27,18 @@ class AnnotationTable(object):
             if encoding is not None:
                 with open(path_to_file, encoding=encoding) as f:
                     data = pd.read_csv(
-                        filepath_or_buffer=f, sep="\t", engine="c", comment="#"
+                        filepath_or_buffer=f, sep="\t", engine="c", # comment="#"
                     )
             else:
                 try:
                     with open(path_to_file, encoding="utf8") as f:
                         data = pd.read_csv(
-                            filepath_or_buffer=f, sep="\t", engine="c", comment="#"
+                            filepath_or_buffer=f, sep="\t", engine="c", # comment="#"
                         )
                 except UnicodeError:
                     with open(path_to_file, encoding="latin1") as f:
                         data = pd.read_csv(
-                            filepath_or_buffer=f, sep="\t", engine="c", comment="#"
+                            filepath_or_buffer=f, sep="\t", engine="c", # comment="#"
                         )
         # Drop columns with no information:
         cols_to_drop = data.apply(
