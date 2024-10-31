@@ -234,11 +234,13 @@ class Palette(UserDict):
                 "BLCA": self.cyan,  # bladder cancer
                 "CRC": self.darkcyan,  # colorectal cancer
 
-                "KIRC": self.brightgreen,  # kidney cancer
-                "RCC": self.brightgreen,  # renal cell carninoma
+                "KIRC": self.brightgreen,  # renal cell carcinoma (clear cell)
+                "KIRP": self.lightgreen,  # renal cell carcinoma (papillary)
+                "RCC": self.brightgreen,  # renal cell carcinoma
 
                 "LUAD": self.brightblue,  # lung adenocarcinoma
                 "LUCA": self.lightblue,  # lung cancer
+                "LUSC": self.darkblue,  # lung squamous cell carcinoma
 
                 "MEL": self.brightorange,  # melanoma
 
