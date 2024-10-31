@@ -32,12 +32,12 @@ class Gistic(object):
             raise FileNotFoundError(
                 f"No Gistic instance created. No such file or directory: '{path_to_file}'"
             )
-        with open(path_to_file, encoding=encoding) as f:
-            data = (
-                pd.read_csv(filepath_or_buffer=f, sep="\t", engine="c", comment="#")
-                .set_index(cls._gene_symbol)
-                .rename_axis(MutA.gene_name, axis=0)
-            )
+        try:
+            with open(path_to_file, encoding=encoding) as f:
+                data = pd.read_csv(filepath_or_buffer=f, sep="\t", engine="c", comment="#")
+        except:
+            data = pd.read_csv(filepath_or_buffer=path_to_file, sep="\t", engine="c", comment="#")
+        data = data.set_index(cls._gene_symbol).rename_axis(MutA.gene_name, axis=0)
         return Gistic(data=data)
 
     def __init__(self, data=None):
@@ -51,6 +51,7 @@ class Gistic(object):
         gene_name_map = {
             "C10orf54": "VSIR",
             "C15orf2": "NPAP1",
+            "CCDC76": "TRMT13",
             "DIET1": "MALRD1",
             "FYB": "FYB1",
             "HIST1H3A": "H3C1",
