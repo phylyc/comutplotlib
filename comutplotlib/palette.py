@@ -200,7 +200,7 @@ class Palette(UserDict):
                 "XY": self.darkcyan,
                 "Male": self.darkcyan,
                 "NA": self.grey,
-                "unknown": self.grey,
+                "unknown": self.lightgrey,
 
                 # HISTOLOGIES
                 "AML": self.darkbrown,  # akute myeloid leukemia
@@ -264,6 +264,8 @@ class Palette(UserDict):
                 "HR+/HER2-": self.blue,
                 "HR-/HER2-": self.darkviolet,
                 "TN": self.darkviolet,
+                "pos": self.lightyellow,
+                "neg": self.lightblue,
 
                 # PLATFORM
                 "Agilent": self.lightred,
@@ -388,6 +390,12 @@ class Palette(UserDict):
         add_cmap("Norwegian", order=["yes", "no"])
         add_cmap("Sex", order=["Female", "Male"])
         add_cmap("HR Status", order=["HR+", "HER2+", "HR+/HER2+", "HR-/HER2+", "HR+/HER2-", "HR-/HER2-", "TN", "N/A", "NA", "unknown"])
+        add_cmap("ER status", order=["pos", "neg", "unknown"])
+        add_cmap("PR status", order=["pos", "neg", "unknown"])
+        add_cmap("HER2 status", order=["pos", "neg", "unknown"])
+        add_cmap("ESR1 status", order=["pos", "neg", "unknown"])
+        add_cmap("PGR status", order=["pos", "neg", "unknown"])
+        add_cmap("ERBB2 status", order=["pos", "neg", "unknown"])
         add_cmap("Histology")
         add_cont_cmap("Contamination", plt.cm.get_cmap("nipy_spectral"), 0.2, 0.95)
         add_cont_cmap("Tumor Purity", plt.cm.get_cmap("nipy_spectral_r"), 0.05, 0.8)
