@@ -6,7 +6,11 @@ from comutplotlib.mutation_annotation import MutationAnnotation as MutA
 
 class Comut(object):
     """ Caption:
-    This comutation plot, displayed in the central panel, illustrates the mutation landscape in a patient cohort. Rows and columns represent genes and patients, respectively. Each cell's color denotes the mutation status of a gene in a patient: rectangles for copy-number variations (CNVs) and ellipses for short nucleotide variations (SNVs) (subdivided into wedges for multiple), both colored by functional effect. The top margin shows tumor mutation burden (TMB) for each patient, with high TMB (10 /Mb) shown in red. The left margin shows the recurrence rates of SNVs and CNVs in each gene across the cohort, with annotations of highly recurrent protein alterations. It also includes the percentage of patients with high-level CNVs, supplemented with the percentage of low-level CNVs in brackets, and the total percentage of patients exhibiting any SNV or high-level CNV in a gene. The bottom panel presents patient- and sample-level metadata, with individual cells for patients with multiple samples sub-divided per sample when relevant.
+    This comutation plot (central panel) visualizes the mutation landscape across a patient cohort. Rows represent genes, and columns correspond to patients. Each cell indicates a gene’s mutation status in a patient: rectangles denote copy-number variations (CNVs), and ellipses indicate short nucleotide variations (SNVs), with multiple SNVs shown as subdivided wedges. Colors encode mutation types and functional effects.
+
+    The top panel displays tumor mutation burden (TMB) per patient, with high TMB (≥10/Mb) highlighted in red. The mutational signature panel shows the relative fraction of exposures to different mutational signatures for each patient or sample. The left panel summarizes mutation recurrence, showing SNV and CNV frequencies per gene, annotated with recurrent protein alterations. It also reports the percentage of patients with high-level CNVs, supplemented by low-level CNVs in brackets, along with the total percentage of patients carrying either an SNV or a high-level CNV in the gene.
+
+    The bottom panel presents patient- and sample-level metadata. For patients with multiple samples, metadata cells are subdivided accordingly.
     """
 
     def __init__(
