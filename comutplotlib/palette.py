@@ -346,8 +346,83 @@ class Palette(UserDict):
         return tmb_cmap
 
     def get_mutsig_cmap(self, data):
+        # The listed order determines the order in which the signatures are plotted
+        signature_sets = {
+            "clock-like": ["SBS1", "SBS5"],
+            "PolE/D/H": ["SBS9", "SBS10a", "SBS10b", "SBS10c", "SBS10d", "DBS3"],
+            "MMR": [
+                "SBS3",
+                "SBS6",
+                "SBS14",
+                "SBS15",
+                "SBS20",
+                "SBS21",
+                "SBS26",
+                "SBS30",
+                "SBS36",
+                "SBS44",
+                "DBS7",
+                "DBS10",
+                "DBS13",
+                "ID6",
+                "ID7",
+                "ID8",  # TOP2A
+                "ID17",  # TOP2A
+            ],
+            "Other": [
+                "SBS18",  # Oxog
+                "SBS22a",  # Aristolochic acid
+                "SBS22b",  # Aristolochic acid
+                "SBS24",  # aflatoxin
+                "SBS42",  # haloalkane
+                "SBS85",  # ind eff of AID
+                "SBS88",  # colibactin
+                "SBS90",  # duocarmycin
+                "SBS99",  # melphalan
+                "DBS20",  # Aristolochic acid
+                "ID23",  # Aristolochic acid
+                "ID18",  # e.coli
+            ],
+            "APOBEC": ["SBS2", "SBS13"],
+            "Smoking": ["SBS4", "SBS29", "SBS92", "DBS2", "ID3"],
+            "UV": ["SBS7a", "SBS7b", "SBS7c", "SBS7d", "SBS38", "DBS1", "ID13"],
+            "Treatment": [
+                "SBS11",  # Temozolomide
+                "SBS25",  # Chemotherapy
+                "SBS31",  # Platinum chemotherapy
+                "SBS32",  # Azathioprine
+                "SBS35",  # Platinum chemotherapy
+                "SBS86",  # Unknown chemotherapy
+                "SBS87",  # Thiopurine chemotherapy
+                "DBS5",  # Platinum chemotherapy
+            ],
+            "Error": [
+                "SBS27",
+                "SBS43", "SBS45", "SBS46", "SBS47", "SBS48", "SBS49",
+                "SBS50", "SBS51", "SBS52", "SBS53", "SBS54", "SBS55", "SBS56", "SBS57", "SBS58", "SBS59",
+                "SBS60",
+                "SBS95",
+                "DBS14"
+            ],
+            "Unknown": []
+        }
+        mutsigset_palette = {
+            "clock-like": self.brown,
+            "APOBEC": self.red,
+            "MMR": self.green,
+            "PolE/D/H": self.cyan,
+            "Other": self.violet,
+            "UV": self.brightorange,
+            "Smoking": self.brightblue,
+            "Treatment": self.pink,
+            "Error": self.grey
+        }
+        signature_colors = {color: signature_sets[key] for key, color in mutsigset_palette.items()}
+        for color, signatures in signature_colors.items():
+            for s, c in zip(signatures, self.make_diverging_palette(color=color, n_colors=len(signatures))):
+                mutsigset_palette[s] = c
         mutsig_cmap = {
-            sig: self.get(sig, color)
+            sig: mutsigset_palette.get(sig, color)
             for sig, color in zip(data.mutsig.columns, sns.color_palette("husl", n_colors=len(data.mutsig.columns)))
         } if data.mutsig is not None else {}
         return mutsig_cmap
@@ -397,7 +472,7 @@ class Palette(UserDict):
         add_cmap("PGR status", order=["pos", "neg", "unknown"])
         add_cmap("ERBB2 status", order=["pos", "neg", "unknown"])
         add_cmap("Histology")
-        add_cont_cmap("Contamination", plt.cm.get_cmap("nipy_spectral"), 0.2, 0.95)
-        add_cont_cmap("Tumor Purity", plt.cm.get_cmap("nipy_spectral_r"), 0.05, 0.8)
+        add_cont_cmap("Contamination", plt.cm.get_cmap("viridis_r"), 0.2, 0.95)
+        add_cont_cmap("Tumor Purity", plt.cm.get_cmap("plasma_r"), 0.05, 0.8)
 
         return {k: meta_cmaps[k] for k in data.meta.rows if k in meta_cmaps.keys()}
