@@ -1,207 +1,117 @@
 import argparse
 
 
-def parse_args():
+def validate_args(args):
+    """Ensure required arguments are correctly specified."""
+    if args.maf is None and args.gistic is None:
+        raise ValueError("Either --maf or --gistic must be specified.")
 
+
+def parse_comma_separated(value):
+    """Convert a comma-separated string into a list."""
+    return value.split(",") if value else None
+
+
+def parse_palette(value):
+    """Parse a color palette definition from a semicolon-separated string."""
+    if not value:
+        return None
+    palette = {}
+    for entry in value.split(";"):
+        key, rgb = entry.split(":")
+        palette[key] = tuple(map(float, rgb.split(",")))
+    return palette
+
+
+def parse_ground_truth_genes(value):
+    """Parse ground truth genes into a dictionary format."""
+    if not value:
+        return None
+    return {k: v.split(",") for k, v in (x.split(":") for x in value.split(";"))}
+
+
+
+def parse_args():
+    """Parse command-line arguments for ComutPlot."""
     parser = argparse.ArgumentParser(
         prog="ComutPlot",
-        description="Plotting",
-        epilog="Text at the bottom of help",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        description="Generate genomic comutation plots.",
+        epilog="For more details, refer to the documentation.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
 
-    parser.usage = '''
-    ComutPlot is a powerful tool for generating interactive genomic comutation plots.
+    parser.add_argument("-o", "--output", type=str, required=True,
+                        help="Path to the output file.")
+    parser.add_argument("--maf", type=str, action='append', default=None,
+                        help="Path to a MAF file (output from GATK Funcotate). Can be specified multiple times.")
+    parser.add_argument("--sif", type=str, action='append', default=None,
+                        help="Path to a SIF input file. See documentation for format details.")
+    parser.add_argument("--gistic", type=str, action='append', default=None,
+                        help="Path to a GISTIC output file (e.g., 'all_thresholded.by_gene.txt').")
+    parser.add_argument("--mutsig", type=str, action='append', default=None,
+                        help="Path to a file containing mutational signature exposures (index: patient, columns: signatures).")
 
-    Usage:
-      python your_script.py -o OUTPUT_FILE [--maf MAF_FILE] [--sif SIF_FILE] [--gistic GISTIC_FILE]
-                             [--by {Sample, Patient}] [--label_columns {True, False}]
-                             [--column_order COLUMN_ORDER] [--index_order INDEX_ORDER]
-                             [--meta META_FILE] [--meta_data_rows META_DATA_ROWS]
-                             [--meta_data_rows_per_sample META_DATA_ROWS_PER_SAMPLE]
-                             [--genes GENES] [--snv_interesting_genes SNV_INTERESTING_GENES]
-                             [--cnv_interesting_genes CNV_INTERESTING_GENES]
-                             [--interesting_gene_comut_threshold_percent GENE_COMUT_THRESHOLD_PERCENT]
-                             [--ground_truth_genes GROUND_TRUTH_GENES]
-                             [--low_amp_threshold LOW_AMP_THRESHOLD]
-                             [--high_amp_threshold HIGH_AMP_THRESHOLD]
-                             [--low_del_threshold LOW_DEL_THRESHOLD]
-                             [--high_del_threshold HIGH_DEL_THRESHOLD]
-                             [--total_recurrence_threshold TOTAL_RECURRENCE_THRESHOLD]
-                             [--model_names MODEL_NAMES]
-                             [--panels_to_plot PANELS_TO_PLOT]
-                             [--max_xfigsize MAX_XFIGSIZE] [--yfigsize YFIGSIZE]
-                             [--sub_folders SUB_FOLDERS] [--file_name_prefix FILE_NAME_PREFIX]
-                             [--file_name_suffix FILE_NAME_SUFFIX]
-                             [--regions REGIONS] [--mutsig MUTSIG] [--cytoband CYTOBAND]
-                             [--tmb TMB] [--prev PREV]
+    parser.add_argument("--model-names", type=parse_comma_separated, default=["SNV burden model", "CNV burden model"],
+                        help="Comma-separated names of models corresponding to SNV and CNV interesting genes.")
+    parser.add_argument("--model-significances", type=str, action="append", default=None,
+                        help="Path to files containing gene significance values for each model.")
 
-    Required Arguments:
-      -o, --output OUTPUT_FILE
-          Path to the output file.
-    
-    Semi-Optional Arguments (at least one of the two is required):
-      --maf MAF_FILE
-          Path to the MAF input file (direct output from Funcotator GATK).
+    parser.add_argument("--by", type=str, choices=["Sample", "Patient"], default="Patient",
+                        help="Aggregation level for mutations (Sample or Patient).")
+    parser.add_argument("--label-columns", action="store_true",
+                        help="Display labels at the bottom of the plot.")
+    parser.add_argument("--column-order", type=parse_comma_separated, default=None,
+                        help="Comma-separated order of columns in the plot.")
+    parser.add_argument("--index-order", type=parse_comma_separated, default=None,
+                        help="Comma-separated order of gene indices in the plot.")
+    parser.add_argument("--drop-empty-columns", action="store_true",
+                        help="Exclude samples/patients with no mutation data.")
 
-      --gistic GISTIC_FILE
-          Path to the GISTIC input file.
+    parser.add_argument("--meta-data-rows", type=parse_comma_separated, default=[
+                        "Sample Type", "Material", "Contamination", "Tumor Purity", "Platform", "has matched N", "Sex", "Histology"],
+                        help="Comma-separated list of metadata fields to display.")
+    parser.add_argument("--meta-data-rows-per-sample", type=parse_comma_separated, default=[
+                        "Sample Type", "Material", "Contamination", "Tumor Purity", "Platform"],
+                        help="Metadata fields to display per sample.")
 
-    Optional Arguments:
-      --sif SIF_FILE
-          Path to the SIF input file.
+    parser.add_argument("--interesting-gene", type=str, default=None,
+                        help="Find genes co-mutated at least a given percentage (set by --interesting-gene-comut-percent-threshold).")
+    parser.add_argument("--interesting-gene-comut-percent-threshold", type=float, default=None,
+                        help="Minimum co-mutation percentage threshold for interesting genes.")
+    parser.add_argument("--interesting-genes", type=parse_comma_separated, default=None,
+                        help="Comma-separated list of interesting genes.")
+    parser.add_argument("--snv-interesting-genes", type=parse_comma_separated, default=None,
+                        help="Comma-separated list of SNV interesting genes.")
+    parser.add_argument("--cnv-interesting-genes", type=parse_comma_separated, default=None,
+                        help="Comma-separated list of CNV interesting genes.")
+    parser.add_argument("--total-recurrence-threshold", type=float, default=None,
+                        help="Minimum percentage of patients with a mutation in a gene for it to be plotted.")
+    parser.add_argument("--snv-recurrence-threshold", type=int, default=5,
+                        help="Minimum number of patients with the same protein change for annotation.")
+    parser.add_argument("--ground-truth-genes", type=parse_ground_truth_genes, default=None,
+                        help="Highlight genes with specified colors. Format: 'color1:gene1,gene2,...;color2:gene3,gene4,...'.")
 
-      --by {Sample, Patient}
-          Group the data by Sample or Patient. (Default: Patient)
+    parser.add_argument("--low-amp-threshold", type=int, default=1,
+                        help="Threshold for low-level amplification.")
+    parser.add_argument("--high-amp-threshold", type=int, default=2,
+                        help="Threshold for high-level amplification.")
+    parser.add_argument("--low-del-threshold", type=int, default=-1,
+                        help="Threshold for low-level deletion.")
+    parser.add_argument("--high-del-threshold", type=int, default=-2,
+                        help="Threshold for high-level deletion.")
+    parser.add_argument("--show-low-level-cnvs", default=True, action="store_true",
+                        help="Include low-level CNVs in the plot.")
 
-      --label_columns {True, False}
-          Include labels at the bottom of the plot. (Default: True)
-
-      --column_order COLUMN_ORDER
-          Order of the columns on the plot.
-
-      --index_order INDEX_ORDER
-          Order of the index on the plot.
-
-      --meta META_FILE
-          Path to the meta input file.
-
-      --meta_data_rows META_DATA_ROWS
-          Comma separated list of SIF columns to plot.
-
-      --meta_data_rows_per_sample META_DATA_ROWS_PER_SAMPLE
-          Comma separated list of SIF columns to plot per sample.
-
-      --genes GENES
-          Comma separated list of genes.
-
-      --snv_interesting_genes SNV_INTERESTING_GENES
-          Comma separated list of SNV genes.
-
-      --cnv_interesting_genes CNV_INTERESTING_GENES
-          Comma separated list of CNV genes.
-
-      --interesting_gene_comut_threshold_percent GENE_COMUT_THRESHOLD_PERCENT
-          Threshold of significance for interesting genes.
-
-      --ground_truth_genes GROUND_TRUTH_GENES
-          Dictionary of genes to compare to. Format: key1:value1,value2,...;key2:value3,value4,...
-
-      --low_amp_threshold LOW_AMP_THRESHOLD
-          Threshold for low amplification.
-
-      --high_amp_threshold HIGH_AMP_THRESHOLD
-          Threshold for high amplification.
-
-      --low_del_threshold LOW_DEL_THRESHOLD
-          Threshold for low deletion.
-
-      --high_del_threshold HIGH_DEL_THRESHOLD
-          Threshold for high deletion.
-
-      --total_recurrence_threshold TOTAL_RECURRENCE_THRESHOLD
-          Threshold for total recurrence.
-
-      --model_names MODEL_NAMES
-          Comma separated list of names of models.
-
-      --panels_to_plot PANELS_TO_PLOT
-          Comma separated list of parts to be plotted.
-
-      --max_xfigsize MAX_XFIGSIZE
-          Maximum x figure size.
-
-      --yfigsize YFIGSIZE
-          y figure size.
-
-      --sub_folders SUB_FOLDERS
-          Sub folders.
-
-      --file_name_prefix FILE_NAME_PREFIX
-          File name prefix.
-
-      --file_name_suffix FILE_NAME_SUFFIX
-          File name suffix.
-
-      --regions REGIONS
-          Path to the covered regions input file.
-
-      --mutsig MUTSIG
-          Path to mutational signatures input file.
-
-      --cytoband CYTOBAND
-          Path to the cytoband input file.
-
-      --tmb TMB
-          Path to the TMB input file.
-
-      --prev PREV
-          Path to the prevalence input file.
-    '''
-    def validate_flags(args):
-        if args.maf is None and args.gistic is None:
-            raise ValueError("Either --maf or --gistic must be specified.")
-
-    parser.add_argument("-o", "--output", type=str, required=True, help="Path to the output file.")
-    parser.add_argument("--maf", type=str, required=False, default=None, action='append', help="Path to the MAF input file.")
-    parser.add_argument("--sif", type=str, required=False, default=None, action='append', help="Path to the SIF input file.")
-    parser.add_argument("--gistic", type=str, required=False, default=None, action='append', help="Path to the MAF input file.")
-    parser.add_argument("--mutsig", type=str, required=False, default=None, action='append', help="Path to mutational signatures input file.")
-
-    parser.add_argument("--model_names", type=str, required=False, default="SNV burden model,CNV burden model", help="names of models.")
-    parser.add_argument("--model_significances", type=str, required=False, default=None, action="append", help="Path to the model significances input file.")
-
-    parser.add_argument("--by", type=str, choices=["Sample", "Patient"], required=False, default="Patient")
-    parser.add_argument("--label_columns", type=bool, required=False, default=True, help="labels at the bottom of plot")
-    parser.add_argument("--column_order", type=str, required=False, default=None, help="order of the columns on plot")
-    parser.add_argument("--index_order", type=str, required=False, default=None, help="order of the index on plot")
-
-    parser.add_argument("--meta", type=str, required=False, default=None, help="Path to the meta input file.")
-    parser.add_argument("--meta_data_rows", type=str, required=False, default="Sample Type,Material,Contamination,Tumor Purity,Platform,has matched N,Sex,Histology", help="Comma separated list of SIF columns to plot.")
-    parser.add_argument("--meta_data_rows_per_sample", type=str, required=False,
-                        default="Sample Type,Material,Contamination,Tumor Purity,Platform",
-                        help="Comma separated list of SIF columns to plot per sample.")
-
-    parser.add_argument("--interesting_gene", type=str, required=False, default=None, help="Interesting gene.")
-    parser.add_argument("--interesting_gene_comut_percent_threshold", type=float, required=False, default=None,
-                        help="threshold of significance for interesting genes")
-    parser.add_argument("--interesting_genes", type=str, required=False, default=None, help="Comma separated list of genes.")
-    parser.add_argument("--snv_interesting_genes", type=str, required=False, default=None,
-                        help="Comma separated list of snv genes.")
-    parser.add_argument("--cnv_interesting_genes", type=str, required=False, default=None,
-                        help="Comma separated list of cnv genes")
-    parser.add_argument("--total_recurrence_threshold", type=float, required=False, default=None,
-                        help="Minimum percentage of patients to have a mutation in this gene to be plotted")
-    parser.add_argument("--ground_truth_genes", type=str, required=False, default=None, action="append",
-                        help="dictionary of color in palette as keys with list of genes to be colored as values")
-
-    parser.add_argument("--low_amp_threshold", type=int, required=False, default=1, help="threshold for low amplification")
-    parser.add_argument("--high_amp_threshold", type=int, required=False, default=2, help="threshold for high amplification")
-    parser.add_argument("--low_del_threshold", type=int, required=False, default=-1, help="threshold for low deletion")
-    parser.add_argument("--high_del_threshold", type=int, required=False, default=-2, help="threshold for high deletion")
-
-    parser.add_argument("--panels_to_plot", type=str, required=False, default="tmb,mutational signatures,recurrence,total recurrence,total recurrence overall,cytoband,gene names,model annotation,comutation,mutsig legend,snv legend,cnv legend,model annotation legend,meta data,meta data legend", help="parts to be plotted")
-    parser.add_argument("--max_xfigsize", type=int, required=False, default=None, help="maximum x figure size; central comutation plot will be scaled to fit this size")
+    parser.add_argument("--panels-to-plot", type=parse_comma_separated, default=[
+                        "tmb", "mutational signatures", "recurrence", "total recurrence", "total recurrence overall",
+                        "cytoband", "gene names", "model annotation", "comutation", "mutsig legend",
+                        "snv legend", "cnv legend", "model annotation legend", "meta data", "meta data legend"],
+                        help="Comma-separated list of plot panels to include.")
+    parser.add_argument("--palette", type=parse_palette, default=None,
+                        help="Define additional colors for categories. Format: 'key1:r,g,b;key2:r,g,b'.")
+    parser.add_argument("--max-xfigsize", type=int, default=None,
+                        help="Maximum x-axis figure size; the comutation plot scales to fit.")
 
     args = parser.parse_args()
-    validate_flags(args)
-
-    if args.interesting_genes is not None:
-        args.interesting_genes = args.interesting_genes.split(",")
-    if args.snv_interesting_genes is not None:
-        args.snv_interesting_genes = args.snv_interesting_genes.split(",")
-    if args.cnv_interesting_genes is not None:
-        args.cnv_interesting_genes = args.cnv_interesting_genes.split(",")
-    if args.ground_truth_genes is not None:
-        args.ground_truth_genes = {
-            k: v.split(",") for k, v in [x.split(":") for x in args.ground_truth_genes]
-        }
-    if args.column_order is not None:
-        args.column_order = args.column_order.split(",")
-    if args.index_order is not None:
-        args.index_order = args.index_order.split(",")
-    args.meta_data_rows = args.meta_data_rows.split(",")
-    args.meta_data_rows_per_sample = args.meta_data_rows_per_sample.split(",")
-    args.model_names = args.model_names.split(",")
-    args.panels_to_plot = args.panels_to_plot.split(",")
-
+    validate_args(args)
     return args
