@@ -198,7 +198,6 @@ class ComutPlotter(Plotter):
             percent_ax.set_xlabel(xlabel, fontdict=dict(fontsize=4), labelpad=2)
             self.no_spines(ax=percent_ax)
 
-        # make_snv_prevalence(_ax=ax)
         make_snv_recurrence(_ax=ax)
         cna_ax = ax.twiny()
         label_ax = ax.twiny()
@@ -326,8 +325,6 @@ class ComutPlotter(Plotter):
                 ax.add_patch(patch)
         ax.set_xlim([0, 2])
         ax.set_ylim([0, model_annotation.shape[0]])
-        # ax.set_xlabel("Cytoband", fontdict=dict(fontsize=5), rotation="vertical")
-        # ax.xaxis.set_label_position("top")
         ax.set_xticks([])
         ax.set_yticks([])
         self.no_spines(ax)
@@ -363,6 +360,7 @@ class ComutPlotter(Plotter):
                 }
             else:
                 color = [self.palette.darkred if t >= tmb_threshold else self.palette.grey for t in tmb[SA.tmb]]
+                bar_kwargs = {}
             perc_high_tmb = color.count(self.palette.darkred) / len(color)
             ax.bar(
                 x=np.arange(tmb.shape[0]),
