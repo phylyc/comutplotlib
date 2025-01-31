@@ -1,61 +1,90 @@
-# ComutPlot - Interactive Genomic Comutation Plots
-Welcome to ComutPlot, a powerful tool for generating interactive genomic comutation plots. 
-Comutation plots are a widely used visualization method to explore co-occurrence patterns 
-of genomic alterations, such as mutations, copy number variations (CNVs), and other genetic 
-events, across multiple samples or patients.
+# ComutPlotLib - Genomic Comutation Plots
+Welcome to **ComutPlotLib**, a Python tool for generating **genomic comutation plots**. These plots visualize **co-occurrence patterns** of genomic alterations—**mutations, copy number variations (CNVs), and other genetic events**—across multiple patients or samples.  
 
-![Sample Comut Plot Output](https://raw.githubusercontent.com/phylyc/comut_plot/main/demo/comut_test.png)  
+## **Example Output**  
+![Sample Comut Plot Output](https://raw.githubusercontent.com/phylyc/comutplotlib/main/demo/comut_test.png)  
+This comutation plot (central panel) visualizes the mutation landscape across a patient cohort. Rows represent genes, and columns correspond to patients. Each cell indicates a gene’s mutation status in a patient: rectangles denote copy-number variations (CNVs), and ellipses indicate short nucleotide variations (SNVs), with multiple SNVs shown as subdivided wedges. Colors encode mutation types and functional effects.
 
-### DESCRIPTION:
-ComutPlot is a tool for plotting and visualizing genomic data. It offers
-a flexible and customizable way to generate informative plots for various
-genomic analyses. This Python script uses the argparse library to parse
-command-line arguments and allows users to specify different input files, 
-options, and configurations.
+The top panel displays tumor mutation burden (TMB) per patient, with high TMB (≥10/Mb) highlighted in red. The mutational signature panel shows the relative fraction of exposures to different mutational signatures for each patient or sample. The left panel summarizes mutation recurrence, showing SNV and CNV frequencies per gene, annotated with recurrent protein alterations. It also reports the percentage of patients with high-level CNVs, supplemented by low-level CNVs in brackets, along with the total percentage of patients carrying either an SNV or a high-level CNV in the gene.
 
-### INSTALLATION: 
-To install comut_plot, please refer to the following files:
-- `install.sh`: Shell script for installation
-- `setup.cfg`: Configuration file
-- `setup.py`: Setup script
-- `required.txt`: List of required dependencies
+The bottom panel presents patient- and sample-level metadata. For patients with multiple samples, metadata cells are subdivided accordingly.
 
-### USAGE GUIDE: 
-To use ComutPlot, simply execute the script with the desired options and arguments.  
-For a comprehensive list of available options and their descriptions, run the following command:
-`python comut_argparse.py --help`
 
-#### INPUT FILES:
-There are three main inputs to provide. Most of them are direct outputs of other tools to minimize special formatting needs:
-1. **MAF file**: This should be the output of Funcotator GATK. Refer to `mutation_annotation.py` for related fields.
-2. **GISTIC file**: The output of GISTIC 2.0, which stands for Genomic Identification of Significant Targets in Cancer.
-3. **SIF file**: A tab-separated file. Please see `sample_annotation.py` for column names that need to be specified.
+## **Features**  
+✔ **Visualizes SNVs and CNVs** in a single plot  
+✔ **Summarizes mutational burden, recurrence, and metadata**  
+✔ **Customizable layout and annotation**  
+✔ **Compatible with MAF, GISTIC, and SIF files**  
+✔ **Integrates with GATK Funcotator, GISTIC 2.0, and other genomic tools**  
 
-*Note: At least one of the MAF or GISTIC files must be provided as input for the program to run.*
 
-#### EXAMPLES:
+---
 
-- Generate a plot with a single MAF file and specific output path:   
-`python comut_argparse.py --maf file1.maf --output output_plot.png`  
+## **Installation**  
+To install **ComutPlotLib**, run:  
+```bash
+pip install -r requirements.txt
+```
+Alternatively, use the provided installation script:
+```
+bash install.sh
+```
 
-- Use multiple input files (MAF, SIF, GISTIC) and set additional options:   
-`python comut_argparse.py --maf file1.maf --sif file2.sif --gistic file3.gistic --by Sample --label_columns True --output output_plot.png`  
+## **Usage**
 
-- Provide multiple interesting genes and customize the plot layout:   
-`python comut_argparse.py --genes geneA,geneB,geneC --snv_interesting_genes geneX,geneY --parts_to_plot mutation burden,comutations,cytoband --output output_plot.png`  
+Run **ComutPlotLib** with:
+```
+python comut_argparse.py --output output_plot.png --maf input.maf
+```
+For a full list of options, use:
+```
+python comut_argparse.py --help
+```
+📌 For detailed examples, refer to the ![demo folder](https://github.com/phylyc/comutplotlib/tree/main/demo).
 
-- For more complicated demo figures, please run the code in bash/call_comut.sh:  
-`bash call_comut.sh`
 
-Contribution Guidelines (don't need): 
-if want to suggest new features, create a new issue; 
-if want to contribute, create a branch & make a pull request;
+### **Input Files**:
+ComutPlotLib requires at least one of the following input files:
+1. **Mutation Annotation Format (MAF)**: 
+   - Output of GATK Funcotator
+   - Contains mutation calls and annotations
+2. **GISTIC output**: 
+   - From GISTIC 2.0
+   - Provides copy number alteration calls (file: all_thresholded.by_gene.txt)
 
-### DEPENDENCIES: 
-See `requirements.txt` for the required dependencies
+Sample information can be provided via
+- **Sample Information File (SIF)**:
+  - Tab-separated metadata file
+  - Contains sample attributes (e.g., tumor purity, platform, histology)
+  - See ![sample_annotation.py](https://raw.githubusercontent.com/phylyc/comutplotlib/main/comutplotlib/sample_annotation.py) for required columns
 
-### AUTHOR:
-ComutPlot is authored by **[Philipp Hähnel]**.  
-For any questions or support related to ComutPlot, please contact **[Philipp_Hahnel@DFCI.HARVARD.EDU](mailto:Philipp_Hahnel@DFCI.HARVARD.EDU)**.
 
-We hope you find ComutPlot to be a valuable tool for your genomic data analysis and visualization needs. Happy plotting!
+## **Demo & Examples**:
+
+🔬 Try the demo:
+
+- Generate your own synthetic data: 
+```
+python make_data.py
+```
+- Generate a plot
+```
+bash call_comut.sh
+```
+This will generate an example comutation plot using the synthetic test datasets.
+
+
+## **Dependencies**: 
+Required dependencies are listed in requirements.txt. Install them via:
+```
+pip install -r requirements.txt
+```
+
+
+## **Author**:
+Developed by Philipp Hähnel.
+For questions, send an **[email](mailto:phylyc.ai@gmail.com)**.
+
+
+## **License**  
+This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for details.  
