@@ -69,6 +69,8 @@ class Gistic(object):
             "HIST2H3A": "H3C15",
             "IL8": "CXCL8",
             "IGHG3": "HDC",
+            "MLL": "KMT2A",
+            "MLL1": "KMT2A",
             "MLL2": "KMT2D",
             "MLL3": "KMT2C",
         }
