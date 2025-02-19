@@ -41,6 +41,8 @@ class SNV(object):
 
     @property
     def deleteriousness_score(self):
+        """ A score between -1 (GoF) and 0 (LoF)
+        """
         return self.df.map(
             lambda effect_list: - (np.min([FunctionalEffect.values_map.get(e, 0) for e in effect_list]) / 1000 + 1) / 2
             if isinstance(effect_list, list) else 0

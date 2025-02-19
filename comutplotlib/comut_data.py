@@ -61,13 +61,13 @@ class ComutData(object):
         high_del_threshold: int | float = -2,
         show_low_level_cnvs: bool = False,
     ):
-        self.maf = join_mafs([MAF.from_file(path_to_file=maf) for maf in maf_paths])
+        self.maf = join_mafs([MAF.from_file(path_to_file=maf) for maf in maf_paths]) if maf_paths is not None else MAF()
         self.maf.pool_annotations(pool_as=maf_pool_as, inplace=True)
         self.maf.select(selection={MAF.effect: self.uninteresting_effects}, complement=True, inplace=True)
         self.snv = None
 
-        self.seg = join_segs([SEG.from_file(path_to_file=seg) for seg in seg_paths])
-        self.gistic = join_gistics([Gistic.from_file(path_to_file=gistic) for gistic in gistic_paths])
+        self.seg = join_segs([SEG.from_file(path_to_file=seg) for seg in seg_paths]) if seg_paths is not None else SEG()
+        self.gistic = join_gistics([Gistic.from_file(path_to_file=gistic) for gistic in gistic_paths]) if gistic_paths is not None else Gistic()
         if not show_low_level_cnvs:
             self.gistic.data = (
                 self.gistic.data
@@ -89,7 +89,7 @@ class ComutData(object):
         ) if model_significances is not None else None
         self.model_names = model_names
 
-        self.sif = join_sifs([SIF.from_file(path_to_file=sif) for sif in sif_paths])
+        self.sif = join_sifs([SIF.from_file(path_to_file=sif) for sif in sif_paths]) if sif_paths is not None else SIF()
         self.sif.add_annotations(inplace=True)
         self.meta = None
         self.meta_data_rows = meta_data_rows
@@ -189,12 +189,16 @@ class ComutData(object):
 
     def get_columns(self):
         if not self.sif.empty:
-            if self.by == MAF.sample:
-                columns = pd.Index(self.sif.samples, name=SIF.sample)
-            elif self.by == MAF.patient:
-                columns = pd.Index(self.sif.patients, name=SIF.patient)
-            else:
-                raise ValueError("The argument 'by' needs to be one of {" + f"{MAF.sample}, {MAF.patient}" + "} but received " + f"{self.by}.")
+            entity = self.sif
+        else:
+            entity = self.maf
+
+        if self.by == MAF.sample:
+            columns = pd.Index(entity.samples, name=SIF.sample)
+        elif self.by == MAF.patient:
+            columns = pd.Index(entity.patients, name=SIF.patient)
+        else:
+            raise ValueError("The argument 'by' needs to be one of {" + f"{MAF.sample}, {MAF.patient}" + "} but received " + f"{self.by}.")
         return columns
 
     def get_genes(self):

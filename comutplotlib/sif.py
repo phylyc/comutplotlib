@@ -397,7 +397,7 @@ class SIF(SampleAnnotation, AnnotationTable):
         if self.histotype in sif.data.columns:
             sif.data.loc[sif.data[self.histotype].isna(), self.histotype] = "NA"
 
-        if self.histology not in sif.data.columns:
+        if self.histology not in sif.data.columns and (self.cancer_type in sif.data.columns):
             sif.data[self.histology] = sif.data.apply(
                 lambda s: get_histology(s.get(self.cancer_type, ""), s.get(self.histotype, "")),
                 axis=1,
@@ -418,7 +418,7 @@ class SIF(SampleAnnotation, AnnotationTable):
         if self.data_type in sif.data.columns:
             sif.data.loc[sif.data[self.data_type].isna(), self.data_type] = "NA"
 
-        if self.sample_type not in sif.data.columns:
+        if self.sample_type not in sif.data.columns and (self.sample_type_long in sif.data.columns):
             sif.data[self.sample_type] = sif.data.apply(
                 lambda s: get_sample_type(
                     s.get(self.sample_type_long, ""), s.get(self.sample_description, "")
@@ -426,9 +426,10 @@ class SIF(SampleAnnotation, AnnotationTable):
                 axis=1,
             )
 
-        sif.data[self.material] = sif.data.apply(
-            lambda s: get_sample_material(s.get(self.material, "")), axis=1
-        )
+        if self.material in sif.data.columns:
+            sif.data[self.material] = sif.data.apply(
+                lambda s: get_sample_material(s.get(self.material, "")), axis=1
+            )
 
         if self.sex in sif.data.columns:
             sif.data[SIF.sex_genotype] = (

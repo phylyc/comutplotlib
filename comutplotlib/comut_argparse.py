@@ -5,6 +5,12 @@ def validate_args(args):
     """Ensure required arguments are correctly specified."""
     if args.maf is None and args.gistic is None:
         raise ValueError("Either --maf or --gistic must be specified.")
+    if args.mutsig is None and "mutational signatures" in args.panels_to_plot:
+        args.panels_to_plot.remove("mutational signatures")
+    if args.sif is None and "meta data" in args.panels_to_plot:
+        args.panels_to_plot.remove("meta data")
+    if args.sif is None and "meta data legend" in args.panels_to_plot:
+        args.panels_to_plot.remove("meta data legend")
 
 
 def parse_comma_separated(value):

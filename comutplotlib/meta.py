@@ -35,6 +35,10 @@ class Meta(object):
 
         self.rows = [c for c in self.rows if c in sif_meta_data.columns]
         self.rows_per_sample = [c for c in self.rows_per_sample if c in self.rows]
+
+        if sif_meta_data.empty:
+            return pd.DataFrame()
+
         per_patient_columns = [c for c in self.rows if c not in self.rows_per_sample]
         sif_meta_data = (
             sif_meta_data[[self.sif.sample, self.sif.patient] + list(self.rows)]
