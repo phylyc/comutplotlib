@@ -190,8 +190,10 @@ class ComutData(object):
     def get_columns(self):
         if not self.sif.empty:
             entity = self.sif
-        else:
+        elif not self.maf.empty:
             entity = self.maf
+        else:
+            entity = self.gistic
 
         if self.by == MAF.sample:
             columns = pd.Index(entity.samples, name=SIF.sample)
@@ -240,9 +242,11 @@ class ComutData(object):
         meta_tmb = self.meta.get_tmb()
         if meta_tmb is not None:
             return meta_tmb
-        else:
+        elif not self.snv.maf.empty:
             tmb = self.snv.get_tmb()
             return tmb.reindex(index=self.columns).fillna(0)
+        else:
+            return None
 
     def sort_genes(self):
         if self.idx_order is not None:
@@ -328,12 +332,16 @@ class ComutData(object):
                 self.cnv.has_high_del.astype(int),
                 self.cnv.has_mid_del.astype(int),
             ])
-            if SIF.tmb in self.tmb:
-                has_burden = self.tmb[SIF.tmb].gt(0).astype(int).to_frame("has_burden").T
-                burden = self.tmb[[SIF.tmb]].T
+            if self.tmb is not None:
+                if SIF.tmb in self.tmb:
+                    has_burden = self.tmb[SIF.tmb].gt(0).astype(int).to_frame("has_burden").T
+                    burden = self.tmb[[SIF.tmb]].T
+                else:
+                    has_burden = self.tmb.sum(axis=1).gt(0).astype(int).to_frame("has_burden").T
+                    burden = self.tmb.sum(axis=1).to_frame(SIF.tmb).T
             else:
-                has_burden = self.tmb.sum(axis=1).gt(0).astype(int).to_frame("has_burden").T
-                burden = self.tmb.sum(axis=1).to_frame(SIF.tmb).T
+                has_burden = pd.DataFrame()
+                burden = pd.DataFrame()
             has_any_cnv = self.cnv.has_cnv.any(axis=0).astype(int).to_frame("has_cnv").T
             has_low_cnv = get_score([
                 self.cnv.has_low_amp.astype(int),

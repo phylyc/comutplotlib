@@ -104,6 +104,9 @@ class Comut(object):
         self.mutsig_cmap = self.plotter.palette.get_mutsig_cmap(self.data)
         self.meta_cmaps = self.plotter.palette.get_meta_cmaps(self.data)
 
+        if self.data.tmb is None:
+            panels_to_plot.remove("tmb")
+
         self.layout = ComutLayout(
             panels_to_plot=panels_to_plot,
             max_xfigsize=max_xfigsize,

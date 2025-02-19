@@ -113,6 +113,10 @@ class Gistic(object):
         return self.sample_table.columns
 
     @property
+    def patients(self):
+        return self.samples
+
+    @property
     def num_samples(self):
         return self.sample_table.shape[1]
 
