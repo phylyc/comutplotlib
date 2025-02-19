@@ -326,9 +326,9 @@ class Palette(UserDict):
             "Amplification",
             "Low Amplification",
             "Baseline",
-            "Low Deletion",
+            "Shallow Deletion",
             "Deletion",
-            "High Deletion",
+            "Deep Deletion",
         ]
         cnv_cmap = {}
         cnv_names = []
@@ -474,5 +474,10 @@ class Palette(UserDict):
         add_cmap("Histology")
         add_cont_cmap("Contamination", plt.cm.get_cmap("viridis_r"), 0.2, 0.95)
         add_cont_cmap("Tumor Purity", plt.cm.get_cmap("plasma_r"), 0.05, 0.8)
+
+        # For all custom columns:
+        for col in data.meta.rows:
+            if col not in meta_cmaps.keys():
+                add_cmap(col)
 
         return {k: meta_cmaps[k] for k in data.meta.rows if k in meta_cmaps.keys()}
