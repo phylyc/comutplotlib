@@ -222,10 +222,11 @@ class ComutPlotter(Plotter):
 
         return cna_ax
 
-    def plot_total_recurrence(self, ax, total_recurrence_per_gene: pd.Series, pad=0.01):
+    def plot_total_recurrence(self, ax, total_recurrence_per_gene: pd.Series, pad=0.01, invert_x=False):
         for row, (gene_name, percentage) in enumerate(total_recurrence_per_gene.items()):
+            x = 1 - percentage if invert_x else 0
             rect = patches.Rectangle(
-                xy=(0, row + pad / 2),
+                xy=(x, row + pad / 2),
                 width=percentage,
                 height=1 - pad,
                 facecolor=self.palette.grey,
@@ -234,11 +235,11 @@ class ComutPlotter(Plotter):
             )
             ax.add_patch(rect)
             ax.text(
-                1,
+                0 if invert_x else 1,
                 row + 0.4,
                 f"{round(100 * percentage)}%",
                 fontsize=3,
-                horizontalalignment="right",
+                horizontalalignment="left" if invert_x else "right",
                 verticalalignment="center",
             )
         ax.set_ylim([0, total_recurrence_per_gene.size])
@@ -249,10 +250,11 @@ class ComutPlotter(Plotter):
         ax.set_yticks([])
         self.no_spines(ax)
 
-    def plot_total_recurrence_overall(self, ax, total_recurrence_overall: tuple[float], pad=0.01):
+    def plot_total_recurrence_overall(self, ax, total_recurrence_overall: tuple[float], pad=0.01, invert_x=False):
         percentage = total_recurrence_overall[0] / total_recurrence_overall[1]
+        x = 1 - percentage if invert_x else 0
         rect = patches.Rectangle(
-            xy=(0, pad / 2),
+            xy=(x, pad / 2),
             width=percentage,
             height=1 - pad,
             facecolor=self.palette.grey,
@@ -261,12 +263,13 @@ class ComutPlotter(Plotter):
         )
         ax.add_patch(rect)
         ax.text(
-            1,
+            0 if invert_x else 1,
             0.4,
             f"{round(100 * percentage)}%",
             fontsize=3,
-            horizontalalignment="right",
+            horizontalalignment="left" if invert_x else "right",
             verticalalignment="center",
+            fontweight="bold"
         )
         ax.axhline(y=1, xmin=0, xmax=1, color=self.palette.black, linewidth=1)
         ax.set_ylim([0, 1])
@@ -335,6 +338,8 @@ class ComutPlotter(Plotter):
             # fit y axis to data
             ymin = min(10 ** np.floor(np.log10(tmb[SA.tmb].quantile(0.15))), 5 * 1e-1)
             ymax = np.clip(tmb[SA.tmb].max(), a_min=1e2, a_max=ymax)
+            # ymin = 0.3
+            # ymax = 150
             if SA.n_vars in tmb.columns and SA.n_bases in tmb.columns:
                 # test if tmb is significantly higher than threshold:
                 # Jeffrey's prior
@@ -397,6 +402,8 @@ class ComutPlotter(Plotter):
             # ax.spines["bottom"].set_visible(True)
             self.grid(ax=ax, axis="y", which="major", zorder=0.5)
             ax.axhline(y=tmb_threshold, color=self.palette.darkred, linewidth=0.5, ls="--", zorder=1)
+            ax.axhline(y=tmb[SA.tmb].median(), color=self.palette.darkgrey, linewidth=0.5, ls="--", zorder=0)
+            ax.text(x=ax.get_xlim()[1], y=tmb[SA.tmb].median(), s=f"{tmb[SA.tmb].median():.1f}", color=self.palette.darkgrey, fontsize=4, verticalalignment="center")
             # create yticklabel on the right for the TMB threshold and label it with perc_high_tmb
             ax2 = ax.twinx()
             self.no_spines(ax2)
@@ -591,16 +598,18 @@ class ComutPlotter(Plotter):
                 interpolation="nearest",
                 aspect="auto",
             )
+            ax.set_yticks(np.arange(n))
         else:
+            _cmap, _norm = cmap
             plt.colorbar(
-                mappable=plt.cm.ScalarMappable(cmap=cmap),
+                mappable=plt.cm.ScalarMappable(cmap=_cmap, norm=_norm),
                 cax=ax
             )
             ax.set_xlim([0, 1])
-            ax.set_ylim([0, 1])
+            ax.set_ylim([_norm.inverse(0), _norm.inverse(1)])
+            ax.set_yticks([_norm.inverse(0), _norm.inverse(1)])
         ax.set_xticks([])
         ax.xaxis.set_major_locator(ticker.NullLocator())
-        ax.set_yticks(np.arange(n))
         if discrete:
             ax.set_yticklabels(names if names is not None else cmap.keys())
         ax.tick_params(axis="both", labelsize=4, width=0.5)

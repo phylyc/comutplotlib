@@ -22,12 +22,16 @@ class Meta(object):
             sif_meta_data["Contamination"] = sif_meta_data["contamination"]
         if "tumor_purity" in sif_meta_data.columns:
             sif_meta_data["Tumor Purity"] = sif_meta_data["tumor_purity"]
+        if "ploidy" in sif_meta_data.columns:
+            sif_meta_data["Ploidy"] = sif_meta_data["ploidy"]
+        if "Genome doublings" in sif_meta_data.columns:
+            sif_meta_data["WGD"] = sif_meta_data["Genome doublings"].fillna("nan")
+        if "Subclonal genome fraction" in sif_meta_data.columns:
+            sif_meta_data["Subclonal Fraction"] = sif_meta_data["Subclonal genome fraction"].astype(float)
         if self.sif.platform_abv in sif_meta_data.columns:
             sif_meta_data["Platform"] = sif_meta_data[self.sif.platform_abv]
         if "Paired" in sif_meta_data.columns:
             sif_meta_data["has matched N"] = sif_meta_data["Paired"].replace(True, "yes").replace(False, "no")
-        if "Norwegian" in sif_meta_data.columns:
-            sif_meta_data["Norwegian"] = sif_meta_data["Norwegian"].replace(True, "yes").replace(False, "no")
         if self.sif.sex in sif_meta_data.columns:
             sif_meta_data["Sex"] = sif_meta_data[self.sif.sex]
         if self.sif.histology in sif_meta_data.columns:
@@ -47,6 +51,9 @@ class Meta(object):
         )
         meta_data = sif_meta_data[self.rows] if self.rows is not None else pd.DataFrame()
 
+        if meta_data.empty:
+            return meta_data
+
         is_all_nan = meta_data.apply(
             lambda row: len([
                 x
@@ -57,7 +64,11 @@ class Meta(object):
             axis=0
         ) == 0
         is_all_nan |= meta_data.isna().all(axis=0)
+        is_all_nan |= meta_data.isin(["unknown", "nan"]).all(axis=0)
         meta_data = meta_data[is_all_nan.loc[~is_all_nan].index]
+
+        self.rows = [c for c in self.rows if c in meta_data.columns]
+        self.rows_per_sample = [c for c in self.rows_per_sample if c in self.rows]
 
         return meta_data
 

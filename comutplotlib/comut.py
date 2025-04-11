@@ -57,6 +57,7 @@ class Comut(object):
             palette: dict[str, tuple[float]] = None,
             ground_truth_genes: dict[str, list[str]] = None,  # todo: refactor as a palette class
             max_xfigsize: int = None,
+            max_xfigsize_scale: float = 1,
             label_columns: bool = False,
             **kwargs
     ):
@@ -110,6 +111,7 @@ class Comut(object):
         self.layout = ComutLayout(
             panels_to_plot=panels_to_plot,
             max_xfigsize=max_xfigsize,
+            max_xfigsize_scale=max_xfigsize_scale,
             n_genes=n_genes,
             n_samples=n_samples,
             n_meta=n_meta,
@@ -145,7 +147,11 @@ class Comut(object):
 
         def meta_data_color(column, value):
             cmap = self.meta_cmaps[column]
-            return cmap[value] if isinstance(cmap, dict) else cmap(value)
+            if isinstance(cmap, dict):
+                return cmap[value]
+            else:
+                _cmap, _norm = cmap
+                return _cmap(_norm(value))
 
         self.layout.set_plot_func(
             "comutation",
@@ -268,3 +274,5 @@ class Comut(object):
                 panel.plot_func(panel.ax)
 
         self.plotter.save_figure(fig=self.layout.fig, bbox_inches="tight")
+
+        return self.data.genes, self.data.columns

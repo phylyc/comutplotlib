@@ -9,7 +9,7 @@ class ComutLayout(Layout):
         self,
         panels_to_plot: list[str],
         n_genes: int, n_samples: int, n_meta: int = 0, pad: int = 1,
-        xfigsize: float = None, max_xfigsize: float = None, yfigsize: float = None,
+        xfigsize: float = None, max_xfigsize: float = None, max_xfigsize_scale: float = 1, yfigsize: float = None,
         label_columns=False,
         tmb_cmap=(), snv_cmap=(), cnv_cmap=(), mutsig_cmap=(), meta_cmaps={}
     ):
@@ -23,7 +23,7 @@ class ComutLayout(Layout):
         self.inter_heatmap_linewidth = 0.05
 
         # HEIGHTS
-        tmb_height = 5
+        tmb_height = 4
         mut_sig_height = 5
         coverage_height = 5
         comut_height = n_genes
@@ -72,7 +72,7 @@ class ComutLayout(Layout):
         comut_width = (
             min(n_samples, int(10 * max_xfigsize - non_heatmap_width))
             if max_xfigsize is not None
-            else n_samples
+            else int(max_xfigsize_scale * n_samples)
         )
         right_of_comut_width = 0
         if any([part in panels_to_plot for part in ["tmb legend", "snv legend", "cnv legend", "mutsig legend", "model annotation legend"]]):

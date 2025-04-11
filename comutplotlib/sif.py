@@ -304,23 +304,23 @@ class SIF(SampleAnnotation, AnnotationTable):
 
         def get_platform(platform, center):
             if "Custom V2 Exome Bait, 48 RXN X 16 tubes" in platform:
-                return "Agilent_Broad"
+                return "Agilent BI"
             elif "NimbleGen hg18 Exome v2" in platform:
-                return "NimbleGen_hg18"
+                return "NimGen hg18"
             elif "NimbleGen SeqCap EZ Human Exome Library v2.0" in platform:
-                return "NimbleGen_v2"
+                return "NimGen v2"
             elif "NimbleGen SeqCap EZ Human Exome Library v3.0" in platform:
-                return "NimbleGen_v3"
+                return "NimGen v3"
             elif "NimbleGen SeqCap EZ HGSC VCRome v2.1" in platform:
-                return "NimbleGen_VCRome"
+                return "NimGen VCRome"
             elif "NimbleGen SeqCap EZ HGSC VCRome v2.1-PKv1" in platform:
-                return "NimbleGen_VCRome-PKv1"
+                return "NimGen VCRome-PKv1"
             elif "SureSelect Human All Exon 38 Mb v2" in platform:
-                return "Agilent_SureSelect_38Mb"
+                return "Agilent SS 38Mb"
             elif "SureSelect Human All Exon 50Mb Kit" in platform:
-                return "Agilent_SureSelect_50Mb"
+                return "Agilent SS 50Mb"
             elif platform == "Agilent":
-                return "CCGD" if center == "CCGD" else "Agilent"
+                return "Agilent CCGD" if center == "CCGD" else "Agilent BI"
             elif platform == "ICE":
                 return "ICE"
             elif platform == "TWIST":

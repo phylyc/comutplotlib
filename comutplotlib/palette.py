@@ -82,6 +82,18 @@ class Palette(UserDict):
         colorblindyellow,
         colorblindcyan,
     ) = sns.color_palette("colorblind")
+    (
+        deepblue,
+        deeporange,
+        deepgreen,
+        deepred,
+        deepviolet,
+        deepbrown,
+        deeppink,
+        deepgrey,
+        deepyellow,
+        deepcyan,
+    ) = sns.color_palette("deep")
     backgroundgrey = (0.95, 0.95, 0.95)
     white = (1, 1, 1)
     black = (0, 0, 0)
@@ -94,6 +106,11 @@ class Palette(UserDict):
 
     a, A, c, C, t, T, g, G = sns.color_palette(palette="Paired", n_colors=8)
 
+    @classmethod
+    def normalizeRGB(cls, r, g, b):
+        total = r + g + b
+        return r / 255, g / 255, b / 255
+
     def __init__(self, dict: dict = None) -> None:
         super().__init__(
             dict if dict is not None else {
@@ -102,6 +119,7 @@ class Palette(UserDict):
                 "yes": self.lightgray,
                 "no": self.darkgray,
                 np.nan: self.backgroundgray,
+                "nan": self.backgroundgray,
 
                 # FUNCTIONAL EFFECTS
                 MutA.synonymous: self.darkgray,
@@ -185,14 +203,14 @@ class Palette(UserDict):
                 "N/A": self.grey,
 
                 # SAMPLE MATERIAL
-                "FFPE": self.colorblindorange,
-                "FF": self.colorblindblue,
+                "FFPE": self.colorblindyellow,
+                "FF": self.colorblindcyan,
                 "Plasma": self.colorblindviolet,
-                "Blood": self.black,
-                "CSF": self.colorblindred,
+                "Blood": self.colorblindgrey,
+                "CSF": self.colorblindpink,
                 "Buffycoat": self.colorblindbrown,
-                "Urine": self.colorblindyellow,
-                "Cell line": self.colorblindgreen,
+                "Urine": self.colorblindorange,
+                "Cell line": self.colorblindred,
 
                 # SEX GENOTYPE
                 "XX": self.darkpink,
@@ -200,7 +218,7 @@ class Palette(UserDict):
                 "XY": self.darkcyan,
                 "Male": self.darkcyan,
                 "NA": self.grey,
-                "unknown": self.lightgrey,
+                "unknown": self.backgroundgray,
 
                 # HISTOLOGIES
                 "AML": self.darkbrown,  # akute myeloid leukemia
@@ -264,14 +282,22 @@ class Palette(UserDict):
                 "HR+/HER2-": self.blue,
                 "HR-/HER2-": self.darkviolet,
                 "TN": self.darkviolet,
-                "pos": self.lightyellow,
-                "neg": self.lightblue,
+                "pos": self.normalizeRGB(102, 194, 165),  # teal
+                "neg": self.normalizeRGB(252, 141,  98),  # salmon
 
                 # PLATFORM
-                "Agilent": self.lightred,
-                "CCGD": self.lightorange,
-                "ICE": self.lightcyan,
-                "TWIST": self.lightgreen,
+                "Agilent BI": self.lightcyan,
+                "Agilent CCGD": self.lightgreen,
+                "ICE": self.lightyellow,
+                "TWIST": self.lightred,
+                "NimGen hg18": self.lightblue,
+                "NimGen v2": self.lightyellow,
+                "NimGen v3": self.mutedyellow,
+                "NimGen VCRome": self.lightviolet,
+                "NimGen VCRome-PKv1": self.mutedviolet,
+                "Agilent SS 38Mb": self.lightorange,
+                "Agilent SS 50Mb": self.mutedorange,
+                "PanCanPanel": self.lightyellow,
                 "WES": self.lightorange,
                 "WGS": self.lightblue,
                 "TRACERx": self.lightviolet,
@@ -312,14 +338,16 @@ class Palette(UserDict):
         return snv_cmap
 
     def get_cnv_cmap(self, data):
+        amp_color = self.red
+        del_color = self.blue
         _cnv_cmap = {
-            data.high_amp_threshold: self.red,
-            data.mid_amp_threshold: self.adjust_lightness(self.lightred, 0.8),
-            data.low_amp_threshold: self.adjust_lightness(self.lightred, 1.16),
+            data.high_amp_threshold: self.adjust_lightness(amp_color, 1.2),
+            data.mid_amp_threshold: self.adjust_lightness(amp_color, 1.2),
+            data.low_amp_threshold: self.adjust_lightness(amp_color, 1.8),
             data.baseline: self.backgroundgrey,
-            data.low_del_threshold: self.adjust_lightness(self.lightblue, 1.16),
-            data.mid_del_threshold: self.adjust_lightness(self.lightblue, 0.8),
-            data.high_del_threshold: self.blue,
+            data.low_del_threshold: self.adjust_lightness(del_color, 2.05),
+            data.mid_del_threshold: self.adjust_lightness(del_color, 1.2),
+            data.high_del_threshold: self.adjust_lightness(del_color, 1.1),
         }
         _cnv_names = [
             "High Amplification",
@@ -440,40 +468,60 @@ class Palette(UserDict):
                     values += value
                 else:
                     values.append(value)
+
             values = [h[0] for h in Counter(values).most_common()]
             if order is not None:
-                values = [value for value in order if value in values] + [value for value in values if value not in order]
+                _values = [v for v in order if v in values]
+                if _palette is not None:
+                    _palette = _palette[:len(_values)]
+                _values += [v for v in values if v not in order]
+                values = _values
+
             if _palette is None:
                 cmap = {t: self.get(t, self.grey) for t in values}
             else:
-                cmap = {value: color for value, color in zip(values, _palette)}
+                cmap = {v: c for v, c in zip(values, _palette)} | {v: self.get(v, self.grey) for v in values[len(_palette):]}
             meta_cmaps[col] = cmap
 
-        def add_cont_cmap(col, cmap, minval, maxval, n=100):
+        def add_cont_cmap(col, cmap, minval, maxval, n=100, center=None):
             if col not in data.meta.rows:
                 return None
-            truncated_cmap = mc.LinearSegmentedColormap.from_list(
-                'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
-                cmap(np.linspace(minval, maxval, n))
-            )
-            meta_cmaps[col] = truncated_cmap
+
+            if center is None:
+                norm = mc.Normalize(vmin=minval, vmax=maxval)
+                truncated_cmap = mc.LinearSegmentedColormap.from_list(
+                    name=f"trunc({cmap.name},{norm(minval):.2f},{norm(maxval):.2f})",
+                    colors=cmap(norm(np.linspace(minval, maxval, n)))
+                )
+            else:
+                norm = mc.TwoSlopeNorm(vmin=minval, vcenter=center, vmax=maxval)
+                truncated_cmap = mc.LinearSegmentedColormap.from_list(
+                    name=f"trunc({cmap.name},{norm(minval):.2f},{norm(maxval):.2f}, center={center})",
+                    colors=cmap(norm(np.linspace(minval, maxval, n)))
+                )
+            meta_cmaps[col] = (truncated_cmap, norm)
 
         add_cmap("Sample Type", order=["BM", "EM", "Metastasis", "cfDNA", "T", "P", "N"])
-        add_cmap("Material")
-        add_cmap("Platform", order=["Agilent", "CCGD", "ICE", "TWIST", "TRACERx", "WGS"])
+        add_cmap("Material", order=["FF", "FFPE"])
+        add_cmap("Platform", order=["Agilent BI", "Agilent CCGD", "ICE", "TWIST", "TRACERx", "WES", "WGS"])
         add_cmap("has matched N", order=["yes", "no"])
-        add_cmap("Norwegian", order=["yes", "no"])
-        add_cmap("Sex", order=["Female", "Male"])
-        add_cmap("HR Status", order=["HR+", "HER2+", "HR+/HER2+", "HR-/HER2+", "HR+/HER2-", "HR-/HER2-", "TN", "N/A", "NA", "unknown"])
+        add_cmap("Sex", _palette=[self.normalizeRGB(251, 180, 196), self.normalizeRGB(170, 245, 232)], order=["Female", "Male"])
+        add_cmap("HR Status", order=["HR+", "HER2+", "HR+/HER2+", "HR-/HER2+", "HR+/HER2-", "HR-/HER2-", "TN", "N/A", "NA", "pos", "neg", "unknown"])
         add_cmap("ER status", order=["pos", "neg", "unknown"])
         add_cmap("PR status", order=["pos", "neg", "unknown"])
         add_cmap("HER2 status", order=["pos", "neg", "unknown"])
+        add_cmap("HER2 Status", order=["pos", "neg", "unknown"])
         add_cmap("ESR1 status", order=["pos", "neg", "unknown"])
         add_cmap("PGR status", order=["pos", "neg", "unknown"])
         add_cmap("ERBB2 status", order=["pos", "neg", "unknown"])
         add_cmap("Histology")
-        add_cont_cmap("Contamination", plt.cm.get_cmap("viridis_r"), 0.2, 0.95)
-        add_cont_cmap("Tumor Purity", plt.cm.get_cmap("plasma_r"), 0.05, 0.8)
+        for col in ["Chemo Tx", "XRT", "Targeted Tx", "Hormone Tx", "Immuno Tx ICI", "ADC"]:
+            add_cmap(col, _palette=[self.normalizeRGB(105, 200, 219), self.lightgrey, self.backgroundgray], order=["yes", "no", "unknown"])
+        add_cmap("WGD", _palette=self.make_diverging_palette(self.violet, n_colors=5*3)[::5], order=list(range(3)))
+        add_cont_cmap("Contamination", plt.cm.get_cmap("BuPu"), 0.0, 0.1)
+        add_cont_cmap("Tumor Purity", plt.cm.get_cmap("plasma_r"), 0, 1)
+        add_cont_cmap("Ploidy", plt.cm.get_cmap("PiYG"), 1, 6, center=2)
+        add_cont_cmap("Subclonal Fraction", plt.cm.get_cmap("RdPu"), 0, 0.5)
 
         # For all custom columns:
         for col in data.meta.rows:

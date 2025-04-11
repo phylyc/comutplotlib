@@ -175,6 +175,10 @@ def parse_args():
         "--max-xfigsize", type=int, default=None,
         help="Maximum x-axis figure size; the comutation plot scales to fit."
     )
+    parser.add_argument(
+        "--max-xfigsize-scale", type=int, default=1,
+        help="Parameter by which xfigsize scales with the number of columns."
+    )
 
     args = parser.parse_args()
     validate_args(args)
