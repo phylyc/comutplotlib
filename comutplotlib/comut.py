@@ -1,3 +1,5 @@
+import warnings
+
 from comutplotlib.comut_data import ComutData
 from comutplotlib.comut_layout import ComutLayout
 from comutplotlib.comut_plotter import ComutPlotter
@@ -150,6 +152,8 @@ class Comut(object):
         def meta_data_color(column, value):
             cmap = self.meta_cmaps[column]
             if isinstance(cmap, Palette):
+                if value not in cmap:
+                    raise Exception(f"Something went wrong for column {column}: {value} not in {cmap}!")
                 return cmap[value]
             else:
                 _cmap, _norm = cmap
