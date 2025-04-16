@@ -99,11 +99,43 @@ def parse_args():
 
     parser.add_argument(
         "--meta-data-rows", type=parse_comma_separated,
-        default=["Sample Type", "Material", "Contamination", "Tumor Purity", "Platform", "has matched N", "Sex", "Histology"],
+        default=[
+            "WGD",
+            "Ploidy",
+            "Tumor Purity",
+            "Subclonal Fraction",
+            "Contamination",
+            "Material",
+            "Platform",
+            "has matched N",
+            "HR Status",
+            "HER2 Status",
+            "Chemo Tx",
+            "XRT",
+            "Targeted Tx",
+            "Hormone Tx",
+            "Immuno Tx ICI",
+            "ADC",
+            "Age at P Dx",
+            "Sex",
+            "Sample Type",
+            "Histology"
+        ],
         help="Comma-separated list of metadata fields to display.")
     parser.add_argument(
         "--meta-data-rows-per-sample", type=parse_comma_separated,
-        default=["Sample Type", "Material", "Contamination", "Tumor Purity", "Platform"],
+        default=[
+            "WGD",
+            "Ploidy",
+            "Tumor Purity",
+            "Subclonal Fraction",
+            "Contamination",
+            "Material",
+            "Platform",
+            "HR Status",
+            "HER2 Status",
+            "Sample Type",
+        ],
         help="Metadata fields to display per sample."
     )
 

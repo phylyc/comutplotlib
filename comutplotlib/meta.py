@@ -18,20 +18,20 @@ class Meta(object):
             sif_meta_data["Sample Type"] = sif_meta_data[self.sif.sample_type]
         if self.sif.material in sif_meta_data.columns:
             sif_meta_data["Material"] = sif_meta_data[self.sif.material]
-        if "contamination" in sif_meta_data.columns:
-            sif_meta_data["Contamination"] = sif_meta_data["contamination"]
-        if "tumor_purity" in sif_meta_data.columns:
-            sif_meta_data["Tumor Purity"] = sif_meta_data["tumor_purity"]
-        if "ploidy" in sif_meta_data.columns:
-            sif_meta_data["Ploidy"] = sif_meta_data["ploidy"]
-        if "Genome doublings" in sif_meta_data.columns:
-            sif_meta_data["WGD"] = sif_meta_data["Genome doublings"].fillna("nan")
-        if "Subclonal genome fraction" in sif_meta_data.columns:
-            sif_meta_data["Subclonal Fraction"] = sif_meta_data["Subclonal genome fraction"].astype(float)
+        if self.sif.contamination in sif_meta_data.columns:
+            sif_meta_data["Contamination"] = sif_meta_data[self.sif.contamination]
+        if self.sif.tumor_purity in sif_meta_data.columns:
+            sif_meta_data["Tumor Purity"] = sif_meta_data[self.sif.tumor_purity]
+        if self.sif.ploidy in sif_meta_data.columns:
+            sif_meta_data["Ploidy"] = sif_meta_data[self.sif.ploidy]
+        if self.sif.genome_doublings in sif_meta_data.columns:
+            sif_meta_data["WGD"] = sif_meta_data[self.sif.genome_doublings].fillna("nan")
+        if self.sif.subclonal_genome_fraction in sif_meta_data.columns:
+            sif_meta_data["Subclonal Fraction"] = sif_meta_data[self.sif.subclonal_genome_fraction].astype(float)
         if self.sif.platform_abv in sif_meta_data.columns:
             sif_meta_data["Platform"] = sif_meta_data[self.sif.platform_abv]
-        if "Paired" in sif_meta_data.columns:
-            sif_meta_data["has matched N"] = sif_meta_data["Paired"].replace(True, "yes").replace(False, "no")
+        if self.sif.paired in sif_meta_data.columns:
+            sif_meta_data["has matched N"] = sif_meta_data[self.sif.paired].replace(True, "yes").replace(False, "no")
         if self.sif.sex in sif_meta_data.columns:
             sif_meta_data["Sex"] = sif_meta_data[self.sif.sex]
         if self.sif.histology in sif_meta_data.columns:
