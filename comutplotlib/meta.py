@@ -25,7 +25,7 @@ class Meta(object):
         if self.sif.ploidy in sif_meta_data.columns:
             sif_meta_data["Ploidy"] = sif_meta_data[self.sif.ploidy].astype(float)
         if self.sif.genome_doublings in sif_meta_data.columns:
-            sif_meta_data["WGD"] = sif_meta_data[self.sif.genome_doublings].astype(str).fillna("nan")
+            sif_meta_data["WGD"] = sif_meta_data[self.sif.genome_doublings].fillna("nan")
         if self.sif.subclonal_genome_fraction in sif_meta_data.columns:
             sif_meta_data["Subclonal Fraction"] = sif_meta_data[self.sif.subclonal_genome_fraction].astype(float)
         if self.sif.platform_abv in sif_meta_data.columns:

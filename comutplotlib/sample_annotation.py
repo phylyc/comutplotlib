@@ -53,6 +53,13 @@ class SampleAnnotation(object):
     column_dtype = {
         patient: str,
         sample: str,
+        contamination: float,
+        contamination_error: float,
+        tumor_purity: float,
+        tumor_purity_error: float,
+        ploidy: float,
+        subclonal_genome_fraction: float,
+        tmb: float,
     }
 
     def __init__(self, *args, **kwargs):
