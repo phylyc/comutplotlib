@@ -103,6 +103,10 @@ def parse_args():
         help="Comma-separated order of gene indices in the plot."
     )
     parser.add_argument(
+        "--column-sort-by", type=parse_comma_separated, default=["COMUT"],
+        help="Comma-separated order of 'COMUT' and meta data rows to sort by, in order."
+    )
+    parser.add_argument(
         "--drop-empty-columns", action="store_true",
         help="Exclude samples/patients with no mutation data."
     )

@@ -42,6 +42,7 @@ class ComutData(object):
         by: str = MAF.patient,
         column_order: tuple[str] = None,
         index_order: tuple[str] = None,
+        column_sort_by: tuple[str] = None,
 
         interesting_gene: str = None,
         interesting_gene_comut_percent_threshold: float = None,
@@ -119,6 +120,7 @@ class ComutData(object):
         self.by = by
         self.col_order = column_order
         self.idx_order = index_order
+        self.column_sort_by = column_sort_by
         self.columns = None
         self.genes = None
 
@@ -312,7 +314,7 @@ class ComutData(object):
         if self.col_order is not None:
             self.columns = pd.Index([c for c in self.col_order if c in self.columns], name=self.columns.name)
         else:
-            # ORDER BY:
+            # COMUT: ORDER BY:
             # 1. has SNV
             # 2. has SNV and no high CNV
             # 3. todo: SNV type
@@ -347,7 +349,20 @@ class ComutData(object):
                 self.cnv.has_low_amp.astype(int),
                 self.cnv.has_low_del.astype(int),
             ])
-            features = [df for df in [self.snv.deleteriousness_score, burden, has_low_cnv, has_any_cnv, has_burden, has_high_mut] if not df.empty]
+            comut_features = [df for df in [self.snv.deleteriousness_score, burden, has_low_cnv, has_any_cnv, has_burden, has_high_mut] if not df.empty]
+
+            features = []
+            for col in reversed(self.column_sort_by):
+                if col == "COMUT":
+                    features += comut_features
+                elif col in self.meta_data_rows:
+                    if col in self.meta_data_rows_per_sample:
+                        features.append(self.meta.df[col].apply(lambda l: l[0] if len(l) else 0).to_frame(col).T)
+                    else:
+                        features.append(self.meta.df[[col]].T)
+                else:
+                    pass
+
             if len(features):
                 columns = (
                     pd.concat(features)

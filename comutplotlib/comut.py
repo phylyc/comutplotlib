@@ -41,6 +41,7 @@ class Comut(object):
 
             column_order: tuple[str] = None,
             index_order: tuple[str] = None,
+            column_sort_by: tuple[str] = ("COMUT",),
 
             interesting_gene: str = None,
             interesting_gene_comut_percent_threshold: float = None,
@@ -83,6 +84,7 @@ class Comut(object):
             by=by,
             column_order=column_order,
             index_order=index_order,
+            column_sort_by=column_sort_by,
             interesting_gene=interesting_gene,
             interesting_gene_comut_percent_threshold=interesting_gene_comut_percent_threshold,
             interesting_genes=interesting_genes,
