@@ -57,7 +57,7 @@ class Comut(object):
             show_low_level_cnvs: bool = False,
 
             panels_to_plot: list = None,
-            palette: dict[str, tuple[float]] = None,
+            palette: dict[str, dict[str, tuple[float]], dict[str, dict[str, tuple[float]]]] = None,
             ground_truth_genes: dict[str, list[str]] = None,  # todo: refactor as a palette class
             max_xfigsize: int = None,
             max_xfigsize_scale: float = 1,
@@ -66,7 +66,7 @@ class Comut(object):
     ):
         self.plotter = ComutPlotter(
             output=output,
-            extra_palette=palette
+            extra_palette=palette["global"] if palette is not None else None
         )
         self.data = ComutData(
             maf_paths=maf,
@@ -107,10 +107,24 @@ class Comut(object):
         self.cnv_cmap, self.cnv_names = self.plotter.palette.get_cnv_cmap(self.data)
         self.mutsig_cmap = self.plotter.palette.get_mutsig_cmap(self.data)
         self.meta_cmaps = self.plotter.palette.get_meta_cmaps(self.data)
+        if palette is not None:
+            for col, pal in palette["local"].items():
+                if col in self.meta_cmaps:
+                    self.meta_cmaps[col] |= pal
+                else:
+                    self.meta_cmaps[col] = pal
         self.meta_cmaps_condensed = self.plotter.palette.condense(self.meta_cmaps)
 
+        def remove(col):
+            if col in panels_to_plot:
+                panels_to_plot.remove(col)
+
         if self.data.tmb is None:
-            panels_to_plot.remove("tmb")
+            remove("tmb")
+            remove("tmb legend")
+        if self.data.mutsig is None:
+            remove("mutational signatures")
+            remove("mutsig legend")
 
         self.layout = ComutLayout(
             panels_to_plot=panels_to_plot,

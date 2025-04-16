@@ -350,7 +350,7 @@ class ComutPlotter(Plotter):
                 yerr_lower = [np.max([ymin, y]) for y in 1e6 * (dist.mean() - dist.ppf(0.05))]
                 yerr_upper = [np.min([y, ymax]) for y in 1e6 * (dist.ppf(0.95) - dist.mean())]
                 p = dist.cdf(tmb_threshold * 1e-6)
-                color = [self.palette.darkred if q < 0.05 else self.palette.grey for q in p]
+                color = [self.palette.high_tmb if q < 0.05 else self.palette.grey for q in p]
                 bar_kwargs = {
                     "yerr": [yerr_lower, yerr_upper],
                     "error_kw": dict(ecolor=self.palette.black, lw=np.sqrt(aspect_ratio) * 0.5),
@@ -359,15 +359,15 @@ class ComutPlotter(Plotter):
                 # test if tmb is significantly higher than threshold:
                 # tmb is given in log scale
                 p = st.norm(tmb[SA.tmb], np.sqrt(tmb[SA.tmb_error])).cdf(tmb_threshold)
-                color = [self.palette.darkred if q < 0.05 else self.palette.grey for q in p]
+                color = [self.palette.high_tmb if q < 0.05 else self.palette.grey for q in p]
                 bar_kwargs = {
                     "yerr": tmb[SA.tmb_error],
                     "error_kw": dict(ecolor=self.palette.black, lw=np.sqrt(aspect_ratio) * 0.5),
                 }
             else:
-                color = [self.palette.darkred if t >= tmb_threshold else self.palette.grey for t in tmb[SA.tmb]]
+                color = [self.palette.high_tmb if t >= tmb_threshold else self.palette.grey for t in tmb[SA.tmb]]
                 bar_kwargs = {}
-            perc_high_tmb = color.count(self.palette.darkred) / len(color)
+            perc_high_tmb = color.count(self.palette.high_tmb) / len(color)
             ax.bar(
                 x=np.arange(tmb.shape[0]),
                 height=tmb[SA.tmb],
@@ -402,7 +402,7 @@ class ComutPlotter(Plotter):
         if SA.tmb in tmb.columns:
             # ax.spines["bottom"].set_visible(True)
             self.grid(ax=ax, axis="y", which="major", zorder=0.5)
-            ax.axhline(y=tmb_threshold, color=self.palette.darkred, linewidth=0.5, ls="--", zorder=1)
+            ax.axhline(y=tmb_threshold, color=self.palette.high_tmb, linewidth=0.5, ls="--", zorder=1)
             ax.axhline(y=tmb[SA.tmb].median(), color=self.palette.darkgrey, linewidth=0.5, ls="--", zorder=0)
             ax.text(x=ax.get_xlim()[1], y=tmb[SA.tmb].median(), s=f"{tmb[SA.tmb].median():.1f}", color=self.palette.darkgrey, fontsize=4, verticalalignment="center")
             # create yticklabel on the right for the TMB threshold and label it with perc_high_tmb
@@ -412,7 +412,7 @@ class ComutPlotter(Plotter):
             ax2.set_yscale("log")
             ax2.set_yticks([tmb_threshold])
             ax2.yaxis.set_minor_locator(ticker.NullLocator())
-            ax2.tick_params(axis="y", pad=0, length=0, labelsize=5, labelcolor=self.palette.darkred, labelrotation=90)
+            ax2.tick_params(axis="y", pad=0, length=0, labelsize=5, labelcolor=self.palette.high_tmb, labelrotation=90)
             ax2.set_yticklabels([" {:.0f}%".format(perc_high_tmb * 100)], fontdict=dict(verticalalignment="bottom"))
             for tick in ax2.yaxis.get_major_ticks():
                 tick.set_pad(ytickpad)

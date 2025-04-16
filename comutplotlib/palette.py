@@ -111,10 +111,15 @@ class Palette(UserDict):
         return r / 255, g / 255, b / 255
 
     @classmethod
+    def mix(cls, c1, c2, weight=0.5):
+        return tuple(weight * np.array(c1) + (1 - weight) * np.array(c2))
+
+    @classmethod
     def from_hash(cls, hash):
-        return Palette({entry.split(":")[0]: [float(c) for c in entry.split(":")[1].split(",")] for entry in hash.split("_")})
+        return Palette({entry.split(":")[0]: [float(c) for c in entry.split(":")[1].split(",")] for entry in hash.split(";")})
 
     def __init__(self, dict: dict = None) -> None:
+        self.high_tmb = self.mix(self.darkred, self.grey)
         super().__init__(
             dict if dict is not None else {
                 True: self.lightgray,
@@ -315,8 +320,7 @@ class Palette(UserDict):
         })
 
     def hash(self):
-        # sorted_keys = sorted(self.keys())
-        return "_".join([f"{k}:" + ",".join([str(c) for c in self[k]]) for k in self.keys()])
+        return ";".join([f"{k}:" + ",".join([str(c) for c in self[k]]) for k in self.keys()])
 
     @staticmethod
     def adjust_lightness(color, amount):

@@ -23,10 +23,20 @@ def parse_palette(value):
     if not value:
         return None
     palette = {}
-    for entry in value.split(";"):
-        key, rgb = entry.split(":")
-        palette[key] = tuple(map(float, rgb.split(",")))
-    return palette
+    meta_palette = {}
+    palettes = value.split("|")
+    if len(palettes[0]) > 0:
+        for entry in palettes[0].split(";"):
+            key, rgb = entry.split(":")
+            palette[key] = tuple(map(float, rgb.split(",")))
+    if len(palettes) > 1:
+        for meta_entries in palettes[1:]:
+            column, meta_hash = meta_entries.split(">")
+            meta_palette[column] = {}
+            for entry in meta_hash.split(";"):
+                key, rgb = entry.split(":")
+                meta_palette[column][key] = tuple(map(float, rgb.split(",")))
+    return {"global": palette, "local": meta_palette}
 
 
 def parse_ground_truth_genes(value):
@@ -201,7 +211,9 @@ def parse_args():
         help="Comma-separated list of plot panels to include.")
     parser.add_argument(
         "--palette", type=parse_palette, default=None,
-        help="Define additional colors for categories. Format: 'key1:r,g,b;key2:r,g,b'."
+        help="Define additional colors for categories. Global palette in the front, "
+             "followed by meta data-specific palettes. Format: "
+             "'key1:r,g,b;key2:r,g,b|metaColumn1>key3:r,g,b;key4:r,g,b|metaColumn2>key5:r,g,b'."
     )
     parser.add_argument(
         "--max-xfigsize", type=int, default=None,
