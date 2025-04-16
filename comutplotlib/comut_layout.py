@@ -1,6 +1,7 @@
 import pandas as pd
 
 from comutplotlib.layout import Layout
+from comutplotlib.palette import Palette
 
 
 class ComutLayout(Layout):
@@ -18,7 +19,7 @@ class ComutLayout(Layout):
         self.meta_data_legend_titles = list(meta_cmaps.keys())
 
         self.small_inter_legend_width = 2
-        self.inter_legend_width = 7
+        self.inter_legend_width = 5
         self.inter_legend_height = 3
         self.inter_heatmap_linewidth = 0.05
 
@@ -35,7 +36,7 @@ class ComutLayout(Layout):
         meta_height = n_meta
         meta_legend_continuous_height = 4
         meta_legend_heights = {
-            legend_title: len(cmap) if isinstance(cmap, dict) else meta_legend_continuous_height
+            legend_title: len(cmap.drop_undefined()) if isinstance(cmap, Palette) else meta_legend_continuous_height
             for legend_title, cmap in meta_cmaps.items()
         }
         max_meta_legend_height = max(meta_legend_heights.values()) if len(meta_legend_heights) else 1
@@ -147,10 +148,6 @@ class ComutLayout(Layout):
             p_ref = self.add_panel(name="gene names", left_of=p_ref, pad=0)
         if "cytoband" in self.panels_to_plot:
             p_ref = self.add_panel(name="cytoband", left_of=p_ref, pad=0)
-        if "total recurrence" in self.panels_to_plot:
-            p_ref = self.add_panel(name="total recurrence", left_of=p_ref)
-            if "total recurrence overall" in self.panels_to_plot:
-                self.add_panel(name="total recurrence overall", below=p_ref, pad=0)
         if "recurrence" in self.panels_to_plot:
             p_ref = self.add_panel(name="recurrence", left_of=p_ref)
 
@@ -167,6 +164,10 @@ class ComutLayout(Layout):
         p_ref = p_comut
         if "model significance" in self.panels_to_plot:
             p_ref = self.add_panel(name="model significance", right_of=p_ref)
+        if "total recurrence" in self.panels_to_plot:
+            p_ref = self.add_panel(name="total recurrence", right_of=p_ref)
+            if "total recurrence overall" in self.panels_to_plot:
+                self.add_panel(name="total recurrence overall", below=p_ref, pad=0)
 
         def first_legend_panel(name, p_ref):
             return self.add_panel(name=name, right_of=p_ref, pad=self.small_inter_legend_width, align="top")
@@ -174,42 +175,48 @@ class ComutLayout(Layout):
         def other_legend_panel(name, p_ref):
             return self.add_panel(name=name, below=p_ref, pad=self.inter_legend_height, align="left")
 
+        has_legend = False
         if "tmb legend" in self.panels_to_plot:
             p_ref = self.panels.get("tmb", p_ref)
             p_ref = first_legend_panel(name="tmb legend", p_ref=p_ref)
+            has_legend = True
         if "mutsig legend" in self.panels_to_plot:
             p_ref = self.panels.get("mutational signatures", p_ref)
             p_ref = self.panels.get("tmb legend", p_ref)
             p_ref = (
                 first_legend_panel(name="mutsig legend", p_ref=p_ref)
-                if p_ref.name != "tmb legend"
+                if not has_legend
                 else other_legend_panel(name="mutsig legend", p_ref=p_ref)
             )
+            has_legend = True
         if "snv legend" in self.panels_to_plot:
             p_ref = (
                 first_legend_panel(name="snv legend", p_ref=p_ref)
-                if p_ref.name == "comutation"
+                if not has_legend
                 else other_legend_panel(name="snv legend", p_ref=p_ref)
             )
+            has_legend = True
         if "cnv legend" in self.panels_to_plot:
             p_ref = (
                 first_legend_panel(name="cnv legend", p_ref=p_ref)
-                if p_ref.name == "comutation"
+                if not has_legend
                 else other_legend_panel(name="cnv legend", p_ref=p_ref)
             )
+            has_legend = True
         if "model annotation legend" in self.panels_to_plot:
             p_ref = (
                 first_legend_panel(name="model annotation legend", p_ref=p_ref)
-                if p_ref.name == "comutation"
+                if not has_legend
                 else other_legend_panel(name="model annotation legend", p_ref=p_ref)
             )
+            has_legend = True
 
         # BOTTOM PANELS
         p_ref = p_comut
         if "meta data" in self.panels_to_plot:
             p_ref = self.add_panel(name="meta data", below=p_ref)
             if "meta data legend" in self.panels_to_plot and len(self.meta_data_legend_titles):
-                pad = self.inter_legend_height + (self.column_names_height if self.show_patient_names else 0)
+                pad = self.pad + (self.column_names_height if self.show_patient_names else 0)
                 p_ref = self.add_panel(
                     name=f"meta data legend {self.meta_data_legend_titles[0]}", below=p_ref, pad=pad, align="left"
                 )

@@ -107,9 +107,12 @@ class Palette(UserDict):
     a, A, c, C, t, T, g, G = sns.color_palette(palette="Paired", n_colors=8)
 
     @classmethod
-    def normalizeRGB(cls, r, g, b):
-        total = r + g + b
+    def normalizeRGB(cls, r: int, g: int, b: int):
         return r / 255, g / 255, b / 255
+
+    @classmethod
+    def from_hash(cls, hash):
+        return Palette({entry.split(":")[0]: [float(c) for c in entry.split(":")[1].split(",")] for entry in hash.split("_")})
 
     def __init__(self, dict: dict = None) -> None:
         super().__init__(
@@ -118,8 +121,10 @@ class Palette(UserDict):
                 False: self.darkgray,
                 "yes": self.lightgray,
                 "no": self.darkgray,
-                np.nan: self.backgroundgray,
-                "nan": self.backgroundgray,
+                "NA": self.grey,
+                np.nan: self.white,
+                "nan": self.white,
+                "unknown": self.white,
 
                 # FUNCTIONAL EFFECTS
                 MutA.synonymous: self.darkgray,
@@ -217,8 +222,6 @@ class Palette(UserDict):
                 "Female": self.darkpink,
                 "XY": self.darkcyan,
                 "Male": self.darkcyan,
-                "NA": self.grey,
-                "unknown": self.backgroundgray,
 
                 # HISTOLOGIES
                 "AML": self.darkbrown,  # akute myeloid leukemia
@@ -305,6 +308,16 @@ class Palette(UserDict):
             }
         )
 
+    def drop_undefined(self):
+        return Palette({
+            v: c for v, c, in self.items()
+            if not (isinstance(v, float) and np.isnan(v) or v in ["nan", "unknown"])
+        })
+
+    def hash(self):
+        # sorted_keys = sorted(self.keys())
+        return "_".join([f"{k}:" + ",".join([str(c) for c in self[k]]) for k in self.keys()])
+
     @staticmethod
     def adjust_lightness(color, amount):
         """from
@@ -335,7 +348,7 @@ class Palette(UserDict):
         snv_cmap = {
             " / ".join(e_list): c for c, e_list in inv_mut_cmap.items()
         }
-        return snv_cmap
+        return Palette(snv_cmap)
 
     def get_cnv_cmap(self, data):
         amp_color = self.red
@@ -364,14 +377,14 @@ class Palette(UserDict):
             if key in np.unique(data.cnv.df):
                 cnv_cmap[key] = color
                 cnv_names.append(name)
-        return cnv_cmap, cnv_names
+        return Palette(cnv_cmap), cnv_names
 
     def get_tmb_cmap(self, data):
         tmb_cmap = {
             better_effect_legend(effect): self.get(effect, self.grey)
             for effect in reversed(data.tmb.columns)
         } if data.tmb is not None else {}
-        return tmb_cmap
+        return Palette(tmb_cmap)
 
     def get_mutsig_cmap(self, data):
         # The listed order determines the order in which the signatures are plotted
@@ -453,7 +466,7 @@ class Palette(UserDict):
             sig: mutsigset_palette.get(sig, color)
             for sig, color in zip(data.mutsig.columns, sns.color_palette("husl", n_colors=len(data.mutsig.columns)))
         } if data.mutsig is not None else {}
-        return mutsig_cmap
+        return Palette(mutsig_cmap)
 
     def get_meta_cmaps(self, data):
         meta_cmaps = {}
@@ -481,7 +494,7 @@ class Palette(UserDict):
                 cmap = {t: self.get(t, self.grey) for t in values}
             else:
                 cmap = {v: c for v, c in zip(values, _palette)} | {v: self.get(v, self.grey) for v in values[len(_palette):]}
-            meta_cmaps[col] = cmap
+            meta_cmaps[col] = Palette(cmap)
 
         def add_cont_cmap(col, cmap, minval, maxval, n=100, center=None):
             if col not in data.meta.rows:
@@ -518,7 +531,7 @@ class Palette(UserDict):
         for col in ["Chemo Tx", "XRT", "Targeted Tx", "Hormone Tx", "Immuno Tx ICI", "ADC"]:
             add_cmap(col, _palette=[self.normalizeRGB(105, 200, 219), self.lightgrey, self.backgroundgray], order=["yes", "no", "unknown"])
         add_cmap("WGD", _palette=self.make_diverging_palette(self.violet, n_colors=5*3)[::5], order=list(range(3)))
-        add_cont_cmap("Contamination", plt.cm.get_cmap("BuPu"), 0.0, 0.1)
+        add_cont_cmap("Contamination", plt.cm.get_cmap("BuPu"), 0.0, 0.05)
         add_cont_cmap("Tumor Purity", plt.cm.get_cmap("plasma_r"), 0, 1)
         add_cont_cmap("Ploidy", plt.cm.get_cmap("PiYG"), 1, 6, center=2)
         add_cont_cmap("Subclonal Fraction", plt.cm.get_cmap("RdPu"), 0, 0.5)
@@ -529,3 +542,14 @@ class Palette(UserDict):
                 add_cmap(col)
 
         return {k: meta_cmaps[k] for k in data.meta.rows if k in meta_cmaps.keys()}
+
+    @staticmethod
+    def condense(cmaps):
+        continuous_cmaps = {k: p for k, p in cmaps.items() if not isinstance(p, Palette)}
+        condenseable_cmaps = {k: p for k, p in cmaps.items() if isinstance(p, Palette)}
+        grouped_palettes = defaultdict(list)
+        for k, p in condenseable_cmaps.items():
+            grouped_palettes[p.hash()].append(k)
+
+        condensed_cmaps = {"\n".join(k_list): Palette.from_hash(h) for h, k_list in grouped_palettes.items()}
+        return continuous_cmaps | condensed_cmaps

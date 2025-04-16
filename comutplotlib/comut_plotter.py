@@ -7,6 +7,7 @@ import scipy.stats as st
 
 from comutplotlib.plotter import Plotter
 from comutplotlib.math import decompose_rectangle_into_polygons
+from comutplotlib.palette import Palette
 from comutplotlib.sample_annotation import SampleAnnotation as SA
 
 
@@ -215,7 +216,7 @@ class ComutPlotter(Plotter):
         label_ax.xaxis.set_label_position("top")
         self.no_spines(ax=label_ax)
 
-        ax.set_title("Recurrence", fontsize=8)
+        ax.set_title("Recurrence", fontsize=7)
         ax.set_xlabel("  SNV", fontdict=dict(fontsize=5), loc="left", labelpad=9)
         cna_ax.set_xlabel("CNV  ", fontdict=dict(fontsize=5), loc="right", labelpad=9)
         label_ax.set_xlabel("Number of Patients", fontdict=dict(fontsize=4), labelpad=11)
@@ -332,7 +333,7 @@ class ComutPlotter(Plotter):
         ax.set_yticks([])
         self.no_spines(ax)
 
-    def plot_tmb(self, ax, tmb: pd.DataFrame, tmb_threshold=10, ytickpad=0, fontsize=6, aspect_ratio=1, ymin=5 * 1e-1, ymax=1e4):
+    def plot_tmb(self, ax, tmb: pd.DataFrame, tmb_threshold=10, ytickpad=0, fontsize=5, aspect_ratio=1, ymin=5 * 1e-1, ymax=1e4):
         if SA.tmb in tmb.columns:
             ymax = 500
             # fit y axis to data
@@ -416,7 +417,7 @@ class ComutPlotter(Plotter):
             for tick in ax2.yaxis.get_major_ticks():
                 tick.set_pad(ytickpad)
 
-    def plot_mutsig(self, ax, mutsig, mutsig_cmap, ytickpad=0, fontsize=6):
+    def plot_mutsig(self, ax, mutsig, mutsig_cmap, ytickpad=0, fontsize=5):
         fractions = mutsig / mutsig.sum(axis=1).to_numpy()[:, None]
         fractions = fractions[fractions.columns[::-1]]
         fractions.plot.bar(
@@ -588,17 +589,19 @@ class ComutPlotter(Plotter):
         ax.invert_yaxis()
         self.no_spines(ax)
 
-    def plot_legend(self, ax, cmap, names=None, title=None):
-        discrete = isinstance(cmap, dict)
-        n = len(cmap) if discrete else 2
+    def plot_legend(self, ax, cmap, names=None, title=None, title_loc="top"):
+        discrete = isinstance(cmap, Palette)
         if discrete:
+            _cmap = cmap.drop_undefined()
+            n = len(_cmap)
             ax.imshow(
                 np.arange(n).reshape(n, 1),
-                cmap=colors.ListedColormap(list(cmap.values())),
+                cmap=colors.ListedColormap(list(_cmap.values())),
                 interpolation="nearest",
                 aspect="auto",
             )
             ax.set_yticks(np.arange(n))
+            ax.set_yticklabels(names if names is not None else _cmap.keys())
         else:
             _cmap, _norm = cmap
             plt.colorbar(
@@ -610,19 +613,22 @@ class ComutPlotter(Plotter):
             ax.set_yticks([_norm.inverse(0), _norm.inverse(1)])
         ax.set_xticks([])
         ax.xaxis.set_major_locator(ticker.NullLocator())
-        if discrete:
-            ax.set_yticklabels(names if names is not None else cmap.keys())
         ax.tick_params(axis="both", labelsize=4, width=0.5)
         ax.yaxis.set_label_position("right")
         ax.yaxis.set_ticks_position("right")
         if title is not None:
-            ax.set_title(title, fontsize=4, fontdict=dict(horizontalalignment="left"))
+            if title_loc == "top":
+                ax.set_title(title, fontsize=4, loc="left", horizontalalignment="left", pad=5)
+            elif title_loc == "bottom":
+                ax.set_title(title, fontsize=4, loc="left", horizontalalignment="left", verticalalignment="top", y=0, pad=-5)
+            else:
+                pass
         self.set_spines(ax=ax, linewidth=0.5)
 
     def plot_model_significance(self, ax):
         pass
 
-    def plot_model_annotation_legend(self, ax, names=("SNV", "CNV"), title=None):
+    def plot_model_annotation_legend(self, ax, names=("SNV", "CNV"), title=None, title_loc="top"):
         # width = 0.5
         # height = 0.5
         # sep = 0.1 / np.sqrt(2)
@@ -642,5 +648,10 @@ class ComutPlotter(Plotter):
         ax.yaxis.set_label_position("right")
         ax.yaxis.set_ticks_position("right")
         if title is not None:
-            ax.set_title(title, fontsize=4, fontdict=dict(horizontalalignment="left"))
+            if title_loc == "top":
+                ax.set_title(title, fontsize=4, loc="left", horizontalalignment="left", pad=5)
+            elif title_loc == "bottom":
+                ax.set_title(title, fontsize=4, loc="left", horizontalalignment="left", verticalalignment="top", y=0, pad=-5)
+            else:
+                pass
         self.no_spines(ax)

@@ -2,6 +2,7 @@ from comutplotlib.comut_data import ComutData
 from comutplotlib.comut_layout import ComutLayout
 from comutplotlib.comut_plotter import ComutPlotter
 from comutplotlib.mutation_annotation import MutationAnnotation as MutA
+from comutplotlib.palette import Palette
 
 
 class Comut(object):
@@ -104,6 +105,7 @@ class Comut(object):
         self.cnv_cmap, self.cnv_names = self.plotter.palette.get_cnv_cmap(self.data)
         self.mutsig_cmap = self.plotter.palette.get_mutsig_cmap(self.data)
         self.meta_cmaps = self.plotter.palette.get_meta_cmaps(self.data)
+        self.meta_cmaps_condensed = self.plotter.palette.condense(self.meta_cmaps)
 
         if self.data.tmb is None:
             panels_to_plot.remove("tmb")
@@ -120,7 +122,7 @@ class Comut(object):
             snv_cmap=self.snv_cmap,
             cnv_cmap=self.cnv_cmap,
             mutsig_cmap=self.mutsig_cmap,
-            meta_cmaps=self.meta_cmaps,
+            meta_cmaps=self.meta_cmaps_condensed,
         )
 
     def make_comut(self):
@@ -147,7 +149,7 @@ class Comut(object):
 
         def meta_data_color(column, value):
             cmap = self.meta_cmaps[column]
-            if isinstance(cmap, dict):
+            if isinstance(cmap, Palette):
                 return cmap[value]
             else:
                 _cmap, _norm = cmap
@@ -260,12 +262,13 @@ class Comut(object):
             aspect_ratio=self.layout.aspect_ratio,
             labelbottom=self.layout.show_patient_names
         )
-        for title in self.data.meta.legend_titles:
+        for title, cmap in self.meta_cmaps_condensed.items():
             self.layout.set_plot_func(
                 f"meta data legend {title}",
                 self.plotter.plot_legend,
-                cmap=self.meta_cmaps[title],
-                title=title
+                cmap=cmap,
+                title=title,
+                title_loc="bottom"
             )
 
         for _, panel in self.layout.panels.items():
