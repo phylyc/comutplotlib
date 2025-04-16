@@ -358,13 +358,13 @@ class Palette(UserDict):
         amp_color = self.red
         del_color = self.blue
         _cnv_cmap = {
-            data.high_amp_threshold: self.adjust_lightness(amp_color, 1.2),
+            data.high_amp_threshold: self.adjust_lightness(amp_color, 1.17),
             data.mid_amp_threshold: self.adjust_lightness(amp_color, 1.2),
-            data.low_amp_threshold: self.adjust_lightness(amp_color, 1.8),
+            data.low_amp_threshold: self.adjust_lightness(amp_color, 1.78),
             data.baseline: self.backgroundgrey,
-            data.low_del_threshold: self.adjust_lightness(del_color, 2.05),
+            data.low_del_threshold: self.adjust_lightness(del_color, 2.03),
             data.mid_del_threshold: self.adjust_lightness(del_color, 1.2),
-            data.high_del_threshold: self.adjust_lightness(del_color, 1.1),
+            data.high_del_threshold: self.adjust_lightness(del_color, 1.07),
         }
         _cnv_names = [
             "High Amplification",
