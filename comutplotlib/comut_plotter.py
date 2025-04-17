@@ -423,7 +423,7 @@ class ComutPlotter(Plotter):
         fractions.plot.bar(
             stacked=True,
             width=1,
-            color=mutsig_cmap,
+            color=[mutsig_cmap[c] for c in fractions.columns],
             ax=ax,
             legend=False,
         )
