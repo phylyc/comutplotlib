@@ -172,43 +172,53 @@ class ComutLayout(Layout):
         def first_legend_panel(name, p_ref):
             return self.add_panel(name=name, right_of=p_ref, pad=self.small_inter_legend_width, align="top")
 
-        def other_legend_panel(name, p_ref):
+        def above_legend_panel(name, p_ref):
+            return self.add_panel(name=name, above=p_ref, pad=self.inter_legend_height, align="left")
+
+        def below_legend_panel(name, p_ref):
             return self.add_panel(name=name, below=p_ref, pad=self.inter_legend_height, align="left")
 
         has_legend = False
-        if "tmb legend" in self.panels_to_plot:
-            p_ref = self.panels.get("tmb", p_ref)
-            p_ref = first_legend_panel(name="tmb legend", p_ref=p_ref)
-            has_legend = True
-        if "mutsig legend" in self.panels_to_plot:
-            p_ref = self.panels.get("mutational signatures", p_ref)
-            p_ref = self.panels.get("tmb legend", p_ref)
-            p_ref = (
-                first_legend_panel(name="mutsig legend", p_ref=p_ref)
-                if not has_legend
-                else other_legend_panel(name="mutsig legend", p_ref=p_ref)
-            )
-            has_legend = True
+        p_ref_top = None
         if "snv legend" in self.panels_to_plot:
             p_ref = (
                 first_legend_panel(name="snv legend", p_ref=p_ref)
                 if not has_legend
-                else other_legend_panel(name="snv legend", p_ref=p_ref)
+                else below_legend_panel(name="snv legend", p_ref=p_ref)
             )
+            p_ref_top = p_ref if p_ref_top is None else p_ref_top
             has_legend = True
         if "cnv legend" in self.panels_to_plot:
             p_ref = (
                 first_legend_panel(name="cnv legend", p_ref=p_ref)
                 if not has_legend
-                else other_legend_panel(name="cnv legend", p_ref=p_ref)
+                else below_legend_panel(name="cnv legend", p_ref=p_ref)
             )
+            p_ref_top = p_ref if p_ref_top is None else p_ref_top
             has_legend = True
         if "model annotation legend" in self.panels_to_plot:
             p_ref = (
                 first_legend_panel(name="model annotation legend", p_ref=p_ref)
                 if not has_legend
-                else other_legend_panel(name="model annotation legend", p_ref=p_ref)
+                else below_legend_panel(name="model annotation legend", p_ref=p_ref)
             )
+            p_ref_top = p_ref if p_ref_top is None else p_ref_top
+            has_legend = True
+        if "mutsig legend" in self.panels_to_plot:
+            p_ref = (
+                first_legend_panel(name="mutsig legend", p_ref=p_ref)
+                if not has_legend
+                else above_legend_panel(name="mutsig legend", p_ref=p_ref_top)
+            )
+            p_ref_top = p_ref if p_ref_top is None else p_ref_top
+            has_legend = True
+        if "tmb legend" in self.panels_to_plot:
+            p_ref = (
+                first_legend_panel(name="tmb legend", p_ref=p_ref)
+                if not has_legend
+                else above_legend_panel(name="tmb legend", p_ref=p_ref_top)
+            )
+            p_ref_top = p_ref if p_ref_top is None else p_ref_top
             has_legend = True
 
         # BOTTOM PANELS

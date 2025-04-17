@@ -209,9 +209,24 @@ def parse_args():
 
     parser.add_argument(
         "--panels-to-plot", type=parse_comma_separated,
-        default=["tmb", "mutational signatures", "recurrence", "total recurrence", "total recurrence overall",
-                 "cytoband", "gene names", "model annotation", "comutation", "mutsig legend",
-                 "snv legend", "cnv legend", "model annotation legend", "meta data", "meta data legend"],
+        default=[
+            "tmb",
+            # "tmb legend",
+            "mutational signatures",
+            "mutsig legend",
+            "recurrence",
+            "total recurrence",
+            "total recurrence overall",
+            "cytoband",
+            "gene names",
+            "model annotation",
+            "comutation",
+            "snv legend",
+            "cnv legend",
+            "model annotation legend",
+            "meta data",
+            "meta data legend"
+        ],
         help="Comma-separated list of plot panels to include.")
     parser.add_argument(
         "--palette", type=parse_palette, default=None,
