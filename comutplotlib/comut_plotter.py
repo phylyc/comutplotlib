@@ -223,12 +223,24 @@ class ComutPlotter(Plotter):
 
         return cna_ax
 
-    def plot_total_recurrence(self, ax, total_recurrence_per_gene: pd.Series, pad=0.01, invert_x=False):
-        for row, (gene_name, percentage) in enumerate(total_recurrence_per_gene.items()):
-            x = 1 - percentage if invert_x else 0
+    def plot_total_recurrence(self, ax, total_recurrence_per_gene: pd.DataFrame, pad=0.01, invert_x=False, set_joint_title=None):
+        for row, (gene_name, percentage) in enumerate(total_recurrence_per_gene.iterrows()):
+            width = percentage["low"]
+            x = 1 - width if invert_x else 0
             rect = patches.Rectangle(
                 xy=(x, row + pad / 2),
-                width=percentage,
+                width=width,
+                height=1 - pad,
+                facecolor=self.palette.offgrey,
+                edgecolor=None,
+                zorder=0.05,
+            )
+            ax.add_patch(rect)
+            width = percentage["high"]
+            x = 1 - width if invert_x else 0
+            rect = patches.Rectangle(
+                xy=(x, row + pad / 2),
+                width=width,
                 height=1 - pad,
                 facecolor=self.palette.grey,
                 edgecolor=None,
@@ -238,21 +250,39 @@ class ComutPlotter(Plotter):
             ax.text(
                 0 if invert_x else 1,
                 row + 0.4,
-                f"{round(100 * percentage)}%",
+                f"{round(100 * width)}%",
                 fontsize=3,
                 horizontalalignment="left" if invert_x else "right",
                 verticalalignment="center",
             )
-        ax.set_ylim([0, total_recurrence_per_gene.size])
+        ax.set_ylim([0, total_recurrence_per_gene.shape[0]])
         ax.set_xlim([0, 1])
-        ax.set_xlabel("total", fontdict=dict(fontsize=5), rotation="vertical")
+        if set_joint_title is not None:
+            if set_joint_title:
+                ax.set_xlabel("total", fontdict=dict(fontsize=5), rotation="vertical", x=1.03 if invert_x else -0.03)
+        else:
+            ax.set_xlabel("total", fontdict=dict(fontsize=5), rotation="vertical")
+
         ax.xaxis.set_label_position("top")
         ax.set_xticks([])
         ax.set_yticks([])
         self.no_spines(ax)
 
-    def plot_total_recurrence_overall(self, ax, total_recurrence_overall: tuple[float], pad=0.01, invert_x=False):
-        percentage = total_recurrence_overall[0] / total_recurrence_overall[1]
+    def plot_total_recurrence_overall(self, ax, total_recurrence_overall: tuple[dict[str, float], int], pad=0.01, invert_x=False, case_control_spacing=None):
+        total_recurrence = total_recurrence_overall[0]
+        total = total_recurrence_overall[1]
+        percentage = total_recurrence["low"] / total
+        x = 1 - percentage if invert_x else 0
+        rect = patches.Rectangle(
+            xy=(x, pad / 2),
+            width=percentage,
+            height=1 - pad,
+            facecolor=self.palette.offgrey,
+            edgecolor=None,
+            zorder=0.05,
+        )
+        ax.add_patch(rect)
+        percentage = total_recurrence["high"] / total
         x = 1 - percentage if invert_x else 0
         rect = patches.Rectangle(
             xy=(x, pad / 2),
@@ -277,7 +307,12 @@ class ComutPlotter(Plotter):
         ax.set_xlim([0, 1])
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_xlabel(f"({total_recurrence_overall[0]}/{total_recurrence_overall[1]})", fontdict=dict(fontsize=3), labelpad=1)
+        ax.set_xlabel(
+            f"({total_recurrence['high']}/{total})",
+            fontdict=dict(fontsize=3),
+            labelpad=1,
+            loc="center" if case_control_spacing is None else ("right" if case_control_spacing else "left")
+        )
         self.no_spines(ax)
 
     def plot_cytoband(self, ax, cytobands: pd.Series):
@@ -333,14 +368,8 @@ class ComutPlotter(Plotter):
         ax.set_yticks([])
         self.no_spines(ax)
 
-    def plot_tmb(self, ax, tmb: pd.DataFrame, tmb_threshold=10, ytickpad=0, fontsize=5, aspect_ratio=1, ymin=5 * 1e-1, ymax=1e4):
+    def plot_tmb(self, ax, tmb: pd.DataFrame, tmb_threshold=10, ytickpad=0, fontsize=5, aspect_ratio=1, ymin=5 * 1e-1, ymax=1e4, shared_y_ax=None):
         if SA.tmb in tmb.columns:
-            ymax = 500
-            # fit y axis to data
-            ymin = min(10 ** np.floor(np.log10(tmb[SA.tmb].quantile(0.15))), 5 * 1e-1)
-            ymax = np.clip(tmb[SA.tmb].max(), a_min=1e2, a_max=ymax)
-            # ymin = 0.3
-            # ymax = 150
             if SA.n_vars in tmb.columns and SA.n_bases in tmb.columns:
                 # test if tmb is significantly higher than threshold:
                 # Jeffrey's prior
@@ -376,10 +405,9 @@ class ComutPlotter(Plotter):
                 alpha=1,
                 **bar_kwargs
             )
-            ax.set_ylabel(ylabel="TMB [/Mb]", fontdict=dict(fontsize=fontsize))
+            if shared_y_ax is None:
+                ax.set_ylabel(ylabel="TMB [/Mb]", fontdict=dict(fontsize=fontsize))
         else:  # columns are a list of functional effects
-            ymax = 1e4
-            ymax = np.clip(tmb.sum(axis=1).max(), a_min=1e2, a_max=ymax)
             tmb.plot.bar(
                 stacked=True,
                 width=0.9,
@@ -387,17 +415,25 @@ class ComutPlotter(Plotter):
                 ax=ax,
                 legend=False,
             )
-            ax.set_ylabel(ylabel="Mutation\nBurden", fontdict=dict(fontsize=fontsize))
+            if shared_y_ax is None:
+                ax.set_ylabel(ylabel="Mutation\nBurden", fontdict=dict(fontsize=fontsize))
+            else:
+                ax.set_yticks(shared_y_ax.get_yticks())  # set ticks for grid
         ax.set_xlim([-0.5, tmb.shape[0] - 0.5])
         ax.set_yscale("log")
         ax.set_ylim([ymin, ymax])
         ax.set_xticks([])
         ax.set_xlabel("")
-        ax.yaxis.set_minor_locator(ticker.NullLocator())
-        ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _: "{:g}".format(y)))
-        ax.tick_params(axis="y", labelsize=5)
-        for tick in ax.yaxis.get_major_ticks():
-            tick.set_pad(ytickpad)
+        if shared_y_ax is None:
+            ax.yaxis.set_minor_locator(ticker.NullLocator())
+            ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _: "{:g}".format(y)))
+            ax.tick_params(axis="y", labelsize=5)
+            for tick in ax.yaxis.get_major_ticks():
+                tick.set_pad(ytickpad)
+        else:
+            ax.yaxis.set_minor_locator(shared_y_ax.yaxis.get_minor_locator())
+            ax.yaxis.set_major_formatter(ticker.NullFormatter())
+            ax.tick_params(axis="y", length=0)
         self.no_spines(ax)
         if SA.tmb in tmb.columns:
             # ax.spines["bottom"].set_visible(True)
@@ -417,7 +453,7 @@ class ComutPlotter(Plotter):
             for tick in ax2.yaxis.get_major_ticks():
                 tick.set_pad(ytickpad)
 
-    def plot_mutsig(self, ax, mutsig, mutsig_cmap, ytickpad=0, fontsize=5):
+    def plot_mutsig(self, ax, mutsig, mutsig_cmap, ytickpad=0, fontsize=5, add_ylabel=True):
         fractions = mutsig / mutsig.sum(axis=1).to_numpy()[:, None]
         fractions = fractions[fractions.columns[::-1]]
         fractions.plot.bar(
@@ -431,14 +467,17 @@ class ComutPlotter(Plotter):
         ax.set_ylim([0, 1])
         ax.set_xticks([])
         ax.set_xlabel("")
-        ax.set_yticks([0, 1])
-        ax.set_ylabel(
-            ylabel="Exposure\nFraction",
-            fontdict=dict(fontsize=fontsize),
-        )
-        ax.tick_params(axis="y", labelsize=5)
-        for tick in ax.yaxis.get_major_ticks():
-            tick.set_pad(ytickpad)
+        if add_ylabel:
+            ax.set_yticks([0, 1])
+            ax.set_ylabel(
+                ylabel="Exposure\nFraction",
+                fontdict=dict(fontsize=fontsize),
+            )
+            ax.tick_params(axis="y", labelsize=5)
+            for tick in ax.yaxis.get_major_ticks():
+                tick.set_pad(ytickpad)
+        else:
+            ax.set_yticks([])
         self.no_spines(ax)
 
     def plot_cnv_heatmap(self, ax, cnv, cnv_cmap, inter_heatmap_linewidth, aspect_ratio):
@@ -547,7 +586,7 @@ class ComutPlotter(Plotter):
         ax.set_yticks([])
         self.no_spines(ax)
 
-    def plot_meta_data(self, ax, meta_data, meta_data_color, legend_titles, inter_heatmap_linewidth, aspect_ratio, labelbottom=True):
+    def plot_meta_data(self, ax, meta_data, meta_data_color, legend_titles, inter_heatmap_linewidth, aspect_ratio, labelbottom=True, add_ylabel=True):
         for (x, y), values in np.ndenumerate(meta_data.to_numpy()):
             if not isinstance(values, list):
                 values = [values]
@@ -569,9 +608,12 @@ class ComutPlotter(Plotter):
             ax.set_xticklabels(meta_data.index)
             ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
         ax.tick_params(axis="x", labelrotation=90)
-        ax.tick_params(axis="y", labelrotation=0)
-        ax.set_yticks(np.arange(meta_data.shape[1]) + 0.5)
-        ax.set_yticklabels(legend_titles)
+        if add_ylabel:
+            ax.tick_params(axis="y", labelrotation=0)
+            ax.set_yticks(np.arange(meta_data.shape[1]) + 0.5)
+            ax.set_yticklabels(legend_titles)
+        else:
+            ax.set_yticks([])
         ax.tick_params(
             axis="both",
             which="both",

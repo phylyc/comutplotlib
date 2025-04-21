@@ -9,8 +9,8 @@ from comutplotlib.sif import SIF
 np.random.seed(21)
 
 
-def make_sif():
-    columns = [SIF.sample, SIF.patient, SIF.sample_type, SIF.sex, SIF.material, SIF.histology, SIF.contamination, SIF.tumor_purity, "Paired", SIF.tmb, SIF.tmb_error]
+def make_sif(name):
+    columns = [SIF.sample, SIF.patient, SIF.sample_type, SIF.sex, SIF.material, SIF.histology, SIF.contamination, SIF.tumor_purity, SIF.ploidy, SIF.genome_doublings, SIF.subclonal_genome_fraction, SIF.paired, SIF.tmb, SIF.tmb_error, "custom"]
     entries = []
     n_patients = 100
     for i in range(1, n_patients + 1):
@@ -21,14 +21,20 @@ def make_sif():
         for j in range(1, n_samples + 1):
             sample_type = np.random.choice(["BM", "EM"], p=[0.7, 0.3])
             material = np.random.choice(["FFPE", "FF", "cfDNA"], p=[0.5, 0.3, 0.2])
-            contamination = np.random.beta(i + 1, n_patients * 10)
+            contamination = np.random.beta(i + 1, n_patients * 100)
             tumor_purity = np.random.beta(3, 3)
+            wgd = np.random.poisson(0.5)
+            ploidy = max(1, (2 * (wgd + 1) * np.random.normal(1, 0.2)))
+            subclonal_fraction = np.random.beta(1, 10)
             tmb = 19 ** (i / n_patients) + 0.1 * j
             tmb_error = np.abs(np.random.normal(0, 0.1 * tmb))
-            entries.append([f"Sample {i}.{j}", f"Patient {i}", sample_type, sex, material, histology, contamination, tumor_purity, Paired, tmb, tmb_error])
+            custom = np.random.choice(["yes", "no"], p=[0.7, 0.3])
+            entries.append([f"Sample {name} {i}.{j}", f"Patient {name} {i}", sample_type, sex, material, histology, contamination, tumor_purity, ploidy, wgd, subclonal_fraction, Paired, tmb, tmb_error, custom])
 
     sif = SIF(data=pd.DataFrame(entries, columns=columns))
-    sif.to_csv("test.sif.tsv")
+    if name == "control":
+        sif.data.drop(labels=[SIF.contamination, SIF.material], axis=1, inplace=True)
+    sif.to_csv(f"{name}.sif.tsv")
     return sif
 
 
@@ -38,7 +44,7 @@ def make_genes():
     return genes
 
 
-def make_maf(sif, genes):
+def make_maf(sif, genes, name):
     columns = [MAF.sample, MAF.patient, MAF.chromosome, MAF.start_pos, MAF.end_pos, MAF.gene_name, MAF.type, MAF.ref_allele, MAF.alt_allele, MAF.effect, MAF.ref_count, MAF.alt_count, MAF.protein_change]
     entries = []
     # doesn't matter for comut plot!
@@ -65,11 +71,11 @@ def make_maf(sif, genes):
                 entries.append([sample, patient, id, start_pos, end_pos, gene, "SNV", "C", "T", MAF.missense, ref_count, alt_count, "p.M42S"])
 
     maf = MAF(data=pd.DataFrame(entries, columns=columns))
-    maf.to_csv("test.maf.tsv")
+    maf.to_csv(f"{name}.maf.tsv")
     return maf
 
 
-def make_gistic(sif, genes):
+def make_gistic(sif, genes, name):
     n_genes = len(genes)
     columns = [Gistic._locus_id, Gistic._cytoband]
     genes = pd.Index(genes, name=Gistic._gene_symbol)
@@ -85,11 +91,11 @@ def make_gistic(sif, genes):
         thresholded_gistic_scores.append(np.concatenate([neutral_genes, amp_genes, del_genes, other_neutral_genes]))
 
     gistic = Gistic(data=pd.DataFrame(thresholded_gistic_scores, columns=genes, index=columns).T)
-    gistic.data.to_csv("test.all_thresholded.by_genes.txt", sep="\t")
+    gistic.data.to_csv(f"{name}.all_thresholded.by_genes.txt", sep="\t")
     return gistic
 
 
-def make_mutsig(sif):
+def make_mutsig(sif, name):
     signatures = ["clock-like", "APOBEC", "Smoking", "UV", "Treatment"]
     entries = []
     for patient in sif.patients:
@@ -107,13 +113,18 @@ def make_mutsig(sif):
         entries.append(exposures)
 
     mutsig = pd.DataFrame(entries, columns=signatures, index=sif.patients)
-    mutsig.to_csv("test.mutsig.tsv", sep="\t")
+    mutsig.to_csv(f"{name}.mutsig.tsv", sep="\t")
     return mutsig
 
 
 if __name__ == "__main__":
-    sif = make_sif()
+    sif = make_sif(name="test")
     genes = make_genes()
-    maf = make_maf(sif, genes)
-    gistic = make_gistic(sif, genes)
-    mutsig = make_mutsig(sif)
+    maf = make_maf(sif, genes, name="test")
+    gistic = make_gistic(sif, genes, name="test")
+    mutsig = make_mutsig(sif, name="test")
+
+    control_sif = make_sif(name="control")
+    control_maf = make_maf(control_sif, genes, name="control")
+    control_gistic = make_gistic(control_sif, genes, name="control")
+    control_mutsig = make_mutsig(control_sif, name="control")

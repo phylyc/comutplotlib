@@ -9,7 +9,7 @@ class ComutLayout(Layout):
     def __init__(
         self,
         panels_to_plot: list[str],
-        n_genes: int, n_samples: int, n_meta: int = 0, pad: int = 1,
+        n_genes: int, n_samples: int, n_samples_control: int = 0, n_meta: int = 0, pad: int = 1,
         xfigsize: float = None, max_xfigsize: float = None, max_xfigsize_scale: float = 1, yfigsize: float = None,
         label_columns=False,
         tmb_cmap=(), snv_cmap=(), cnv_cmap=(), mutsig_cmap=(), meta_cmaps={}
@@ -25,7 +25,7 @@ class ComutLayout(Layout):
 
         # HEIGHTS
         tmb_height = 4
-        mut_sig_height = 5
+        mut_sig_height = 4
         coverage_height = 5
         comut_height = n_genes
         tmb_legend_height = len(tmb_cmap)
@@ -65,8 +65,10 @@ class ComutLayout(Layout):
         if "model annotation" in panels_to_plot:
             left_of_comut_width += model_annotation_width
 
+        right_panel_legends = ["tmb legend", "mutational signatures legend", "snv legend", "cnv legend", "model annotation legend"]
+
         non_heatmap_width = left_of_comut_width
-        if any([part in panels_to_plot for part in ["tmb legend", "snv legend", "cnv legend", "mutsig legend", "model annotation legend"]]):
+        if any([part in panels_to_plot for part in right_panel_legends]):
             non_heatmap_width += self.small_inter_legend_width + legend_width
         if "model significance" in panels_to_plot:
             non_heatmap_width += model_significance_width
@@ -75,8 +77,13 @@ class ComutLayout(Layout):
             if max_xfigsize is not None
             else int(max_xfigsize_scale * n_samples)
         )
+        comut_width_control = (
+            min(n_samples_control, int(10 * max_xfigsize - non_heatmap_width))
+            if max_xfigsize is not None
+            else int(max_xfigsize_scale * n_samples_control)
+        )
         right_of_comut_width = 0
-        if any([part in panels_to_plot for part in ["tmb legend", "snv legend", "cnv legend", "mutsig legend", "model annotation legend"]]):
+        if any([part in panels_to_plot for part in right_panel_legends]):
             right_of_comut_width += self.small_inter_legend_width + legend_width
         if "model significance" in panels_to_plot:
             right_of_comut_width += model_significance_width
@@ -102,26 +109,37 @@ class ComutLayout(Layout):
         self.dimensions = pd.DataFrame.from_dict(
             {
                 "comutation": [comut_width, comut_height],
-
-                "mutational signatures": [comut_width, mut_sig_height],
-                "coverage": [comut_width, coverage_height],
-                "tmb": [comut_width, tmb_height],
-                "tmb legend": [legend_width, tmb_legend_height],
-
-                "model annotation": [model_annotation_width, comut_height],
-                "gene names": [gene_label_width, comut_height],
-                "cytoband": [cytoband_width, comut_height],
-                "total recurrence": [total_recurrence_width, comut_height],
-                "total recurrence overall": [total_recurrence_width, 1],
-                "recurrence": [snv_recurrence_width + cnv_recurrence_width, comut_height],
-
-                "model significance": [model_significance_width, comut_height],
-                "mutsig legend": [legend_width, mutsig_legend_height],
+                "comutation control": [comut_width_control, comut_height],
                 "snv legend": [legend_width, snv_legend_height],
                 "cnv legend": [legend_width, cnv_legend_height],
+
+                "model significance": [model_significance_width, comut_height],
+
+                "model annotation": [model_annotation_width, comut_height],
                 "model annotation legend": [legend_width, model_annotation_legend_height],
 
+                "coverage": [comut_width, coverage_height],
+                "coverage control": [comut_width_control, coverage_height],
+                "tmb": [comut_width, tmb_height],
+                "tmb control": [comut_width_control, tmb_height],
+                "tmb legend": [legend_width, tmb_legend_height],
+
+                "mutational signatures": [comut_width, mut_sig_height],
+                "mutational signatures control": [comut_width_control, mut_sig_height],
+                "mutational signatures legend": [legend_width, mutsig_legend_height],
+
+                "gene names": [gene_label_width, comut_height],
+                "cytoband": [cytoband_width, comut_height],
+
+                "total recurrence": [total_recurrence_width, comut_height],
+                "total recurrence overall": [total_recurrence_width, 1],
+                "total recurrence control": [total_recurrence_width, comut_height],
+                "total recurrence overall control": [total_recurrence_width, 1],
+                "recurrence": [snv_recurrence_width + cnv_recurrence_width, comut_height],
+                "recurrence control": [snv_recurrence_width + cnv_recurrence_width, comut_height],
+
                 "meta data": [comut_width, meta_height],
+                "meta data control": [comut_width_control, meta_height],
             } | {
                 f"meta data legend {title}": [legend_width, meta_legend_heights[title]]
                 for title in self.meta_data_legend_titles
@@ -132,8 +150,11 @@ class ComutLayout(Layout):
 
         super().__init__(xfigsize=xfigsize, yfigsize=yfigsize, pad=pad)
 
-    def add_panel(self, name, **kwargs):
-        return super().add_panel(name=name, **self.dimensions.loc[name].to_dict(), **kwargs)
+    def add_panel(self, name, ref=None, force_add=False, **kwargs):
+        if name in self.panels_to_plot or force_add:
+            return super().add_panel(name=name, **self.dimensions.loc[name].to_dict(), **kwargs)
+        else:
+            return ref
 
     def add_panels(self):
         # CENTER PANEL - CORE
@@ -142,97 +163,85 @@ class ComutLayout(Layout):
 
         # LEFT PANELS
         p_ref = p_comut
-        if "model annotation" in self.panels_to_plot:
-            p_ref = self.add_panel(name="model annotation", left_of=p_ref, pad=0)
-        if "gene names" in self.panels_to_plot:
-            p_ref = self.add_panel(name="gene names", left_of=p_ref, pad=0)
-        if "cytoband" in self.panels_to_plot:
-            p_ref = self.add_panel(name="cytoband", left_of=p_ref, pad=0)
-        if "recurrence" in self.panels_to_plot:
-            p_ref = self.add_panel(name="recurrence", left_of=p_ref)
+        # for panel, pad in zip(["model significance", "model annotation", "gene names", "cytoband", "recurrence"], [1, 0, 0, 0, 1]):
+        #     p_ref = self.add_panel(name=panel, ref=p_ref, left_of=p_ref, pad=pad)
+        p_ref = self.add_panel(name="model annotation", ref=p_ref, left_of=p_ref, pad=0)
+        p_ref = self.add_panel(name="gene names", ref=p_ref, left_of=p_ref, pad=0)
+        p_ref = self.add_panel(name="cytoband", ref=p_ref, left_of=p_ref, pad=0)
+        p_ref = self.add_panel(name="recurrence", ref=p_ref, left_of=p_ref)
 
         # TOP PANELS
         p_ref = p_comut
-        if "mutational signatures" in self.panels_to_plot:
-            p_ref = self.add_panel(name="mutational signatures", above=p_ref)
-        if "coverage" in self.panels_to_plot:
-            p_ref = self.add_panel(name="coverage", above=p_ref)
-        if "tmb" in self.panels_to_plot:
-            p_ref = self.add_panel(name="tmb", above=p_ref)
-
-        # RIGHT PANELS
-        p_ref = p_comut
-        if "model significance" in self.panels_to_plot:
-            p_ref = self.add_panel(name="model significance", right_of=p_ref)
-        if "total recurrence" in self.panels_to_plot:
-            p_ref = self.add_panel(name="total recurrence", right_of=p_ref)
-            if "total recurrence overall" in self.panels_to_plot:
-                self.add_panel(name="total recurrence overall", below=p_ref, pad=0)
-
-        def first_legend_panel(name, p_ref):
-            return self.add_panel(name=name, right_of=p_ref, pad=self.small_inter_legend_width, align="top")
-
-        def above_legend_panel(name, p_ref):
-            return self.add_panel(name=name, above=p_ref, pad=self.inter_legend_height, align="left")
-
-        def below_legend_panel(name, p_ref):
-            return self.add_panel(name=name, below=p_ref, pad=self.inter_legend_height, align="left")
-
-        has_legend = False
-        p_ref_top = None
-        if "snv legend" in self.panels_to_plot:
-            p_ref = (
-                first_legend_panel(name="snv legend", p_ref=p_ref)
-                if not has_legend
-                else below_legend_panel(name="snv legend", p_ref=p_ref)
-            )
-            p_ref_top = p_ref if p_ref_top is None else p_ref_top
-            has_legend = True
-        if "cnv legend" in self.panels_to_plot:
-            p_ref = (
-                first_legend_panel(name="cnv legend", p_ref=p_ref)
-                if not has_legend
-                else below_legend_panel(name="cnv legend", p_ref=p_ref)
-            )
-            p_ref_top = p_ref if p_ref_top is None else p_ref_top
-            has_legend = True
-        if "model annotation legend" in self.panels_to_plot:
-            p_ref = (
-                first_legend_panel(name="model annotation legend", p_ref=p_ref)
-                if not has_legend
-                else below_legend_panel(name="model annotation legend", p_ref=p_ref)
-            )
-            p_ref_top = p_ref if p_ref_top is None else p_ref_top
-            has_legend = True
-        if "mutsig legend" in self.panels_to_plot:
-            p_ref = (
-                first_legend_panel(name="mutsig legend", p_ref=p_ref)
-                if not has_legend
-                else above_legend_panel(name="mutsig legend", p_ref=p_ref_top)
-            )
-            p_ref_top = p_ref if p_ref_top is None else p_ref_top
-            has_legend = True
-        if "tmb legend" in self.panels_to_plot:
-            p_ref = (
-                first_legend_panel(name="tmb legend", p_ref=p_ref)
-                if not has_legend
-                else above_legend_panel(name="tmb legend", p_ref=p_ref_top)
-            )
-            p_ref_top = p_ref if p_ref_top is None else p_ref_top
-            has_legend = True
+        for panel in ["mutational signatures", "coverage", "tmb"]:
+            p_ref = self.add_panel(name=panel, ref=p_ref, above=p_ref)
 
         # BOTTOM PANELS
         p_ref = p_comut
-        if "meta data" in self.panels_to_plot:
-            p_ref = self.add_panel(name="meta data", below=p_ref)
-            if "meta data legend" in self.panels_to_plot and len(self.meta_data_legend_titles):
-                pad = self.pad + (self.column_names_height if self.show_patient_names else 0)
-                p_ref = self.add_panel(
-                    name=f"meta data legend {self.meta_data_legend_titles[0]}", below=p_ref, pad=pad, align="left"
-                )
-                for title in self.meta_data_legend_titles[1:]:
-                    p_ref = self.add_panel(name=f"meta data legend {title}", right_of=p_ref, pad=self.inter_legend_width, align="top")
+        p_ref = self.add_panel(name="meta data", ref=p_ref, below=p_ref)
+        if "meta data legend" in self.panels_to_plot and len(self.meta_data_legend_titles):
+            pad = self.pad + (self.column_names_height if self.show_patient_names else 0)
+            p_ref = self.add_panel(
+                name=f"meta data legend {self.meta_data_legend_titles[0]}", ref=p_ref, force_add=True,below=p_ref, pad=pad, align="left"
+            )
+            for title in self.meta_data_legend_titles[1:]:
+                p_ref = self.add_panel(name=f"meta data legend {title}", ref=p_ref, force_add=True,right_of=p_ref, pad=self.inter_legend_width, align="top")
 
+        # RIGHT PANELS
+        p_ref = p_comut
+        p_ref = self.add_panel(name="total recurrence", ref=p_ref, right_of=p_ref)
+        self.add_panel(name="total recurrence overall", ref=p_ref, below=p_ref, pad=0)
+
+        if "comutation control" in self.panels_to_plot:
+            p_ref = self.add_panel(name="total recurrence control", ref=p_ref, right_of=p_ref, pad=0)
+            self.add_panel(name="total recurrence overall control", ref=p_ref, below=p_ref, pad=0)
+
+            p_ref = self.add_panel(name="comutation control", ref=p_ref, right_of=p_ref)
+            p_comut_control = p_ref
+
+            # TOP PANELS
+            p_ref = p_comut_control
+            for panel in ["mutational signatures control", "coverage control", "tmb control"]:
+                p_ref = self.add_panel(name=panel, ref=p_ref, above=p_ref)
+
+            # BOTTOM PANELS
+            p_ref = p_comut_control
+            p_ref = self.add_panel(name="meta data control", ref=p_ref, below=p_ref)
+
+            # RIGHT PANELS
+            p_ref = p_comut_control
+            p_ref = self.add_panel(name="recurrence control", ref=p_ref, right_of=p_ref)
+
+            # p_ref = p_comut_control
+
+        def first_legend_panel(name, p_ref):
+            return self.add_panel(name=name, ref=p_ref, right_of=p_ref, pad=self.small_inter_legend_width, align="top")
+
+        def above_legend_panel(name, p_ref):
+            return self.add_panel(name=name, ref=p_ref, above=p_ref, pad=self.inter_legend_height, align="left")
+
+        def below_legend_panel(name, p_ref):
+            return self.add_panel(name=name, ref=p_ref, below=p_ref, pad=self.inter_legend_height, align="left")
+
+        has_legend = False
+        p_ref_top = None
+        for panel in ["snv legend", "cnv legend", "model annotation legend"]:
+            if panel in self.panels_to_plot:
+                p_ref = (
+                    first_legend_panel(name=panel, p_ref=p_ref)
+                    if not has_legend
+                    else below_legend_panel(name=panel, p_ref=p_ref)
+                )
+                p_ref_top = p_ref if p_ref_top is None else p_ref_top
+                has_legend = True
+        for panel in ["mutational signatures legend", "tmb legend"]:
+            if panel in self.panels_to_plot:
+                p_ref = (
+                    first_legend_panel(name=panel, p_ref=p_ref)
+                    if not has_legend
+                    else above_legend_panel(name=panel, p_ref=p_ref_top)
+                )
+                p_ref_top = p_ref if p_ref_top is None else p_ref_top
+                has_legend = True
         self.place_panels_on_gridspec(autoscale_figsize=True, scale=0.1)
 
     def set_plot_func(self, panel: str, plot_func, *args, **kwargs):

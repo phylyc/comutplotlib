@@ -22,18 +22,15 @@ class ComutData(object):
     def __init__(
         self,
 
-        maf_paths: list[str] = (),
+        maf_paths: list[str] = None,
         maf_pool_as: dict | None = None,
 
-        seg_paths: list[str] = (),
-        gistic_paths: list[str] = (),
+        seg_paths: list[str] = None,
+        gistic_paths: list[str] = None,
 
-        mutsig_paths: list[str] = (),
+        mutsig_paths: list[str] = None,
 
-        model_significances: list[str] = (),
-        model_names: list[str] = (),
-
-        sif_paths: list[str] = (),
+        sif_paths: list[str] = None,
         meta_data_rows: list[str] = (),
         meta_data_rows_per_sample: list[str] = (),
 
@@ -65,7 +62,6 @@ class ComutData(object):
         self.maf = join_mafs([MAF.from_file(path_to_file=maf) for maf in maf_paths]) if maf_paths is not None else MAF()
         self.maf.pool_annotations(pool_as=maf_pool_as, inplace=True)
         self.maf.select(selection={MAF.effect: self.uninteresting_effects}, complement=True, inplace=True)
-        self.snv = None
 
         self.seg = join_segs([SEG.from_file(path_to_file=seg) for seg in seg_paths]) if seg_paths is not None else SEG()
         self.gistic = join_gistics([Gistic.from_file(path_to_file=gistic) for gistic in gistic_paths]) if gistic_paths is not None else Gistic()
@@ -76,27 +72,22 @@ class ComutData(object):
                 .replace([high_amp_threshold], mid_amp_threshold)
                 .replace([high_del_threshold], mid_del_threshold)
             )
-        self.cnv = None
 
-        self.mutsig = pd.concat(
-            [pd.read_csv(path_to_file, index_col=0, sep="\t") for path_to_file in mutsig_paths]
-        ) if mutsig_paths is not None else None
-
-        self.model_significance = pd.DataFrame.from_dict(
-            {
-                name: pd.read_csv(path_to_file, index_col=0, sep="\t")
-                for name, path_to_file in zip(model_names, model_significances)
-            }
-        ) if model_significances is not None else None
-        self.model_names = model_names
+        self.mutsig = pd.concat([pd.read_csv(path_to_file, index_col=0, sep="\t") for path_to_file in mutsig_paths]) if mutsig_paths is not None else None
 
         self.sif = join_sifs([SIF.from_file(path_to_file=sif) for sif in sif_paths]) if sif_paths is not None else SIF()
         self.sif.add_annotations(inplace=True)
+
+        self.snv = None
+        self.cnv = None
+        self.tmb = None
         self.meta = None
+
+        self.col_order = column_order
+        self.columns = None
+
         self.meta_data_rows = meta_data_rows
         self.meta_data_rows_per_sample = meta_data_rows_per_sample
-
-        self.tmb = None
 
         self.drop_empty_columns = drop_empty_columns
 
@@ -133,7 +124,7 @@ class ComutData(object):
     def preprocess(self):
         self.columns = self.get_columns()
         self.snv = SNV(maf=self.maf, by=self.by)
-        self.cnv = CNV(seg=self.seg, gistic=self.gistic,
+        self.cnv = CNV(seg=self.seg, gistic=self.gistic, baseline=self.baseline,
                        low_amp_threshold=self.low_amp_threshold, mid_amp_threshold=self.mid_amp_threshold, high_amp_threshold=self.high_amp_threshold,
                        low_del_threshold=self.low_del_threshold, mid_del_threshold=self.mid_del_threshold, high_del_threshold=self.high_del_threshold)
         self.meta = Meta(sif=self.sif, by=self.columns.name, rows=self.meta_data_rows, rows_per_sample=self.meta_data_rows_per_sample)
@@ -226,19 +217,29 @@ class ComutData(object):
         #         self.interesting_genes |= set(ground_truth_gene_list)
 
         if self.total_recurrence_threshold is not None:
-            recurrence = self.get_total_recurrence()
+            recurrence = self.get_total_recurrence()["high"]
             recurrence = recurrence.loc[recurrence >= self.total_recurrence_threshold]
             self.interesting_genes = {g for g in self.interesting_genes if g in recurrence.index}
 
         return pd.Index(self.interesting_genes, name=MAF.gene_name)
 
     def get_total_recurrence(self):
-        has_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv).fillna(False)
-        return has_mut.astype(int).sum(axis=1) / len(self.columns)
+        has_high_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv).fillna(False)
+        has_low_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv | self.cnv.has_low_cnv).fillna(False)
+        has_mut = pd.concat([
+            has_high_mut.astype(int).sum(axis=1).to_frame("high"),
+            has_low_mut.astype(int).sum(axis=1).to_frame("low"),
+        ], axis=1) / len(self.columns)
+        return has_mut
 
     def get_total_recurrence_overall(self):
-        has_mut = self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv
-        return has_mut.any(axis=0).astype(int).sum(), len(self.columns)
+        has_high_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv).fillna(False)
+        has_low_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv | self.cnv.has_low_cnv).fillna(False)
+        has_mut = {
+            "high": has_high_mut.any(axis=0).astype(int).sum(),
+            "low": has_low_mut.any(axis=0).astype(int).sum(),
+        }
+        return has_mut, len(self.columns)
 
     def get_tmb(self):
         meta_tmb = self.meta.get_tmb()
@@ -315,24 +316,24 @@ class ComutData(object):
             self.columns = pd.Index([c for c in self.col_order if c in self.columns], name=self.columns.name)
         else:
             # COMUT: ORDER BY:
-            # 1. has SNV
-            # 2. has SNV and no high CNV
-            # 3. todo: SNV type
-            # 4. has high amplification
-            # 5. has mid-level amplification
-            # 6. has high deletion
-            # 7. has mid-level deletion
+            # 1. has high amplification
+            # 2. has mid-level amplification
+            # 3. has high deletion
+            # 4. has mid-level deletion
+            # 5. has high/mid CNV and no SNV
+            # 6. has SNV
+            # 7. todo: SNV type
             def get_score(criterion_list):
                 log_weights = range(len(criterion_list), 0, -1)
                 return reduce(lambda a, b: a + b, [10 ** w * c for w, c in zip(log_weights, criterion_list)])
 
             has_high_mut = get_score([
-                self.snv.has_snv.astype(int),
-                (self.snv.has_snv & ~(self.cnv.has_high_cnv | self.cnv.has_mid_cnv)).fillna(False).astype(int),
                 self.cnv.has_high_amp.astype(int),
                 self.cnv.has_mid_amp.astype(int),
                 self.cnv.has_high_del.astype(int),
                 self.cnv.has_mid_del.astype(int),
+                (~self.snv.has_snv & (self.cnv.has_high_cnv | self.cnv.has_mid_cnv)).fillna(False).astype(int),
+                self.snv.has_snv.astype(int),
             ])
             if self.tmb is not None:
                 if SIF.tmb in self.tmb:

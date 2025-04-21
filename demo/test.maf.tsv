@@ -1,187 +1,192 @@
 SIF_sample_name	Patient	Chromosome	Start_Position	End_Position	Hugo_Symbol	Variant_Type	Reference_Allele	Tumor_Seq_Allele2	Variant_Classification	t_ref_count	t_alt_count	Protein_Change
-Sample 1.1	Patient 1	5	1000000.0	1000001.0	Gene 5	SNV	T	G	Missense_Mutation	100.0	100.0	p.E42C
-Sample 1.1	Patient 1	6	1000000.0	1000001.0	Gene 6	SNV	G	T	Splice_Site	100.0	100.0	p.C42A
-Sample 2.1	Patient 2	3	1000000.0	1000001.0	Gene 3	SNV	G	A	Missense_Mutation	100.0	100.0	p.A42D
-Sample 3.1	Patient 3	10	1000000.0	1000001.0	Gene 10	SNV	A	T	Missense_Mutation	100.0	100.0	p.A42C
-Sample 3.2	Patient 3	10	1000000.0	1000001.0	Gene 10	SNV	A	T	Frame_Shift_Del	100.0	100.0	p.D42C
-Sample 7.1	Patient 7	4	1000000.0	1000001.0	Gene 4	SNV	C	G	Nonsense_Mutation	100.0	100.0	p.E42D
-Sample 7.1	Patient 7	11	1000000.0	1000001.0	Gene 11	SNV	G	A	Frame_Shift_Del	100.0	100.0	p.E42C
-Sample 7.1	Patient 7	11	1000000.0	1000001.0	Gene 11	SNV	C	T	Nonsense_Mutation	100.0	100.0	p.C42A
-Sample 7.1	Patient 7	11	1000000.0	1000001.0	Gene 11	SNV	C	T	Missense_Mutation	100.0	100.0	p.C42D
-Sample 8.1	Patient 8	7	1000000.0	1000001.0	Gene 7	SNV	A	G	Frame_Shift_Del	100.0	100.0	p.E42D
-Sample 8.1	Patient 8	23	1000000.0	1000001.0	Gene 23	SNV	G	C	Missense_Mutation	100.0	100.0	p.D42C
-Sample 8.1	Patient 8	23	1000000.0	1000001.0	Gene 23	SNV	G	A	Missense_Mutation	100.0	100.0	p.E42A
-Sample 8.1	Patient 8	23	1000000.0	1000001.0	Gene 23	SNV	C	T	Splice_Site	100.0	100.0	p.E42C
-Sample 9.1	Patient 9	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
-Sample 9.1	Patient 9	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
-Sample 9.1	Patient 9	14	1000000.0	1000001.0	Gene 14	SNV	T	A	Missense_Mutation	100.0	100.0	p.C42A
-Sample 9.1	Patient 9	25	1000000.0	1000001.0	Gene 25	SNV	C	A	Splice_Site	100.0	100.0	p.A42D
-Sample 10.2	Patient 10	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
-Sample 10.2	Patient 10	14	1000000.0	1000001.0	Gene 14	SNV	C	G	Frame_Shift_Ins	100.0	100.0	p.A42C
-Sample 10.2	Patient 10	21	1000000.0	1000001.0	Gene 21	SNV	G	A	Missense_Mutation	100.0	100.0	p.C42E
-Sample 11.1	Patient 11	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
-Sample 11.1	Patient 11	12	1000000.0	1000001.0	Gene 12	SNV	G	A	Nonsense_Mutation	100.0	100.0	p.A42D
-Sample 12.1	Patient 12	2	1000000.0	1000001.0	Gene 2	SNV	A	G	Frame_Shift_Del	100.0	100.0	p.A42D
-Sample 12.1	Patient 12	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
-Sample 13.1	Patient 13	7	1000000.0	1000001.0	Gene 7	SNV	C	T	Missense_Mutation	100.0	100.0	p.C42A
-Sample 13.1	Patient 13	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
-Sample 14.1	Patient 14	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
-Sample 15.1	Patient 15	10	1000000.0	1000001.0	Gene 10	SNV	G	T	Frame_Shift_Del	100.0	100.0	p.C42D
-Sample 15.1	Patient 15	12	1000000.0	1000001.0	Gene 12	SNV	G	C	Frame_Shift_Del	100.0	100.0	p.A42D
-Sample 15.1	Patient 15	22	1000000.0	1000001.0	Gene 22	SNV	A	C	Frame_Shift_Del	100.0	100.0	p.E42A
-Sample 16.1	Patient 16	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
-Sample 16.1	Patient 16	23	1000000.0	1000001.0	Gene 23	SNV	A	G	Frame_Shift_Ins	100.0	100.0	p.C42E
-Sample 17.1	Patient 17	7	1000000.0	1000001.0	Gene 7	SNV	A	G	Nonsense_Mutation	100.0	100.0	p.E42C
-Sample 17.1	Patient 17	7	1000000.0	1000001.0	Gene 7	SNV	A	T	Missense_Mutation	100.0	100.0	p.A42D
-Sample 18.1	Patient 18	2	1000000.0	1000001.0	Gene 2	SNV	A	T	Missense_Mutation	100.0	100.0	p.D42C
-Sample 18.1	Patient 18	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
-Sample 18.1	Patient 18	12	1000000.0	1000001.0	Gene 12	SNV	T	C	5'UTR	100.0	100.0	p.C42D
-Sample 19.1	Patient 19	1	1000000.0	1000001.0	Gene 1	SNV	C	G	Missense_Mutation	100.0	100.0	p.D42A
-Sample 19.1	Patient 19	1	1000000.0	1000001.0	Gene 1	SNV	T	C	Missense_Mutation	100.0	100.0	p.E42D
-Sample 19.1	Patient 19	4	1000000.0	1000001.0	Gene 4	SNV	G	C	Nonsense_Mutation	100.0	100.0	p.A42E
-Sample 19.1	Patient 19	15	1000000.0	1000001.0	Gene 15	SNV	C	T	Nonsense_Mutation	100.0	100.0	p.A42C
-Sample 20.1	Patient 20	24	1000000.0	1000001.0	Gene 24	SNV	T	C	Frame_Shift_Del	100.0	100.0	p.D42E
-Sample 21.1	Patient 21	7	1000000.0	1000001.0	Gene 7	SNV	T	C	Frame_Shift_Del	100.0	100.0	p.D42A
-Sample 21.1	Patient 21	9	1000000.0	1000001.0	Gene 9	SNV	G	T	Frame_Shift_Del	100.0	100.0	p.D42C
-Sample 21.1	Patient 21	12	1000000.0	1000001.0	Gene 12	SNV	C	A	Missense_Mutation	100.0	100.0	p.D42E
-Sample 21.1	Patient 21	12	1000000.0	1000001.0	Gene 12	SNV	T	G	Splice_Site	100.0	100.0	p.A42E
-Sample 21.1	Patient 21	20	1000000.0	1000001.0	Gene 20	SNV	A	G	Frame_Shift_Del	100.0	100.0	p.D42C
-Sample 21.1	Patient 21	22	1000000.0	1000001.0	Gene 22	SNV	C	A	Frame_Shift_Del	100.0	100.0	p.C42D
-Sample 23.1	Patient 23	1	1000000.0	1000001.0	Gene 1	SNV	A	C	5'UTR	100.0	100.0	p.D42E
-Sample 23.1	Patient 23	12	1000000.0	1000001.0	Gene 12	SNV	C	T	Missense_Mutation	100.0	100.0	p.A42E
-Sample 23.1	Patient 23	22	1000000.0	1000001.0	Gene 22	SNV	C	T	Missense_Mutation	100.0	100.0	p.D42C
-Sample 23.1	Patient 23	22	1000000.0	1000001.0	Gene 22	SNV	T	G	Splice_Site	100.0	100.0	p.D42C
-Sample 25.1	Patient 25	3	1000000.0	1000001.0	Gene 3	SNV	G	T	Splice_Site	100.0	100.0	p.D42A
-Sample 25.1	Patient 25	3	1000000.0	1000001.0	Gene 3	SNV	G	T	Missense_Mutation	100.0	100.0	p.D42E
-Sample 25.2	Patient 25	14	1000000.0	1000001.0	Gene 14	SNV	A	T	Frame_Shift_Del	100.0	100.0	p.C42A
-Sample 26.1	Patient 26	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
-Sample 26.1	Patient 26	14	1000000.0	1000001.0	Gene 14	SNV	T	G	Nonsense_Mutation	100.0	100.0	p.A42C
-Sample 27.1	Patient 27	1	1000000.0	1000001.0	Gene 1	SNV	C	G	Frame_Shift_Del	100.0	100.0	p.A42D
-Sample 27.1	Patient 27	24	1000000.0	1000001.0	Gene 24	SNV	G	C	Missense_Mutation	100.0	100.0	p.D42E
-Sample 28.1	Patient 28	12	1000000.0	1000001.0	Gene 12	SNV	T	C	Frame_Shift_Ins	100.0	100.0	p.D42E
-Sample 29.1	Patient 29	8	1000000.0	1000001.0	Gene 8	SNV	C	T	Nonsense_Mutation	100.0	100.0	p.D42A
-Sample 29.1	Patient 29	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
-Sample 30.1	Patient 30	2	1000000.0	1000001.0	Gene 2	SNV	C	T	Missense_Mutation	100.0	100.0	p.E42D
-Sample 30.1	Patient 30	2	1000000.0	1000001.0	Gene 2	SNV	T	C	Nonsense_Mutation	100.0	100.0	p.A42D
-Sample 30.1	Patient 30	7	1000000.0	1000001.0	Gene 7	SNV	T	C	Frame_Shift_Del	100.0	100.0	p.D42A
-Sample 30.1	Patient 30	25	1000000.0	1000001.0	Gene 25	SNV	T	G	5'UTR	100.0	100.0	p.D42A
-Sample 31.1	Patient 31	16	1000000.0	1000001.0	Gene 16	SNV	C	T	Missense_Mutation	100.0	100.0	p.A42E
-Sample 31.1	Patient 31	16	1000000.0	1000001.0	Gene 16	SNV	T	A	Splice_Site	100.0	100.0	p.E42D
-Sample 31.2	Patient 31	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
-Sample 31.2	Patient 31	16	1000000.0	1000001.0	Gene 16	SNV	A	T	Nonsense_Mutation	100.0	100.0	p.D42E
-Sample 32.1	Patient 32	11	1000000.0	1000001.0	Gene 11	SNV	A	G	Nonsense_Mutation	100.0	100.0	p.C42E
-Sample 33.1	Patient 33	3	1000000.0	1000001.0	Gene 3	SNV	G	T	Splice_Site	100.0	100.0	p.D42C
-Sample 33.1	Patient 33	8	1000000.0	1000001.0	Gene 8	SNV	A	G	Splice_Site	100.0	100.0	p.A42D
-Sample 33.1	Patient 33	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
-Sample 33.1	Patient 33	9	1000000.0	1000001.0	Gene 9	SNV	C	G	Missense_Mutation	100.0	100.0	p.A42C
-Sample 34.1	Patient 34	2	1000000.0	1000001.0	Gene 2	SNV	T	C	5'UTR	100.0	100.0	p.A42C
-Sample 34.1	Patient 34	2	1000000.0	1000001.0	Gene 2	SNV	G	A	Missense_Mutation	100.0	100.0	p.E42A
-Sample 34.1	Patient 34	2	1000000.0	1000001.0	Gene 2	SNV	C	A	Nonsense_Mutation	100.0	100.0	p.D42E
-Sample 36.1	Patient 36	2	1000000.0	1000001.0	Gene 2	SNV	G	T	Frame_Shift_Del	100.0	100.0	p.A42C
-Sample 37.1	Patient 37	1	1000000.0	1000001.0	Gene 1	SNV	A	C	Frame_Shift_Ins	100.0	100.0	p.C42D
-Sample 37.1	Patient 37	1	1000000.0	1000001.0	Gene 1	SNV	A	C	Frame_Shift_Del	100.0	100.0	p.A42D
-Sample 37.1	Patient 37	1	1000000.0	1000001.0	Gene 1	SNV	A	C	Missense_Mutation	100.0	100.0	p.E42C
-Sample 37.1	Patient 37	6	1000000.0	1000001.0	Gene 6	SNV	T	C	Missense_Mutation	100.0	100.0	p.D42E
-Sample 38.1	Patient 38	21	1000000.0	1000001.0	Gene 21	SNV	G	C	Missense_Mutation	100.0	100.0	p.E42D
-Sample 39.1	Patient 39	2	1000000.0	1000001.0	Gene 2	SNV	A	G	Frame_Shift_Del	100.0	100.0	p.D42C
-Sample 39.1	Patient 39	8	1000000.0	1000001.0	Gene 8	SNV	A	T	In_Frame_Del	100.0	100.0	p.C42E
-Sample 39.1	Patient 39	10	1000000.0	1000001.0	Gene 10	SNV	A	C	Missense_Mutation	100.0	100.0	p.A42D
-Sample 39.2	Patient 39	12	1000000.0	1000001.0	Gene 12	SNV	C	G	Missense_Mutation	100.0	100.0	p.D42E
-Sample 39.2	Patient 39	12	1000000.0	1000001.0	Gene 12	SNV	C	T	Splice_Site	100.0	100.0	p.A42D
-Sample 40.1	Patient 40	12	1000000.0	1000001.0	Gene 12	SNV	T	G	Nonsense_Mutation	100.0	100.0	p.C42D
-Sample 41.1	Patient 41	8	1000000.0	1000001.0	Gene 8	SNV	A	C	Nonsense_Mutation	100.0	100.0	p.A42C
-Sample 41.1	Patient 41	8	1000000.0	1000001.0	Gene 8	SNV	T	A	Missense_Mutation	100.0	100.0	p.D42E
-Sample 42.1	Patient 42	4	1000000.0	1000001.0	Gene 4	SNV	T	A	5'UTR	100.0	100.0	p.C42A
-Sample 42.1	Patient 42	5	1000000.0	1000001.0	Gene 5	SNV	A	G	Frame_Shift_Del	100.0	100.0	p.E42A
-Sample 42.1	Patient 42	5	1000000.0	1000001.0	Gene 5	SNV	A	C	Nonsense_Mutation	100.0	100.0	p.C42E
-Sample 42.1	Patient 42	5	1000000.0	1000001.0	Gene 5	SNV	C	A	Nonsense_Mutation	100.0	100.0	p.C42A
-Sample 42.1	Patient 42	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
-Sample 42.1	Patient 42	17	1000000.0	1000001.0	Gene 17	SNV	C	A	5'UTR	100.0	100.0	p.E42D
-Sample 43.1	Patient 43	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
-Sample 44.1	Patient 44	15	1000000.0	1000001.0	Gene 15	SNV	A	C	Nonsense_Mutation	100.0	100.0	p.E42A
-Sample 45.1	Patient 45	4	1000000.0	1000001.0	Gene 4	SNV	A	G	5'UTR	100.0	100.0	p.C42D
-Sample 45.1	Patient 45	12	1000000.0	1000001.0	Gene 12	SNV	A	C	Nonsense_Mutation	100.0	100.0	p.D42A
-Sample 46.1	Patient 46	4	1000000.0	1000001.0	Gene 4	SNV	T	C	Missense_Mutation	100.0	100.0	p.D42A
-Sample 48.1	Patient 48	17	1000000.0	1000001.0	Gene 17	SNV	A	G	Missense_Mutation	100.0	100.0	p.D42C
-Sample 51.1	Patient 51	10	1000000.0	1000001.0	Gene 10	SNV	A	T	Missense_Mutation	100.0	100.0	p.E42C
-Sample 51.1	Patient 51	10	1000000.0	1000001.0	Gene 10	SNV	G	T	Missense_Mutation	100.0	100.0	p.E42D
-Sample 51.1	Patient 51	10	1000000.0	1000001.0	Gene 10	SNV	A	G	Missense_Mutation	100.0	100.0	p.A42D
-Sample 55.1	Patient 55	1	1000000.0	1000001.0	Gene 1	SNV	A	T	Nonsense_Mutation	100.0	100.0	p.A42C
-Sample 55.1	Patient 55	11	1000000.0	1000001.0	Gene 11	SNV	T	A	Missense_Mutation	100.0	100.0	p.A42E
-Sample 55.1	Patient 55	11	1000000.0	1000001.0	Gene 11	SNV	G	C	Missense_Mutation	100.0	100.0	p.C42D
-Sample 55.1	Patient 55	11	1000000.0	1000001.0	Gene 11	SNV	C	T	Nonsense_Mutation	100.0	100.0	p.A42D
-Sample 55.1	Patient 55	11	1000000.0	1000001.0	Gene 11	SNV	T	G	Missense_Mutation	100.0	100.0	p.E42A
-Sample 55.1	Patient 55	25	1000000.0	1000001.0	Gene 25	SNV	A	G	Frame_Shift_Del	100.0	100.0	p.E42D
-Sample 56.1	Patient 56	7	1000000.0	1000001.0	Gene 7	SNV	A	G	Frame_Shift_Del	100.0	100.0	p.A42C
-Sample 56.1	Patient 56	7	1000000.0	1000001.0	Gene 7	SNV	A	T	3'UTR	100.0	100.0	p.E42C
-Sample 56.1	Patient 56	7	1000000.0	1000001.0	Gene 7	SNV	G	A	Frame_Shift_Del	100.0	100.0	p.A42D
-Sample 56.1	Patient 56	9	1000000.0	1000001.0	Gene 9	SNV	C	G	Nonsense_Mutation	100.0	100.0	p.C42A
-Sample 56.1	Patient 56	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
-Sample 56.1	Patient 56	11	1000000.0	1000001.0	Gene 11	SNV	G	C	Frame_Shift_Del	100.0	100.0	p.E42C
-Sample 57.1	Patient 57	8	1000000.0	1000001.0	Gene 8	SNV	A	C	Frame_Shift_Del	100.0	100.0	p.C42D
-Sample 57.1	Patient 57	20	1000000.0	1000001.0	Gene 20	SNV	T	C	Missense_Mutation	100.0	100.0	p.A42C
-Sample 58.1	Patient 58	2	1000000.0	1000001.0	Gene 2	SNV	G	C	Nonsense_Mutation	100.0	100.0	p.A42D
-Sample 59.1	Patient 59	5	1000000.0	1000001.0	Gene 5	SNV	A	G	3'UTR	100.0	100.0	p.C42D
-Sample 59.1	Patient 59	6	1000000.0	1000001.0	Gene 6	SNV	G	T	Splice_Site	100.0	100.0	p.C42D
-Sample 59.1	Patient 59	9	1000000.0	1000001.0	Gene 9	SNV	A	C	Missense_Mutation	100.0	100.0	p.A42C
-Sample 59.1	Patient 59	19	1000000.0	1000001.0	Gene 19	SNV	A	C	Splice_Site	100.0	100.0	p.C42E
-Sample 60.1	Patient 60	7	1000000.0	1000001.0	Gene 7	SNV	T	G	Missense_Mutation	100.0	100.0	p.A42C
-Sample 60.1	Patient 60	8	1000000.0	1000001.0	Gene 8	SNV	A	C	Frame_Shift_Del	100.0	100.0	p.C42A
-Sample 60.1	Patient 60	17	1000000.0	1000001.0	Gene 17	SNV	C	T	Missense_Mutation	100.0	100.0	p.A42C
-Sample 63.1	Patient 63	4	1000000.0	1000001.0	Gene 4	SNV	A	C	Missense_Mutation	100.0	100.0	p.D42E
-Sample 63.1	Patient 63	7	1000000.0	1000001.0	Gene 7	SNV	G	T	Nonsense_Mutation	100.0	100.0	p.A42C
-Sample 64.1	Patient 64	24	1000000.0	1000001.0	Gene 24	SNV	A	T	Missense_Mutation	100.0	100.0	p.C42E
-Sample 66.1	Patient 66	10	1000000.0	1000001.0	Gene 10	SNV	G	A	Missense_Mutation	100.0	100.0	p.D42E
-Sample 66.1	Patient 66	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
-Sample 66.1	Patient 66	12	1000000.0	1000001.0	Gene 12	SNV	C	T	Nonsense_Mutation	100.0	100.0	p.C42D
-Sample 66.1	Patient 66	12	1000000.0	1000001.0	Gene 12	SNV	G	C	Missense_Mutation	100.0	100.0	p.E42C
-Sample 67.1	Patient 67	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
-Sample 68.1	Patient 68	4	1000000.0	1000001.0	Gene 4	SNV	C	G	Nonsense_Mutation	100.0	100.0	p.A42E
-Sample 69.1	Patient 69	7	1000000.0	1000001.0	Gene 7	SNV	G	C	Splice_Site	100.0	100.0	p.A42E
-Sample 69.1	Patient 69	10	1000000.0	1000001.0	Gene 10	SNV	G	T	Missense_Mutation	100.0	100.0	p.E42A
-Sample 70.1	Patient 70	14	1000000.0	1000001.0	Gene 14	SNV	T	A	Missense_Mutation	100.0	100.0	p.D42A
-Sample 71.1	Patient 71	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
-Sample 71.1	Patient 71	13	1000000.0	1000001.0	Gene 13	SNV	C	A	Frame_Shift_Ins	100.0	100.0	p.C42A
-Sample 72.1	Patient 72	2	1000000.0	1000001.0	Gene 2	SNV	A	G	Frame_Shift_Del	100.0	100.0	p.D42A
-Sample 74.1	Patient 74	25	1000000.0	1000001.0	Gene 25	SNV	A	C	Splice_Site	100.0	100.0	p.D42E
-Sample 75.1	Patient 75	7	1000000.0	1000001.0	Gene 7	SNV	T	G	Nonsense_Mutation	100.0	100.0	p.E42D
-Sample 76.1	Patient 76	7	1000000.0	1000001.0	Gene 7	SNV	G	T	Missense_Mutation	100.0	100.0	p.E42D
-Sample 76.1	Patient 76	7	1000000.0	1000001.0	Gene 7	SNV	G	C	Frame_Shift_Ins	100.0	100.0	p.A42E
-Sample 77.1	Patient 77	8	1000000.0	1000001.0	Gene 8	SNV	C	T	Splice_Site	100.0	100.0	p.E42D
-Sample 77.1	Patient 77	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
-Sample 78.1	Patient 78	17	1000000.0	1000001.0	Gene 17	SNV	A	G	Nonsense_Mutation	100.0	100.0	p.A42D
-Sample 79.1	Patient 79	4	1000000.0	1000001.0	Gene 4	SNV	C	G	Missense_Mutation	100.0	100.0	p.E42C
-Sample 79.1	Patient 79	6	1000000.0	1000001.0	Gene 6	SNV	C	A	Nonsense_Mutation	100.0	100.0	p.C42E
-Sample 79.1	Patient 79	13	1000000.0	1000001.0	Gene 13	SNV	C	A	Missense_Mutation	100.0	100.0	p.C42D
-Sample 80.1	Patient 80	5	1000000.0	1000001.0	Gene 5	SNV	A	G	Nonsense_Mutation	100.0	100.0	p.D42E
-Sample 80.1	Patient 80	8	1000000.0	1000001.0	Gene 8	SNV	C	A	Frame_Shift_Del	100.0	100.0	p.A42E
-Sample 80.1	Patient 80	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
-Sample 82.1	Patient 82	10	1000000.0	1000001.0	Gene 10	SNV	A	C	Missense_Mutation	100.0	100.0	p.D42A
-Sample 82.1	Patient 82	16	1000000.0	1000001.0	Gene 16	SNV	T	G	Missense_Mutation	100.0	100.0	p.D42E
-Sample 83.1	Patient 83	2	1000000.0	1000001.0	Gene 2	SNV	C	T	Splice_Site	100.0	100.0	p.C42A
-Sample 84.1	Patient 84	6	1000000.0	1000001.0	Gene 6	SNV	T	A	Nonsense_Mutation	100.0	100.0	p.C42A
-Sample 85.1	Patient 85	7	1000000.0	1000001.0	Gene 7	SNV	T	C	Nonsense_Mutation	100.0	100.0	p.E42C
-Sample 86.1	Patient 86	4	1000000.0	1000001.0	Gene 4	SNV	C	A	Nonsense_Mutation	100.0	100.0	p.A42D
-Sample 87.1	Patient 87	5	1000000.0	1000001.0	Gene 5	SNV	C	T	Nonsense_Mutation	100.0	100.0	p.D42E
-Sample 89.2	Patient 89	3	1000000.0	1000001.0	Gene 3	SNV	T	C	Frame_Shift_Del	100.0	100.0	p.C42E
-Sample 89.2	Patient 89	10	1000000.0	1000001.0	Gene 10	SNV	A	T	Frame_Shift_Ins	100.0	100.0	p.A42C
-Sample 89.3	Patient 89	1	1000000.0	1000001.0	Gene 1	SNV	T	G	Missense_Mutation	100.0	100.0	p.A42C
-Sample 90.1	Patient 90	2	1000000.0	1000001.0	Gene 2	SNV	C	A	Missense_Mutation	100.0	100.0	p.C42D
-Sample 91.1	Patient 91	1	1000000.0	1000001.0	Gene 1	SNV	A	G	Splice_Site	100.0	100.0	p.A42D
-Sample 91.1	Patient 91	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
-Sample 91.2	Patient 91	4	1000000.0	1000001.0	Gene 4	SNV	C	G	Frame_Shift_Ins	100.0	100.0	p.C42A
-Sample 91.2	Patient 91	5	1000000.0	1000001.0	Gene 5	SNV	A	T	Missense_Mutation	100.0	100.0	p.A42E
-Sample 91.2	Patient 91	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Missense_Mutation	100.0	100.0	p.D42A
-Sample 91.2	Patient 91	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
-Sample 93.1	Patient 93	1	1000000.0	1000001.0	Gene 1	SNV	C	T	Missense_Mutation	100.0	100.0	p.C42E
-Sample 93.1	Patient 93	16	1000000.0	1000001.0	Gene 16	SNV	T	C	Missense_Mutation	100.0	100.0	p.D42C
-Sample 95.1	Patient 95	8	1000000.0	1000001.0	Gene 8	SNV	C	A	Nonsense_Mutation	100.0	100.0	p.A42E
-Sample 95.1	Patient 95	11	1000000.0	1000001.0	Gene 11	SNV	G	A	Missense_Mutation	100.0	100.0	p.E42C
-Sample 99.1	Patient 99	6	1000000.0	1000001.0	Gene 6	SNV	T	G	Nonsense_Mutation	100.0	100.0	p.A42E
-Sample 99.1	Patient 99	12	1000000.0	1000001.0	Gene 12	SNV	T	G	5'UTR	100.0	100.0	p.E42D
-Sample 99.2	Patient 99	5	1000000.0	1000001.0	Gene 5	SNV	T	G	Splice_Site	100.0	100.0	p.D42E
-Sample 99.2	Patient 99	8	1000000.0	1000001.0	Gene 8	SNV	G	T	Frame_Shift_Del	100.0	100.0	p.A42C
-Sample 99.2	Patient 99	9	1000000.0	1000001.0	Gene 9	SNV	T	C	Frame_Shift_Del	100.0	100.0	p.C42E
-Sample 99.2	Patient 99	9	1000000.0	1000001.0	Gene 9	SNV	T	G	Missense_Mutation	100.0	100.0	p.E42C
-Sample 100.1	Patient 100	4	1000000.0	1000001.0	Gene 4	SNV	G	C	Nonsense_Mutation	100.0	100.0	p.D42A
-Sample 100.1	Patient 100	17	1000000.0	1000001.0	Gene 17	SNV	G	T	Splice_Site	100.0	100.0	p.A42C
+Sample test 1.1	Patient test 1	1	1000000.0	1000001.0	Gene 1	SNV	C	T	Frame_Shift_Del	100.0	100.0	p.A42C
+Sample test 1.1	Patient test 1	3	1000000.0	1000001.0	Gene 3	SNV	G	C	Frame_Shift_Del	100.0	100.0	p.A42D
+Sample test 2.1	Patient test 2	16	1000000.0	1000001.0	Gene 16	SNV	A	G	Frame_Shift_Ins	100.0	100.0	p.C42E
+Sample test 2.1	Patient test 2	25	1000000.0	1000001.0	Gene 25	SNV	A	G	Nonsense_Mutation	100.0	100.0	p.E42C
+Sample test 3.1	Patient test 3	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
+Sample test 4.1	Patient test 4	1	1000000.0	1000001.0	Gene 1	SNV	A	T	Missense_Mutation	100.0	100.0	p.D42C
+Sample test 4.1	Patient test 4	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
+Sample test 4.1	Patient test 4	11	1000000.0	1000001.0	Gene 11	SNV	T	C	5'UTR	100.0	100.0	p.C42D
+Sample test 4.1	Patient test 4	25	1000000.0	1000001.0	Gene 25	SNV	C	G	Missense_Mutation	100.0	100.0	p.D42A
+Sample test 5.1	Patient test 5	7	1000000.0	1000001.0	Gene 7	SNV	G	C	Nonsense_Mutation	100.0	100.0	p.A42E
+Sample test 5.1	Patient test 5	18	1000000.0	1000001.0	Gene 18	SNV	C	T	Nonsense_Mutation	100.0	100.0	p.A42C
+Sample test 6.1	Patient test 6	3	1000000.0	1000001.0	Gene 3	SNV	C	A	Nonsense_Mutation	100.0	100.0	p.C42E
+Sample test 6.1	Patient test 6	9	1000000.0	1000001.0	Gene 9	SNV	T	A	Splice_Site	100.0	100.0	p.A42E
+Sample test 6.1	Patient test 6	21	1000000.0	1000001.0	Gene 21	SNV	T	C	Frame_Shift_Del	100.0	100.0	p.D42E
+Sample test 7.1	Patient test 7	4	1000000.0	1000001.0	Gene 4	SNV	T	C	Frame_Shift_Del	100.0	100.0	p.D42A
+Sample test 8.1	Patient test 8	8	1000000.0	1000001.0	Gene 8	SNV	A	G	Frame_Shift_Del	100.0	100.0	p.D42C
+Sample test 8.1	Patient test 8	8	1000000.0	1000001.0	Gene 8	SNV	A	C	Nonsense_Mutation	100.0	100.0	p.E42D
+Sample test 8.1	Patient test 8	15	1000000.0	1000001.0	Gene 15	SNV	A	C	Nonsense_Mutation	100.0	100.0	p.D42E
+Sample test 8.1	Patient test 8	18	1000000.0	1000001.0	Gene 18	SNV	A	T	Missense_Mutation	100.0	100.0	p.A42C
+Sample test 9.1	Patient test 9	4	1000000.0	1000001.0	Gene 4	SNV	A	C	5'UTR	100.0	100.0	p.D42E
+Sample test 10.1	Patient test 10	2	1000000.0	1000001.0	Gene 2	SNV	C	T	Missense_Mutation	100.0	100.0	p.D42C
+Sample test 10.1	Patient test 10	2	1000000.0	1000001.0	Gene 2	SNV	T	G	Splice_Site	100.0	100.0	p.D42C
+Sample test 10.1	Patient test 10	2	1000000.0	1000001.0	Gene 2	SNV	A	T	Splice_Site	100.0	100.0	p.A42D
+Sample test 10.1	Patient test 10	2	1000000.0	1000001.0	Gene 2	SNV	G	A	Frame_Shift_Del	100.0	100.0	p.C42D
+Sample test 11.1	Patient test 11	11	1000000.0	1000001.0	Gene 11	SNV	G	C	Missense_Mutation	100.0	100.0	p.D42E
+Sample test 12.1	Patient test 12	10	1000000.0	1000001.0	Gene 10	SNV	T	A	Splice_Site	100.0	100.0	p.C42A
+Sample test 12.1	Patient test 12	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
+Sample test 12.1	Patient test 12	19	1000000.0	1000001.0	Gene 19	SNV	A	T	Frame_Shift_Del	100.0	100.0	p.C42A
+Sample test 12.2	Patient test 12	17	1000000.0	1000001.0	Gene 17	SNV	T	G	Nonsense_Mutation	100.0	100.0	p.A42C
+Sample test 13.1	Patient test 13	4	1000000.0	1000001.0	Gene 4	SNV	C	G	Frame_Shift_Del	100.0	100.0	p.A42D
+Sample test 13.1	Patient test 13	11	1000000.0	1000001.0	Gene 11	SNV	T	A	Missense_Mutation	100.0	100.0	p.D42A
+Sample test 13.1	Patient test 13	12	1000000.0	1000001.0	Gene 12	SNV	G	A	Missense_Mutation	100.0	100.0	p.C42E
+Sample test 14.1	Patient test 14	2	1000000.0	1000001.0	Gene 2	SNV	A	C	Nonsense_Mutation	100.0	100.0	p.E42C
+Sample test 14.1	Patient test 14	3	1000000.0	1000001.0	Gene 3	SNV	G	T	Nonsense_Mutation	100.0	100.0	p.E42D
+Sample test 15.1	Patient test 15	9	1000000.0	1000001.0	Gene 9	SNV	T	C	Missense_Mutation	100.0	100.0	p.D42A
+Sample test 15.1	Patient test 15	9	1000000.0	1000001.0	Gene 9	SNV	C	T	Missense_Mutation	100.0	100.0	p.D42E
+Sample test 15.1	Patient test 15	21	1000000.0	1000001.0	Gene 21	SNV	T	A	Missense_Mutation	100.0	100.0	p.D42A
+Sample test 17.1	Patient test 17	19	1000000.0	1000001.0	Gene 19	SNV	C	T	Missense_Mutation	100.0	100.0	p.A42E
+Sample test 17.1	Patient test 17	19	1000000.0	1000001.0	Gene 19	SNV	T	A	Splice_Site	100.0	100.0	p.E42D
+Sample test 18.1	Patient test 18	17	1000000.0	1000001.0	Gene 17	SNV	A	T	Nonsense_Mutation	100.0	100.0	p.D42E
+Sample test 19.1	Patient test 19	12	1000000.0	1000001.0	Gene 12	SNV	A	G	Nonsense_Mutation	100.0	100.0	p.C42E
+Sample test 19.2	Patient test 19	4	1000000.0	1000001.0	Gene 4	SNV	G	T	Splice_Site	100.0	100.0	p.D42C
+Sample test 19.2	Patient test 19	24	1000000.0	1000001.0	Gene 24	SNV	G	T	Missense_Mutation	100.0	100.0	p.A42C
+Sample test 20.1	Patient test 20	6	1000000.0	1000001.0	Gene 6	SNV	T	G	Nonsense_Mutation	100.0	100.0	p.D42A
+Sample test 20.1	Patient test 20	9	1000000.0	1000001.0	Gene 9	SNV	G	T	5'UTR	100.0	100.0	p.D42A
+Sample test 21.1	Patient test 21	9	1000000.0	1000001.0	Gene 9	SNV	T	G	Nonsense_Mutation	100.0	100.0	p.E42A
+Sample test 22.2	Patient test 22	3	1000000.0	1000001.0	Gene 3	SNV	G	T	Frame_Shift_Del	100.0	100.0	p.A42C
+Sample test 22.2	Patient test 22	25	1000000.0	1000001.0	Gene 25	SNV	A	C	Frame_Shift_Ins	100.0	100.0	p.C42D
+Sample test 23.1	Patient test 23	4	1000000.0	1000001.0	Gene 4	SNV	T	A	Nonsense_Mutation	100.0	100.0	p.D42E
+Sample test 23.1	Patient test 23	8	1000000.0	1000001.0	Gene 8	SNV	G	C	Missense_Mutation	100.0	100.0	p.C42D
+Sample test 23.2	Patient test 23	6	1000000.0	1000001.0	Gene 6	SNV	T	A	Missense_Mutation	100.0	100.0	p.A42E
+Sample test 25.1	Patient test 25	13	1000000.0	1000001.0	Gene 13	SNV	C	G	Missense_Mutation	100.0	100.0	p.D42E
+Sample test 25.1	Patient test 25	18	1000000.0	1000001.0	Gene 18	SNV	A	G	Missense_Mutation	100.0	100.0	p.A42C
+Sample test 28.1	Patient test 28	4	1000000.0	1000001.0	Gene 4	SNV	C	A	Splice_Site	100.0	100.0	p.A42C
+Sample test 28.1	Patient test 28	14	1000000.0	1000001.0	Gene 14	SNV	A	G	Frame_Shift_Ins	100.0	100.0	p.C42E
+Sample test 29.1	Patient test 29	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
+Sample test 30.1	Patient test 30	1	1000000.0	1000001.0	Gene 1	SNV	C	G	Frame_Shift_Del	100.0	100.0	p.A42D
+Sample test 30.1	Patient test 30	4	1000000.0	1000001.0	Gene 4	SNV	G	A	Splice_Site	100.0	100.0	p.D42A
+Sample test 30.1	Patient test 30	4	1000000.0	1000001.0	Gene 4	SNV	T	G	3'UTR	100.0	100.0	p.E42A
+Sample test 30.1	Patient test 30	9	1000000.0	1000001.0	Gene 9	SNV	C	A	Nonsense_Mutation	100.0	100.0	p.D42A
+Sample test 30.1	Patient test 30	9	1000000.0	1000001.0	Gene 9	SNV	C	A	Frame_Shift_Del	100.0	100.0	p.D42A
+Sample test 30.2	Patient test 30	8	1000000.0	1000001.0	Gene 8	SNV	A	G	Frame_Shift_Ins	100.0	100.0	p.E42A
+Sample test 31.1	Patient test 31	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
+Sample test 31.1	Patient test 31	10	1000000.0	1000001.0	Gene 10	SNV	G	A	Nonsense_Mutation	100.0	100.0	p.C42D
+Sample test 31.1	Patient test 31	11	1000000.0	1000001.0	Gene 11	SNV	G	C	Splice_Site	100.0	100.0	p.D42E
+Sample test 32.1	Patient test 32	6	1000000.0	1000001.0	Gene 6	SNV	A	C	Missense_Mutation	100.0	100.0	p.D42E
+Sample test 32.1	Patient test 32	6	1000000.0	1000001.0	Gene 6	SNV	C	G	Splice_Site	100.0	100.0	p.C42A
+Sample test 32.1	Patient test 32	9	1000000.0	1000001.0	Gene 9	SNV	T	C	Missense_Mutation	100.0	100.0	p.D42A
+Sample test 32.1	Patient test 32	12	1000000.0	1000001.0	Gene 12	SNV	A	T	Splice_Site	100.0	100.0	p.D42A
+Sample test 33.1	Patient test 33	6	1000000.0	1000001.0	Gene 6	SNV	T	G	Splice_Site	100.0	100.0	p.A42E
+Sample test 33.1	Patient test 33	11	1000000.0	1000001.0	Gene 11	SNV	G	A	Nonsense_Mutation	100.0	100.0	p.A42C
+Sample test 33.1	Patient test 33	20	1000000.0	1000001.0	Gene 20	SNV	G	T	Nonsense_Mutation	100.0	100.0	p.A42E
+Sample test 34.1	Patient test 34	4	1000000.0	1000001.0	Gene 4	SNV	A	C	Missense_Mutation	100.0	100.0	p.E42A
+Sample test 34.1	Patient test 34	8	1000000.0	1000001.0	Gene 8	SNV	G	T	Frame_Shift_Del	100.0	100.0	p.C42A
+Sample test 34.1	Patient test 34	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
+Sample test 35.1	Patient test 35	1	1000000.0	1000001.0	Gene 1	SNV	G	A	Missense_Mutation	100.0	100.0	p.E42C
+Sample test 35.1	Patient test 35	2	1000000.0	1000001.0	Gene 2	SNV	T	C	Missense_Mutation	100.0	100.0	p.D42A
+Sample test 35.1	Patient test 35	10	1000000.0	1000001.0	Gene 10	SNV	G	T	5'UTR	100.0	100.0	p.D42C
+Sample test 36.1	Patient test 36	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
+Sample test 37.1	Patient test 37	2	1000000.0	1000001.0	Gene 2	SNV	A	C	Frame_Shift_Del	100.0	100.0	p.A42E
+Sample test 37.1	Patient test 37	9	1000000.0	1000001.0	Gene 9	SNV	G	T	Frame_Shift_Del	100.0	100.0	p.D42E
+Sample test 39.1	Patient test 39	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
+Sample test 40.1	Patient test 40	4	1000000.0	1000001.0	Gene 4	SNV	A	G	Nonsense_Mutation	100.0	100.0	p.C42D
+Sample test 40.1	Patient test 40	13	1000000.0	1000001.0	Gene 13	SNV	A	T	Frame_Shift_Del	100.0	100.0	p.C42D
+Sample test 40.1	Patient test 40	13	1000000.0	1000001.0	Gene 13	SNV	A	T	Nonsense_Mutation	100.0	100.0	p.D42C
+Sample test 41.1	Patient test 41	19	1000000.0	1000001.0	Gene 19	SNV	A	G	Frame_Shift_Del	100.0	100.0	p.A42C
+Sample test 42.1	Patient test 42	2	1000000.0	1000001.0	Gene 2	SNV	C	G	Nonsense_Mutation	100.0	100.0	p.C42A
+Sample test 42.1	Patient test 42	3	1000000.0	1000001.0	Gene 3	SNV	A	C	Missense_Mutation	100.0	100.0	p.C42D
+Sample test 42.1	Patient test 42	9	1000000.0	1000001.0	Gene 9	SNV	C	G	Frame_Shift_Ins	100.0	100.0	p.A42C
+Sample test 43.1	Patient test 43	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
+Sample test 44.1	Patient test 44	4	1000000.0	1000001.0	Gene 4	SNV	A	G	3'UTR	100.0	100.0	p.C42D
+Sample test 44.1	Patient test 44	5	1000000.0	1000001.0	Gene 5	SNV	G	T	Splice_Site	100.0	100.0	p.C42D
+Sample test 44.1	Patient test 44	8	1000000.0	1000001.0	Gene 8	SNV	G	C	Splice_Site	100.0	100.0	p.D42E
+Sample test 44.1	Patient test 44	18	1000000.0	1000001.0	Gene 18	SNV	A	C	Splice_Site	100.0	100.0	p.C42E
+Sample test 45.1	Patient test 45	6	1000000.0	1000001.0	Gene 6	SNV	T	G	Missense_Mutation	100.0	100.0	p.A42C
+Sample test 45.1	Patient test 45	7	1000000.0	1000001.0	Gene 7	SNV	A	C	Frame_Shift_Del	100.0	100.0	p.C42A
+Sample test 45.1	Patient test 45	18	1000000.0	1000001.0	Gene 18	SNV	C	T	Missense_Mutation	100.0	100.0	p.A42C
+Sample test 46.1	Patient test 46	14	1000000.0	1000001.0	Gene 14	SNV	C	G	Missense_Mutation	100.0	100.0	p.A42C
+Sample test 48.1	Patient test 48	5	1000000.0	1000001.0	Gene 5	SNV	A	C	Missense_Mutation	100.0	100.0	p.D42E
+Sample test 48.1	Patient test 48	8	1000000.0	1000001.0	Gene 8	SNV	G	T	Nonsense_Mutation	100.0	100.0	p.A42C
+Sample test 48.1	Patient test 48	9	1000000.0	1000001.0	Gene 9	SNV	C	T	Frame_Shift_Del	100.0	100.0	p.E42C
+Sample test 49.1	Patient test 49	11	1000000.0	1000001.0	Gene 11	SNV	A	G	Splice_Site	100.0	100.0	p.D42A
+Sample test 49.1	Patient test 49	12	1000000.0	1000001.0	Gene 12	SNV	T	G	Splice_Site	100.0	100.0	p.E42C
+Sample test 49.1	Patient test 49	13	1000000.0	1000001.0	Gene 13	SNV	A	T	Missense_Mutation	100.0	100.0	p.E42A
+Sample test 49.1	Patient test 49	14	1000000.0	1000001.0	Gene 14	SNV	T	C	Missense_Mutation	100.0	100.0	p.A42E
+Sample test 51.1	Patient test 51	1	1000000.0	1000001.0	Gene 1	SNV	C	T	Nonsense_Mutation	100.0	100.0	p.C42D
+Sample test 51.1	Patient test 51	1	1000000.0	1000001.0	Gene 1	SNV	G	C	Missense_Mutation	100.0	100.0	p.E42C
+Sample test 53.1	Patient test 53	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
+Sample test 54.1	Patient test 54	6	1000000.0	1000001.0	Gene 6	SNV	A	G	Missense_Mutation	100.0	100.0	p.E42A
+Sample test 54.1	Patient test 54	8	1000000.0	1000001.0	Gene 8	SNV	T	G	Nonsense_Mutation	100.0	100.0	p.D42A
+Sample test 56.1	Patient test 56	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
+Sample test 56.1	Patient test 56	19	1000000.0	1000001.0	Gene 19	SNV	C	G	Missense_Mutation	100.0	100.0	p.C42A
+Sample test 57.1	Patient test 57	21	1000000.0	1000001.0	Gene 21	SNV	T	A	Missense_Mutation	100.0	100.0	p.A42D
+Sample test 57.1	Patient test 57	21	1000000.0	1000001.0	Gene 21	SNV	C	G	Missense_Mutation	100.0	100.0	p.E42A
+Sample test 57.1	Patient test 57	21	1000000.0	1000001.0	Gene 21	SNV	G	A	Nonsense_Mutation	100.0	100.0	p.A42D
+Sample test 58.1	Patient test 58	6	1000000.0	1000001.0	Gene 6	SNV	A	T	Frame_Shift_Del	100.0	100.0	p.C42A
+Sample test 59.1	Patient test 59	8	1000000.0	1000001.0	Gene 8	SNV	G	A	Missense_Mutation	100.0	100.0	p.E42D
+Sample test 60.1	Patient test 60	7	1000000.0	1000001.0	Gene 7	SNV	T	C	Frame_Shift_Del	100.0	100.0	p.D42A
+Sample test 60.1	Patient test 60	10	1000000.0	1000001.0	Gene 10	SNV	G	C	Nonsense_Mutation	100.0	100.0	p.D42E
+Sample test 60.2	Patient test 60	19	1000000.0	1000001.0	Gene 19	SNV	A	C	Missense_Mutation	100.0	100.0	p.A42D
+Sample test 62.1	Patient test 62	8	1000000.0	1000001.0	Gene 8	SNV	C	G	Splice_Site	100.0	100.0	p.A42D
+Sample test 62.1	Patient test 62	20	1000000.0	1000001.0	Gene 20	SNV	C	T	Missense_Mutation	100.0	100.0	p.E42A
+Sample test 63.1	Patient test 63	1	1000000.0	1000001.0	Gene 1	SNV	T	G	Missense_Mutation	100.0	100.0	p.D42A
+Sample test 63.1	Patient test 63	13	1000000.0	1000001.0	Gene 13	SNV	C	A	Missense_Mutation	100.0	100.0	p.C42D
+Sample test 64.1	Patient test 64	5	1000000.0	1000001.0	Gene 5	SNV	A	G	Nonsense_Mutation	100.0	100.0	p.D42E
+Sample test 64.1	Patient test 64	8	1000000.0	1000001.0	Gene 8	SNV	C	A	Frame_Shift_Del	100.0	100.0	p.A42E
+Sample test 64.1	Patient test 64	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
+Sample test 66.1	Patient test 66	10	1000000.0	1000001.0	Gene 10	SNV	A	C	Missense_Mutation	100.0	100.0	p.D42A
+Sample test 66.1	Patient test 66	16	1000000.0	1000001.0	Gene 16	SNV	T	G	Missense_Mutation	100.0	100.0	p.D42E
+Sample test 67.1	Patient test 67	2	1000000.0	1000001.0	Gene 2	SNV	C	T	Splice_Site	100.0	100.0	p.C42A
+Sample test 68.1	Patient test 68	6	1000000.0	1000001.0	Gene 6	SNV	T	A	Nonsense_Mutation	100.0	100.0	p.C42A
+Sample test 68.2	Patient test 68	7	1000000.0	1000001.0	Gene 7	SNV	T	C	Nonsense_Mutation	100.0	100.0	p.E42C
+Sample test 69.1	Patient test 69	4	1000000.0	1000001.0	Gene 4	SNV	C	A	Nonsense_Mutation	100.0	100.0	p.A42D
+Sample test 70.1	Patient test 70	5	1000000.0	1000001.0	Gene 5	SNV	C	T	Nonsense_Mutation	100.0	100.0	p.D42E
+Sample test 73.1	Patient test 73	3	1000000.0	1000001.0	Gene 3	SNV	T	C	Frame_Shift_Del	100.0	100.0	p.C42E
+Sample test 73.1	Patient test 73	10	1000000.0	1000001.0	Gene 10	SNV	A	T	Frame_Shift_Ins	100.0	100.0	p.A42C
+Sample test 74.1	Patient test 74	1	1000000.0	1000001.0	Gene 1	SNV	T	G	Missense_Mutation	100.0	100.0	p.A42C
+Sample test 75.1	Patient test 75	2	1000000.0	1000001.0	Gene 2	SNV	C	A	Missense_Mutation	100.0	100.0	p.C42D
+Sample test 76.1	Patient test 76	1	1000000.0	1000001.0	Gene 1	SNV	A	G	Splice_Site	100.0	100.0	p.A42D
+Sample test 76.1	Patient test 76	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
+Sample test 77.1	Patient test 77	4	1000000.0	1000001.0	Gene 4	SNV	C	G	Frame_Shift_Ins	100.0	100.0	p.C42A
+Sample test 77.1	Patient test 77	5	1000000.0	1000001.0	Gene 5	SNV	A	T	Missense_Mutation	100.0	100.0	p.A42E
+Sample test 77.1	Patient test 77	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Missense_Mutation	100.0	100.0	p.D42A
+Sample test 77.1	Patient test 77	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
+Sample test 79.1	Patient test 79	1	1000000.0	1000001.0	Gene 1	SNV	C	T	Missense_Mutation	100.0	100.0	p.C42E
+Sample test 79.1	Patient test 79	16	1000000.0	1000001.0	Gene 16	SNV	T	C	Missense_Mutation	100.0	100.0	p.D42C
+Sample test 81.1	Patient test 81	8	1000000.0	1000001.0	Gene 8	SNV	C	A	Nonsense_Mutation	100.0	100.0	p.A42E
+Sample test 81.1	Patient test 81	11	1000000.0	1000001.0	Gene 11	SNV	G	A	Missense_Mutation	100.0	100.0	p.E42C
+Sample test 85.1	Patient test 85	6	1000000.0	1000001.0	Gene 6	SNV	T	G	Nonsense_Mutation	100.0	100.0	p.A42E
+Sample test 85.1	Patient test 85	12	1000000.0	1000001.0	Gene 12	SNV	T	G	5'UTR	100.0	100.0	p.E42D
+Sample test 86.1	Patient test 86	5	1000000.0	1000001.0	Gene 5	SNV	T	G	Splice_Site	100.0	100.0	p.D42E
+Sample test 86.1	Patient test 86	8	1000000.0	1000001.0	Gene 8	SNV	G	T	Frame_Shift_Del	100.0	100.0	p.A42C
+Sample test 86.1	Patient test 86	9	1000000.0	1000001.0	Gene 9	SNV	T	C	Frame_Shift_Del	100.0	100.0	p.C42E
+Sample test 86.1	Patient test 86	9	1000000.0	1000001.0	Gene 9	SNV	T	G	Missense_Mutation	100.0	100.0	p.E42C
+Sample test 86.2	Patient test 86	4	1000000.0	1000001.0	Gene 4	SNV	G	C	Nonsense_Mutation	100.0	100.0	p.D42A
+Sample test 86.2	Patient test 86	17	1000000.0	1000001.0	Gene 17	SNV	G	T	Splice_Site	100.0	100.0	p.A42C
+Sample test 88.1	Patient test 88	2	1000000.0	1000001.0	Gene 2	SNV	G	A	5'UTR	100.0	100.0	p.D42E
+Sample test 88.1	Patient test 88	9	1000000.0	1000001.0	Gene 9	SNV	A	C	Nonsense_Mutation	100.0	100.0	p.D42C
+Sample test 88.1	Patient test 88	12	1000000.0	1000001.0	Gene 12	SNV	T	A	Frame_Shift_Ins	100.0	100.0	p.A42D
+Sample test 90.1	Patient test 90	7	1000000.0	1000001.0	Gene 7	SNV	A	T	Missense_Mutation	100.0	100.0	p.A42D
+Sample test 90.1	Patient test 90	7	1000000.0	1000001.0	Gene 7	SNV	G	C	3'UTR	100.0	100.0	p.E42D
+Sample test 90.1	Patient test 90	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
+Sample test 90.1	Patient test 90	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S
+Sample test 90.1	Patient test 90	11	1000000.0	1000001.0	Gene 11	SNV	A	T	Frame_Shift_Ins	100.0	100.0	p.E42A
+Sample test 90.1	Patient test 90	11	1000000.0	1000001.0	Gene 11	SNV	C	A	Missense_Mutation	100.0	100.0	p.C42E
+Sample test 90.1	Patient test 90	11	1000000.0	1000001.0	Gene 11	SNV	C	T	Nonsense_Mutation	100.0	100.0	p.C42A
+Sample test 90.1	Patient test 90	11	1000000.0	1000001.0	Gene 11	SNV	C	T	Missense_Mutation	100.0	100.0	p.C42E
+Sample test 92.1	Patient test 92	6	1000000.0	1000001.0	Gene 6	SNV	G	C	Missense_Mutation	100.0	100.0	p.A42D
+Sample test 92.1	Patient test 92	6	1000000.0	1000001.0	Gene 6	SNV	A	C	Frame_Shift_Ins	100.0	100.0	p.E42D
+Sample test 92.1	Patient test 92	6	1000000.0	1000001.0	Gene 6	SNV	C	T	Nonsense_Mutation	100.0	100.0	p.E42A
+Sample test 92.1	Patient test 92	11	1000000.0	1000001.0	Gene 11	SNV	A	T	Frame_Shift_Ins	100.0	100.0	p.A42E
+Sample test 92.1	Patient test 92	11	1000000.0	1000001.0	Gene 11	SNV	G	T	Missense_Mutation	100.0	100.0	p.A42C
+Sample test 92.1	Patient test 92	11	1000000.0	1000001.0	Gene 11	SNV	G	C	Nonsense_Mutation	100.0	100.0	p.E42C
+Sample test 92.1	Patient test 92	11	1000000.0	1000001.0	Gene 11	SNV	C	A	Nonsense_Mutation	100.0	100.0	p.C42A
+Sample test 92.1	Patient test 92	12	1000000.0	1000001.0	Gene 12	SNV	G	A	Splice_Site	100.0	100.0	p.D42C
+Sample test 92.1	Patient test 92	24	1000000.0	1000001.0	Gene 24	SNV	A	T	Missense_Mutation	100.0	100.0	p.E42C
+Sample test 93.1	Patient test 93	4	1000000.0	1000001.0	Gene 4	SNV	T	A	Splice_Site	100.0	100.0	p.E42D
+Sample test 93.1	Patient test 93	4	1000000.0	1000001.0	Gene 4	SNV	C	T	Missense_Mutation	100.0	100.0	p.E42A
+Sample test 93.2	Patient test 93	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
+Sample test 93.2	Patient test 93	11	1000000.0	1000001.0	Gene 11	SNV	G	C	Missense_Mutation	100.0	100.0	p.C42D
+Sample test 93.2	Patient test 93	11	1000000.0	1000001.0	Gene 11	SNV	C	T	Frame_Shift_Ins	100.0	100.0	p.E42C
+Sample test 94.1	Patient test 94	3	1000000.0	1000001.0	Gene 3	SNV	C	T	Missense_Mutation	100.0	100.0	p.D42A
+Sample test 94.1	Patient test 94	3	1000000.0	1000001.0	Gene 3	SNV	T	C	Splice_Site	100.0	100.0	p.A42D
+Sample test 94.1	Patient test 94	3	1000000.0	1000001.0	Gene 3	SNV	T	A	Splice_Site	100.0	100.0	p.C42E
+Sample test 94.1	Patient test 94	4	1000000.0	1000001.0	Gene 4	SNV	T	G	Splice_Site	100.0	100.0	p.D42E
+Sample test 94.1	Patient test 94	8	1000000.0	1000001.0	Gene 8	SNV	A	T	Splice_Site	100.0	100.0	p.S42P
+Sample test 94.1	Patient test 94	11	1000000.0	1000001.0	Gene 11	SNV	G	A	Frame_Shift_Ins	100.0	100.0	p.E42D
+Sample test 94.1	Patient test 94	15	1000000.0	1000001.0	Gene 15	SNV	C	G	Nonsense_Mutation	100.0	100.0	p.A42E
+Sample test 95.1	Patient test 95	1	1000000.0	1000001.0	Gene 1	SNV	A	G	Frame_Shift_Ins	100.0	100.0	p.C42A
+Sample test 96.1	Patient test 96	5	1000000.0	1000001.0	Gene 5	SNV	C	T	Missense_Mutation	100.0	100.0	p.D42C
+Sample test 96.1	Patient test 96	10	1000000.0	1000001.0	Gene 10	SNV	C	T	Missense_Mutation	100.0	100.0	p.M42S

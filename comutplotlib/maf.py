@@ -13,14 +13,14 @@ from comutplotlib.mutation_annotation import MutationAnnotation
 import comutplotlib.pandas_util as pd_util
 
 
-def join_mafs(mafs: list["MAF"]):
+def join_mafs(mafs: list["MAF"], verbose=False):
     if len(mafs) == 0:
         return MAF()
     elif len(mafs) == 1:
         return mafs[0].copy()
     else:
         maf = mafs[0]
-        for other in tqdm(mafs[1:], desc="Joining MAFs", total=len(mafs), initial=1):
+        for other in tqdm(mafs[1:], desc="Joining MAFs", total=len(mafs), initial=1, disable=not verbose):
             maf = maf.join(other=other)
         return maf
 
@@ -214,7 +214,7 @@ class MAF(MutationAnnotation, AnnotationTable):
             return self
         else:
             merged_data = pd.concat(
-                [self.data, other.data], ignore_index=True
+                [d for d in [self.data, other.data] if not d.empty], ignore_index=True
             ).drop_duplicates(ignore_index=True)
             maf = MAF(
                 data=merged_data,

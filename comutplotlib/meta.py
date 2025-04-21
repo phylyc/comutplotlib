@@ -73,6 +73,10 @@ class Meta(object):
         return meta_data
 
     def reindex(self, index=None, columns=None):
+        if index is not None:
+            self.rows = index
+            self.rows_per_sample = [r for r in index if r in self.rows_per_sample]
+            self.df = self.df.reindex(columns=index)
         if columns is not None:
             self.sif.select({columns.name: columns}, inplace=True)
             self.df = self.df.reindex(index=columns)

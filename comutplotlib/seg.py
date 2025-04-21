@@ -4,14 +4,14 @@ import pandas as pd
 from tqdm import tqdm
 
 
-def join_segs(segs: list["SEG"]):
+def join_segs(segs: list["SEG"], verbose=False):
     if len(segs) == 0:
         return SEG()
     elif len(segs) == 1:
         return segs[0].copy()
     else:
         seg = segs[0]
-        for other in tqdm(segs[1:], desc="Joining SEGs", total=len(segs), initial=1):
+        for other in tqdm(segs[1:], desc="Joining SEGs", total=len(segs), initial=1, disable=not verbose):
             seg = seg.join(other=other)
         return seg
 

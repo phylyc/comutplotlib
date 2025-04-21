@@ -6,14 +6,14 @@ from tqdm import tqdm
 from comutplotlib.mutation_annotation import MutationAnnotation as MutA
 
 
-def join_gistics(gistics: list["Gistic"]):
+def join_gistics(gistics: list["Gistic"], verbose=False):
     if len(gistics) == 0:
         return Gistic()
     elif len(gistics) == 1:
         return gistics[0].copy()
     else:
         gistic = gistics[0]
-        for other in tqdm(gistics[1:], desc="Joining GISTICs", total=len(gistics), initial=1):
+        for other in tqdm(gistics[1:], desc="Joining GISTICs", total=len(gistics), initial=1, disable=not verbose):
             gistic = gistic.join(other=other)
         return gistic
 

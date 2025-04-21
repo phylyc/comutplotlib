@@ -11,7 +11,7 @@ The bottom panel presents patient- and sample-level metadata. For patients with 
 
 
 ## **Features**  
-✔ **Visualizes SNVs and CNVs** in a single plot  
+✔ **Visualizes SNVs and CNVs in a single plot**  
 ✔ **Summarizes mutational burden, recurrence, and metadata**  
 ✔ **Customizable layout and annotation**  
 ✔ **Compatible with MAF, GISTIC, and SIF files**  

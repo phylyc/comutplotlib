@@ -8,6 +8,7 @@ class CNV(object):
         low_amp_threshold: int | float = 1,
         mid_amp_threshold: int | float = 1.5,
         high_amp_threshold: int | float = 2,
+        baseline: int | float = 0,
         low_del_threshold: int | float = -1,
         mid_del_threshold: int | float = -1.5,
         high_del_threshold: int | float = -2,
@@ -17,6 +18,7 @@ class CNV(object):
         self.low_amp_threshold = low_amp_threshold
         self.mid_amp_threshold = mid_amp_threshold
         self.high_amp_threshold = high_amp_threshold
+        self.baseline = baseline
         self.low_del_threshold = low_del_threshold
         self.mid_del_threshold = mid_del_threshold
         self.high_del_threshold = high_del_threshold

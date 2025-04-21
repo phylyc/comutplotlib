@@ -9,14 +9,14 @@ from comutplotlib.sample_annotation import SampleAnnotation
 from comutplotlib import pandas_util as pd_util
 
 
-def join_sifs(sifs: list["SIF"]):
+def join_sifs(sifs: list["SIF"], verbose=False):
     if len(sifs) == 0:
         return SIF()
     elif len(sifs) == 1:
         return sifs[0].copy()
     else:
         sif = sifs[0]
-        for other in tqdm(sifs[1:], desc="Joining SIFs", total=len(sifs), initial=1):
+        for other in tqdm(sifs[1:], desc="Joining SIFs", total=len(sifs), initial=1, disable=not verbose):
             sif = sif.join(other=other)
         return sif
 

@@ -94,6 +94,7 @@ class Palette(UserDict):
         deepyellow,
         deepcyan,
     ) = sns.color_palette("deep")
+    offgrey = (0.91, 0.91, 0.91)
     backgroundgrey = (0.95, 0.95, 0.95)
     white = (1, 1, 1)
     black = (0, 0, 0)
@@ -340,12 +341,12 @@ class Palette(UserDict):
         palette2 = sns.dark_palette(color, n_colors=np.floor(n_colors / 2) + 3)[3:]
         return [p for p in palette1] + [p for p in reversed(palette2)]
 
-    def get_snv_cmap(self, data):
+    def get_snv_cmap(self, snv):
         # Some functional effects are painted with the same color, which messes up
         # the legend, so we have to construct the legend color map separately.
         mut_cmap = {}
         inv_mut_cmap = defaultdict(list)
-        for effect in data.snv.effects:
+        for effect in snv.effects:
             color = self.get(effect, self.grey)
             mut_cmap[effect] = color
             inv_mut_cmap[color].append(better_effect_legend(effect))
@@ -354,17 +355,17 @@ class Palette(UserDict):
         }
         return Palette(snv_cmap)
 
-    def get_cnv_cmap(self, data):
+    def get_cnv_cmap(self, cnv):
         amp_color = self.red
         del_color = self.blue
         _cnv_cmap = {
-            data.high_amp_threshold: self.adjust_lightness(amp_color, 1.17),
-            data.mid_amp_threshold: self.adjust_lightness(amp_color, 1.2),
-            data.low_amp_threshold: self.adjust_lightness(amp_color, 1.78),
-            data.baseline: self.backgroundgrey,
-            data.low_del_threshold: self.adjust_lightness(del_color, 2.03),
-            data.mid_del_threshold: self.adjust_lightness(del_color, 1.2),
-            data.high_del_threshold: self.adjust_lightness(del_color, 1.07),
+            cnv.high_amp_threshold: self.adjust_lightness(amp_color, 1.17),
+            cnv.mid_amp_threshold: self.adjust_lightness(amp_color, 1.2),
+            cnv.low_amp_threshold: self.adjust_lightness(amp_color, 1.78),
+            cnv.baseline: self.backgroundgrey,
+            cnv.low_del_threshold: self.adjust_lightness(del_color, 2.03),
+            cnv.mid_del_threshold: self.adjust_lightness(del_color, 1.2),
+            cnv.high_del_threshold: self.adjust_lightness(del_color, 1.07),
         }
         _cnv_names = [
             "High Amplification",
@@ -378,19 +379,19 @@ class Palette(UserDict):
         cnv_cmap = {}
         cnv_names = []
         for name, (key, color) in zip(_cnv_names, _cnv_cmap.items()):
-            if key in np.unique(data.cnv.df):
+            if key in np.unique(cnv.df):
                 cnv_cmap[key] = color
                 cnv_names.append(name)
         return Palette(cnv_cmap), cnv_names
 
-    def get_tmb_cmap(self, data):
+    def get_tmb_cmap(self, tmb):
         tmb_cmap = {
             better_effect_legend(effect): self.get(effect, self.grey)
-            for effect in reversed(data.tmb.columns)
-        } if data.tmb is not None else {}
+            for effect in reversed(tmb.columns)
+        } if tmb is not None else {}
         return Palette(tmb_cmap)
 
-    def get_mutsig_cmap(self, data):
+    def get_mutsig_cmap(self, mutsig):
         # The listed order determines the order in which the signatures are plotted
         signature_sets = {
             "clock-like": ["SBS1", "SBS5"],
@@ -452,15 +453,15 @@ class Palette(UserDict):
             "Unknown": []
         }
         mutsigset_palette = {
-            "clock-like": self.brown,
-            "APOBEC": self.red,
-            "MMR": self.green,
-            "PolE/D/H": self.cyan,
-            "Other": self.violet,
-            "UV": self.brightorange,
-            "Smoking": self.brightblue,
-            "Treatment": self.pink,
-            "Error": self.grey
+            "clock-like": self.lightbrown,
+            "APOBEC": self.lightred,
+            "MMR": self.lightgreen,
+            "PolE/D/H": self.lightcyan,
+            "Other": self.lightviolet,
+            "UV": self.lightorange,
+            "Smoking": self.lightblue,
+            "Treatment": self.lightpink,
+            "Error": self.lightgrey
         }
         signature_colors = {color: signature_sets[key] for key, color in mutsigset_palette.items()}
         for color, signatures in signature_colors.items():
@@ -468,19 +469,19 @@ class Palette(UserDict):
                 mutsigset_palette[s] = c
         mutsig_cmap = {
             sig: mutsigset_palette.get(sig, color)
-            for sig, color in zip(data.mutsig.columns, sns.color_palette("husl", n_colors=len(data.mutsig.columns)))
-        } if data.mutsig is not None else {}
+            for sig, color in zip(mutsig.columns, sns.color_palette("husl", n_colors=len(mutsig.columns)))
+        } if mutsig is not None else {}
         return Palette(mutsig_cmap)
 
-    def get_meta_cmaps(self, data):
+    def get_meta_cmaps(self, meta):
         meta_cmaps = {}
 
         def add_cmap(col, _palette=None, order=None):
-            if col not in data.meta.rows:
+            if col not in meta.rows:
                 return None
 
             values = []
-            for value in data.meta.df[col].values:
+            for value in meta.df[col].values:
                 if isinstance(value, list):
                     values += value
                 else:
@@ -501,7 +502,7 @@ class Palette(UserDict):
             meta_cmaps[col] = Palette(cmap)
 
         def add_cont_cmap(col, cmap, minval, maxval, n=100, center=None):
-            if col not in data.meta.rows:
+            if col not in meta.rows:
                 return None
 
             if center is None:
@@ -534,18 +535,18 @@ class Palette(UserDict):
         add_cmap("Histology")
         for col in ["Chemo Tx", "XRT", "Targeted Tx", "Hormone Tx", "Immuno Tx ICI", "ADC"]:
             add_cmap(col, _palette=[self.normalizeRGB(105, 200, 219), self.lightgrey, self.backgroundgray], order=["yes", "no", "unknown"])
-        add_cmap("WGD", _palette=self.make_diverging_palette(self.violet, n_colors=5*3)[::5], order=list(range(3)))
+        add_cmap("WGD", _palette=self.make_diverging_palette(self.violet, n_colors=5*4)[::5], order=list(range(4)))
         add_cont_cmap("Contamination", plt.cm.get_cmap("BuPu"), 0.0, 0.05)
         add_cont_cmap("Tumor Purity", plt.cm.get_cmap("plasma_r"), 0, 1)
         add_cont_cmap("Ploidy", plt.cm.get_cmap("PiYG"), 1, 6, center=2)
         add_cont_cmap("Subclonal Fraction", plt.cm.get_cmap("RdPu"), 0, 0.5)
 
         # For all custom columns:
-        for col in data.meta.rows:
+        for col in meta.rows:
             if col not in meta_cmaps.keys():
                 add_cmap(col)
 
-        return {k: meta_cmaps[k] for k in data.meta.rows if k in meta_cmaps.keys()}
+        return {k: meta_cmaps[k] for k in meta.rows if k in meta_cmaps.keys()}
 
     @staticmethod
     def condense(cmaps):

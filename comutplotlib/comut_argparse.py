@@ -5,11 +5,25 @@ def validate_args(args):
     """Ensure required arguments are correctly specified."""
     if args.maf is None and args.gistic is None:
         raise ValueError("Either --maf or --gistic must be specified.")
+
+    if args.control_maf is None or args.control_gistic is None:
+        for panel in args.panels_to_plot:
+            if panel.endswith("control"):
+                args.panels_to_plot.remove(panel)
+
+    if args.snv_interesting_genes is None and args.cnv_interesting_genes is None and "model annotation" in args.panels_to_plot:
+        args.panels_to_plot.remove("model annotation")
+    if "model annotation" not in args.panels_to_plot and "model annotation legend" in args.panels_to_plot:
+        args.panels_to_plot.remove("model annotation legend")
+
     if args.mutsig is None and "mutational signatures" in args.panels_to_plot:
         args.panels_to_plot.remove("mutational signatures")
+    if "mutational signatures" not in args.panels_to_plot:
+        args.panels_to_plot.remove("mutational signatures legend")
+
     if args.sif is None and "meta data" in args.panels_to_plot:
         args.panels_to_plot.remove("meta data")
-    if args.sif is None and "meta data legend" in args.panels_to_plot:
+    if "meta data" not in args.panels_to_plot and "meta data legend" in args.panels_to_plot:
         args.panels_to_plot.remove("meta data legend")
 
 
@@ -60,6 +74,7 @@ def parse_args():
         "-o", "--output", type=str, required=True,
         help="Path to the output file."
     )
+
     parser.add_argument(
         "--maf", type=str, action='append', default=None,
         help="Path to a MAF file (output from GATK Funcotate). Can be specified multiple times."
@@ -74,6 +89,23 @@ def parse_args():
     )
     parser.add_argument(
         "--mutsig", type=str, action='append', default=None,
+        help="Path to a file containing mutational signature exposures (index: patient, columns: signatures)."
+    )
+
+    parser.add_argument(
+        "--control-maf", type=str, action='append', default=None,
+        help="Path to a MAF file (output from GATK Funcotate). Can be specified multiple times."
+    )
+    parser.add_argument(
+        "--control-sif", type=str, action='append', default=None,
+        help="Path to a SIF input file. See documentation for format details."
+    )
+    parser.add_argument(
+        "--control-gistic", type=str, action='append', default=None,
+        help="Path to a GISTIC output file (e.g., 'all_thresholded.by_gene.txt')."
+    )
+    parser.add_argument(
+        "--control-mutsig", type=str, action='append', default=None,
         help="Path to a file containing mutational signature exposures (index: patient, columns: signatures)."
     )
 
@@ -96,6 +128,10 @@ def parse_args():
     )
     parser.add_argument(
         "--column-order", type=parse_comma_separated, default=None,
+        help="Comma-separated order of columns in the plot."
+    )
+    parser.add_argument(
+        "--control-column-order", type=parse_comma_separated, default=None,
         help="Comma-separated order of columns in the plot."
     )
     parser.add_argument(
@@ -210,21 +246,28 @@ def parse_args():
     parser.add_argument(
         "--panels-to-plot", type=parse_comma_separated,
         default=[
+            "comutation",
+            "comutation control",
             "tmb",
+            "tmb control",
             # "tmb legend",
             "mutational signatures",
-            "mutsig legend",
+            "mutational signatures control",
+            "mutational signatures legend",
             "recurrence",
+            "recurrence control",
             "total recurrence",
             "total recurrence overall",
+            "total recurrence control",
+            "total recurrence overall control",
             "cytoband",
             "gene names",
-            "model annotation",
-            "comutation",
             "snv legend",
             "cnv legend",
+            "model annotation",
             "model annotation legend",
             "meta data",
+            "meta data control",
             "meta data legend"
         ],
         help="Comma-separated list of plot panels to include.")
