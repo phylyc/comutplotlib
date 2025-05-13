@@ -94,7 +94,7 @@ class Palette(UserDict):
         deepyellow,
         deepcyan,
     ) = sns.color_palette("deep")
-    offgrey = (0.91, 0.91, 0.91)
+    offgrey = (0.90, 0.90, 0.90)
     backgroundgrey = (0.95, 0.95, 0.95)
     white = (1, 1, 1)
     black = (0, 0, 0)
@@ -293,6 +293,7 @@ class Palette(UserDict):
                 "TN": self.darkviolet,
                 "pos": self.normalizeRGB(102, 194, 165),  # teal
                 "neg": self.normalizeRGB(252, 141,  98),  # salmon
+                "equiv": self.grey,
 
                 # PLATFORM
                 "Agilent BI": self.lightcyan,
@@ -355,7 +356,7 @@ class Palette(UserDict):
         }
         return Palette(snv_cmap)
 
-    def get_cnv_cmap(self, cnv):
+    def get_cnv_cmap(self, cnv, full=False):
         amp_color = self.red
         del_color = self.blue
         _cnv_cmap = {
@@ -379,7 +380,7 @@ class Palette(UserDict):
         cnv_cmap = {}
         cnv_names = []
         for name, (key, color) in zip(_cnv_names, _cnv_cmap.items()):
-            if key in np.unique(cnv.df):
+            if key in np.unique(cnv.df) or full:
                 cnv_cmap[key] = color
                 cnv_names.append(name)
         return Palette(cnv_cmap), cnv_names
@@ -523,6 +524,7 @@ class Palette(UserDict):
         add_cmap("Material", order=["FF", "FFPE"])
         add_cmap("Platform", order=["Agilent BI", "Agilent CCGD", "ICE", "TWIST", "TRACERx", "WES", "WGS"])
         add_cmap("has matched N", order=["yes", "no"])
+        add_cmap("has metastasis", order=["yes", "no"])
         add_cmap("Sex", _palette=[self.normalizeRGB(251, 180, 196), self.normalizeRGB(170, 245, 232)], order=["Female", "Male"])
         add_cmap("HR Status", order=["HR+", "HER2+", "HR+/HER2+", "HR-/HER2+", "HR+/HER2-", "HR-/HER2-", "TN", "N/A", "NA", "pos", "neg", "unknown"])
         add_cmap("ER status", order=["pos", "neg", "unknown"])
@@ -540,6 +542,8 @@ class Palette(UserDict):
         add_cont_cmap("Tumor Purity", plt.cm.get_cmap("plasma_r"), 0, 1)
         add_cont_cmap("Ploidy", plt.cm.get_cmap("PiYG"), 1, 6, center=2)
         add_cont_cmap("Subclonal Fraction", plt.cm.get_cmap("RdPu"), 0, 0.5)
+        add_cont_cmap("Age at BM Dx", plt.cm.get_cmap("bone_r"), 0, 100)
+        add_cont_cmap("Age at P Dx", plt.cm.get_cmap("bone_r"), 0, 100)
 
         # For all custom columns:
         for col in meta.rows:
@@ -551,6 +555,10 @@ class Palette(UserDict):
     @staticmethod
     def condense(cmaps):
         continuous_cmaps = {k: p for k, p in cmaps.items() if not isinstance(p, Palette)}
+        if "Age at BM Dx" in continuous_cmaps and "Age at P Dx" in continuous_cmaps:
+            continuous_cmaps["Age at Dx"] = continuous_cmaps["Age at P Dx"]
+            del continuous_cmaps["Age at BM Dx"]
+            del continuous_cmaps["Age at P Dx"]
         condenseable_cmaps = {k: p for k, p in cmaps.items() if isinstance(p, Palette)}
         grouped_palettes = defaultdict(list)
         for k, p in condenseable_cmaps.items():

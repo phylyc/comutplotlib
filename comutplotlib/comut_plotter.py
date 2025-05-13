@@ -207,7 +207,7 @@ class ComutPlotter(Plotter):
         make_cnv_recurrence(_ax=cna_ax)
 
         _by = "Patients"  # if by == MutA.patient else "Samples"
-        add_percentage_ticks(ax, xlabel=f"of {_by}")
+        add_percentage_ticks(ax, xlabel=f"Fraction of {_by}")
         add_percentage_ticks(cna_ax)
 
         label_ax.set_xticks([])
@@ -236,6 +236,16 @@ class ComutPlotter(Plotter):
                 zorder=0.05,
             )
             ax.add_patch(rect)
+            ax.text(
+                -0.08 if invert_x else 1.08,
+                row + 0.4,
+                f"{round(100 * width)}%",
+                fontsize=1.5,
+                horizontalalignment="right" if invert_x else "left",
+                verticalalignment="center",
+                color=self.palette.grey
+            )
+
             width = percentage["high"]
             x = 1 - width if invert_x else 0
             rect = patches.Rectangle(
@@ -282,6 +292,17 @@ class ComutPlotter(Plotter):
             zorder=0.05,
         )
         ax.add_patch(rect)
+        ax.text(
+            -0.08 if invert_x else 1.08,
+            0.4,
+            f"{round(100 * percentage)}%",
+            fontsize=1.5,
+            horizontalalignment="right" if invert_x else "left",
+            verticalalignment="center",
+            fontweight="bold",
+            color=self.palette.grey
+        )
+
         percentage = total_recurrence["high"] / total
         x = 1 - percentage if invert_x else 0
         rect = patches.Rectangle(
@@ -406,7 +427,7 @@ class ComutPlotter(Plotter):
                 **bar_kwargs
             )
             if shared_y_ax is None:
-                ax.set_ylabel(ylabel="TMB [/Mb]", fontdict=dict(fontsize=fontsize))
+                ax.set_ylabel(ylabel="TMB\n[/Mb]", fontdict=dict(fontsize=fontsize))
         else:  # columns are a list of functional effects
             tmb.plot.bar(
                 stacked=True,
@@ -440,9 +461,21 @@ class ComutPlotter(Plotter):
             self.grid(ax=ax, axis="y", which="major", zorder=0.5)
             ax.axhline(y=tmb_threshold, color=self.palette.high_tmb, linewidth=0.5, ls="--", zorder=1)
             ax.axhline(y=tmb[SA.tmb].median(), color=self.palette.darkgrey, linewidth=0.5, ls="--", zorder=0)
-            ax.text(x=ax.get_xlim()[1], y=tmb[SA.tmb].median(), s=f"{tmb[SA.tmb].median():.1f}", color=self.palette.darkgrey, fontsize=4, verticalalignment="center")
+            median_tmb = f"{tmb[SA.tmb].median():.1f}"
+            median_tmb = " " + median_tmb if shared_y_ax is None else median_tmb + " "
+            ax.text(
+                x=ax.get_xlim()[1] if shared_y_ax is None else ax.get_xlim()[0],
+                y=tmb[SA.tmb].median(),
+                s=median_tmb,
+                color=self.palette.darkgrey,
+                fontsize=4,
+                verticalalignment="center",
+                horizontalalignment="left" if shared_y_ax is None else "right",
+            )
             # create yticklabel on the right for the TMB threshold and label it with perc_high_tmb
             ax2 = ax.twinx()
+            if shared_y_ax is not None:
+                ax2.yaxis.set_ticks_position("left")
             self.no_spines(ax2)
             ax2.set_ylim(ax.get_ylim())
             ax2.set_yscale("log")

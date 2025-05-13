@@ -356,6 +356,8 @@ class ComutData(object):
             for col in reversed(self.column_sort_by):
                 if col == "COMUT":
                     features += comut_features
+                elif col == "TMB":
+                    features += [burden]
                 elif col in self.meta_data_rows:
                     if col in self.meta_data_rows_per_sample:
                         features.append(self.meta.df[col].apply(lambda l: l[0] if len(l) else 0).to_frame(col).T)

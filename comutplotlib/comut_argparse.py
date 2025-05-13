@@ -18,7 +18,7 @@ def validate_args(args):
 
     if args.mutsig is None and "mutational signatures" in args.panels_to_plot:
         args.panels_to_plot.remove("mutational signatures")
-    if "mutational signatures" not in args.panels_to_plot:
+    if "mutational signatures" not in args.panels_to_plot and "mutational signatures legend" in args.panels_to_plot:
         args.panels_to_plot.remove("mutational signatures legend")
 
     if args.sif is None and "meta data" in args.panels_to_plot:
@@ -140,7 +140,7 @@ def parse_args():
     )
     parser.add_argument(
         "--column-sort-by", type=parse_comma_separated, default=["COMUT"],
-        help="Comma-separated order of 'COMUT' and meta data rows to sort by, in order."
+        help="Comma-separated order of 'COMUT', 'TMB', and meta data rows to sort by, in order."
     )
     parser.add_argument(
         "--drop-empty-columns", action="store_true",

@@ -253,19 +253,18 @@ class Comut(object):
         def meta_data_color(column, value):
             cmap = self.meta_cmaps[column]
             if isinstance(cmap, Palette):
-                # if value not in cmap:
-                #     raise Exception(f"Something went wrong for column {column}: {value} not in {cmap}!")
                 return cmap[value] if value in cmap else self.plotter.palette.get(value, self.plotter.palette.white)
             else:
                 _cmap, _norm = cmap
                 return _cmap(_norm(value))
 
         if SA.tmb in self.joint.tmb.columns:
-            tmb_ymin = min(10 ** np.floor(np.log10(self.joint.tmb[SA.tmb].quantile(0.15))), 5 * 1e-1)
-            tmb_ymax = np.clip(self.joint.tmb[SA.tmb].max(), a_min=1.1 * 1e2, a_max=1e4)
+            # tmb_ymin = min(10 ** np.floor(np.log10(self.joint.tmb[SA.tmb].quantile(0.15))), 5 * 1e-1)
+            tmb_ymin = min(self.joint.tmb[SA.tmb].quantile(0.1), 5 * 1e-1)
+            tmb_ymax = np.clip(self.joint.tmb[SA.tmb].max(), a_min=1.01 * 1e2, a_max=1e4)
         else:
             tmb_ymin = 0
-            tmb_ymax = np.clip(self.joint.tmb.sum(axis=1).max(), a_min=1e2, a_max=1e4)
+            tmb_ymax = np.clip(self.joint.tmb.sum(axis=1).max(), a_min=1.01 * 1e2, a_max=1e4)
 
         has_control = len(self.control.columns) > 0
         for data, label, is_case, special in zip([self.case, self.control], ["", " control"], [True, False], [has_control, False]):

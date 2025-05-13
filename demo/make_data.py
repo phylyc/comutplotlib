@@ -12,7 +12,8 @@ np.random.seed(21)
 def make_sif(name):
     columns = [SIF.sample, SIF.patient, SIF.sample_type, SIF.sex, SIF.material, SIF.histology, SIF.contamination, SIF.tumor_purity, SIF.ploidy, SIF.genome_doublings, SIF.subclonal_genome_fraction, SIF.paired, SIF.tmb, SIF.tmb_error, "custom"]
     entries = []
-    n_patients = 100
+    n_patients = 100 if name == "test" else 200
+    offset = 0 if name == "test" else -1
     for i in range(1, n_patients + 1):
         histology = np.random.choice(["BRCA", "LUAD", "MEL", "RCC"], p=[0.4, 0.2, 0.2, 0.2])
         sex = np.random.choice(["Male", "Female", "unknown"], p=[0.4, 0.5, 0.1])
@@ -26,7 +27,7 @@ def make_sif(name):
             wgd = np.random.poisson(0.5)
             ploidy = max(1, (2 * (wgd + 1) * np.random.normal(1, 0.2)))
             subclonal_fraction = np.random.beta(1, 10)
-            tmb = 19 ** (i / n_patients) + 0.1 * j
+            tmb = 19 ** (i / n_patients) + 0.1 * j + offset
             tmb_error = np.abs(np.random.normal(0, 0.1 * tmb))
             custom = np.random.choice(["yes", "no"], p=[0.7, 0.3])
             entries.append([f"Sample {name} {i}.{j}", f"Patient {name} {i}", sample_type, sex, material, histology, contamination, tumor_purity, ploidy, wgd, subclonal_fraction, Paired, tmb, tmb_error, custom])
@@ -52,12 +53,13 @@ def make_maf(sif, genes, name):
     end_pos = 1e6 + 1
     ref_count = 1e2
     alt_count = 1e2
+    scale = 1 if name == "test" else 1.1
     for sample in sif.samples:
         patient = sif.select({SIF.sample: sample}).patients[0]
         for gene in genes:
             id = int(gene.split(" ")[1])
             rate = -1.5 if id in range(1, 13) else -2.1
-            for i in range(int(np.random.lognormal(rate, 1))):
+            for i in range(int(np.random.lognormal(scale * rate, 1))):
                 chromosome = gene.split(" ")[1]
                 ref_allele, alt_allele = np.random.choice(["A", "C", "G", "T"], size=2, replace=False)
                 effect_p = np.arange(10, 1, -1) ** 3
@@ -82,12 +84,13 @@ def make_gistic(sif, genes, name):
     locus_ids = [f"Locus {i}" for i in range(1, n_genes + 1)]
     cytobands = [f"{i}p1.{i}" for i in range(1, n_genes + 1)]
     thresholded_gistic_scores = [locus_ids, cytobands]
+    offset = 0 if name == "test" else -0.03
     for patient in sif.patients:
         columns.append(patient)
-        neutral_genes = np.random.choice(range(-2, 3), p=[0.001, 0.1, 0.798, 0.1, 0.001], size=8)
-        amp_genes = np.random.choice(range(-2, 3), p=[0.01, 0.1, 0.49, 0.28, 0.12], size=6)
-        del_genes = np.random.choice(range(-2, 3), p=[0.1, 0.3, 0.49, 0.1, 0.01], size=6)
-        other_neutral_genes = np.random.choice(range(-2, 3), p=[0.001, 0.1, 0.798, 0.1, 0.001], size=n_genes - 20)
+        neutral_genes = np.random.choice(range(-2, 3), p=[0.001, 0.1 + offset, 0.798 - 2 * offset, 0.1 + offset, 0.001], size=8)
+        amp_genes = np.random.choice(range(-2, 3), p=[0.01, 0.05 - offset, 0.49 - offset, 0.33 + offset / 2, 0.12 + 1.5 * offset], size=6)
+        del_genes = np.random.choice(range(-2, 3), p=[0.1 + 1.5 * offset, 0.35 + offset / 2, 0.49 - offset, 0.05 - offset, 0.01], size=6)
+        other_neutral_genes = np.random.choice(range(-2, 3), p=[0.001, 0.1 - offset, 0.798 + 2 * offset, 0.1 - offset, 0.001], size=n_genes - 20)
         thresholded_gistic_scores.append(np.concatenate([neutral_genes, amp_genes, del_genes, other_neutral_genes]))
 
     gistic = Gistic(data=pd.DataFrame(thresholded_gistic_scores, columns=genes, index=columns).T)
