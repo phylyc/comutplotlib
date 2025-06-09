@@ -19,6 +19,8 @@ def join_gistics(gistics: list["Gistic"], verbose=False):
 
 
 class Gistic(object):
+    """ GISTIC2 output table: all_thresholded.by_genes.txt
+    """
 
     # Column names of Gistic output files
     _gene_symbol = "Gene Symbol"
@@ -73,6 +75,8 @@ class Gistic(object):
             "MLL1": "KMT2A",
             "MLL2": "KMT2D",
             "MLL3": "KMT2C",
+            "JMJD5": "KDM8",
+            "LRRC33": "NRROS",
         }
 
         for gene_name, replacement in gene_name_map.items():

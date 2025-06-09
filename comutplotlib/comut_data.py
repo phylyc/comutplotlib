@@ -197,6 +197,9 @@ class ComutData(object):
         return columns
 
     def get_genes(self):
+        if self.genes is not None:
+            return self.genes
+
         if self.interesting_gene is not None:
             has_mut = self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv
             has_mut_in_gene = has_mut.loc[self.interesting_gene]
@@ -210,7 +213,8 @@ class ComutData(object):
             self.interesting_genes = self.snv_interesting_genes | self.cnv_interesting_genes
             self.snv_recurrence_threshold = int(total_mut_in_gene * self.interesting_gene_comut_percent_threshold) + 1
 
-        self.interesting_genes |= self.snv_interesting_genes | self.cnv_interesting_genes
+        if self.interesting_genes is None:
+            self.interesting_genes |= self.snv_interesting_genes | self.cnv_interesting_genes
 
         # if ground_truth_genes is not None:
         #     for _, ground_truth_gene_list in ground_truth_genes.items():

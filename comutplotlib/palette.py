@@ -94,10 +94,15 @@ class Palette(UserDict):
         deepyellow,
         deepcyan,
     ) = sns.color_palette("deep")
+
     offgrey = (0.90, 0.90, 0.90)
     backgroundgrey = (0.95, 0.95, 0.95)
     white = (1, 1, 1)
     black = (0, 0, 0)
+
+    grassgreen = (0.0, 160 / 255, 0.0)
+    teal = (102 / 255, 194 / 255, 165 / 255)
+    salmon = (252 / 255, 141 / 255, 98 / 255)
 
     # for everyone their favo(u)rite spelling:
     gray = grey
@@ -123,30 +128,30 @@ class Palette(UserDict):
         self.high_tmb = self.mix(self.darkred, self.grey)
         super().__init__(
             dict if dict is not None else {
-                True: self.lightgray,
-                False: self.darkgray,
-                "yes": self.lightgray,
-                "no": self.darkgray,
+                True: self.lightgrey,
+                False: self.darkgrey,
+                "yes": self.lightgrey,
+                "no": self.darkgrey,
                 "NA": self.grey,
                 np.nan: self.white,
                 "nan": self.white,
                 "unknown": self.white,
 
                 # FUNCTIONAL EFFECTS
-                MutA.synonymous: self.darkgray,
-                MutA.silent: self.darkgray,
-                MutA.utr3: self.gray,
-                MutA.utr5: self.gray,
-                MutA.flank3: self.gray,
-                MutA.flank5: self.gray,
-                MutA.intron: self.gray,
-                MutA.igr: self.lightgray,
-                MutA.missense: self.green,
-                MutA.nonsynonymous: self.orange,
-                MutA.structural: self.orange,
-                MutA.nonsense: self.orange,
-                MutA.stop_codon_ins: self.orange,
-                MutA.nonstop: self.brown,
+                MutA.synonymous: self.darkgrey,
+                MutA.silent: self.darkgrey,
+                MutA.utr3: self.grey,
+                MutA.utr5: self.grey,
+                MutA.flank3: self.grey,
+                MutA.flank5: self.grey,
+                MutA.intron: self.grey,
+                MutA.igr: self.lightgrey,
+                MutA.missense: self.grassgreen,
+                MutA.nonsynonymous: self.black,
+                MutA.structural: self.black,
+                MutA.nonsense: self.black,
+                MutA.stop_codon_ins: self.black,
+                MutA.nonstop: self.darkbrown,
                 MutA.insertion: self.pink,
                 MutA.deletion: self.cyan,
                 MutA.frame_shift_ins: self.lightpink,
@@ -165,7 +170,7 @@ class Palette(UserDict):
                 MutA.rna: self.yellow,
                 MutA.linc_rna: self.yellow,
 
-                # SELECTION
+                # CASE - CONTROL
                 "negative selection": self.darkblue,
                 "positive selection": self.darkred,
                 "case": self.darkpink,
@@ -231,57 +236,96 @@ class Palette(UserDict):
 
                 # HISTOLOGIES
                 "AML": self.darkbrown,  # akute myeloid leukemia
+                "Acute myeloid leukemia": self.darkbrown,
                 "CLL": self.lightbrown,  # chronic lymphocytic leukemia
+                "Chromic lymphocytic leukemia": self.lightbrown,
                 "LEUK": self.brightbrown,  # leukemia
+                "Leukemia": self.brightbrown,
 
                 "BRCA": self.brightred,  # breast cancer
+                "Breast cancer": self.brightred,
 
                 "DLBCL": self.red,  # diffuse large B-cell lymphoma
+                "Diffuse large B-cell lymphoma": self.red,
                 "CARC": self.lightred,  # carcinoid
+                "Carcinoid": self.lightred,
                 "ECRI": self.darkred,  # endocrine cancer
+                "Endocrine cancer": self.darkred,
 
                 "CNC": self.mutedred,  # central neurocytoma
+                "Central neurocytoma": self.mutedred,
                 "ESNB": self.colorblindpink,  # Esthesioneuroblastoma
+                "Esthesioneuroblastoma": self.colorblindpink,
                 "GBM": self.lightpink,  # glioblastoma multiforme
+                "Glioblastoma multiforme": self.lightpink,
                 "GLIO": self.darkpink,  # glioma
+                "Glioma": self.darkpink,
                 "MED": self.mutedpink,  # medulloblastoma
+                "Medulloblastoma": self.mutedpink,
                 "MEN": self.brightpink,  # meningioma
+                "Meningioma": self.brightpink,
                 "NB": self.mutedbrown,  # neuroblastoma
+                "Neuroblastoma": self.mutedbrown,
                 "PCNSL": self.pink,  # primary central nervous system lymphoma
+                "Primary central nervous system lymphoma": self.pink,
                 "RHAB": self.mutedgrey,  # rhabdoid tumor
+                "Rhabdoid tumor": self.mutedgrey,
 
                 "HNC": self.brightyellow,  # head and neck cancer
+                "Head and neck cancer": self.brightyellow,
                 "HNSC": self.brightyellow,  # head and neck cancer
+                "Head and neck squamous cell carcinoma": self.brightyellow,
                 "LACA": self.lightyellow,  # laryngeal cancer
+                "Laryngeal cancer": self.lightyellow,
                 "THCA": self.darkyellow,  # thyroid cancer
+                "Thyroid cancer": self.darkyellow,
 
                 "GI": self.brightcyan,  # gastro-intestinal
+                "Gastro-intestinal": self.brightcyan,
                 "ESO": self.lightcyan,  # esophageal adenocarcinoma
+                "Esophageal adenocarcinoma": self.lightcyan,
                 "CHOL": self.colorblindcyan,  # Cholangiocarcinoma (Bile duct cancer)
+                "Cholangiocarcinoma": self.colorblindcyan,
                 "BLCA": self.cyan,  # bladder cancer
+                "Bladder cancer": self.cyan,
                 "CRC": self.darkcyan,  # colorectal cancer
+                "Colorectal cancer": self.darkcyan,
 
                 "KIRC": self.brightgreen,  # renal cell carcinoma (clear cell)
                 "KIRP": self.lightgreen,  # renal cell carcinoma (papillary)
+                "KICH": self.darkgreen,  # renal cell carcinoma (chromophobe)
                 "RCC": self.brightgreen,  # renal cell carcinoma
+                "Renal cell carcinoma": self.brightgreen,
+                "Kidney cancer": self.brightgreen,
 
                 "LUAD": self.brightblue,  # lung adenocarcinoma
+                "Lung adenocarcinoma": self.brightblue,
                 "LUCA": self.lightblue,  # lung cancer
+                "Lung cancer": self.lightblue,
                 "LUSC": self.darkblue,  # lung squamous cell carcinoma
+                "Lung squamous cell carcinoma": self.darkblue,
 
                 "MEL": self.brightorange,  # melanoma
+                "Melanoma": self.brightorange,
 
-                "MM": self.darkgray,  # multiple myeloma (bone marrow)
+                "MM": self.darkgrey,  # multiple myeloma (bone marrow)
+                "Multiple myeloma": self.darkgrey,
 
-                "SARC": self.gray,  # sarcoma
+                "SARC": self.grey,  # sarcoma
+                "Sarcoma": self.grey,
 
                 "PRAD": self.lightviolet,  # prostrate adenocarcinoma
+                "Prostate adenocarcinoma": self.lightviolet,
                 "TECA": self.colorblindviolet,  # testicular cancer
+                "Testicular cancer": self.colorblindviolet,
                 "GynOnc": self.brightviolet,  # ovarian, endometrial, uterine, vaginal cancer
                 "OV": self.violet,  # ovarian cancer
+                "Ovarian cancer": self.violet,
                 "UCEC": self.darkviolet,  # endometrial cancer
+                "Endometrial cancer": self.darkviolet,
 
                 "hd": self.white,  # healthy donor
+                "Healthy donor": self.white,
 
                 # Hormone Receptor Status
                 "HR+": self.yellow,
@@ -295,7 +339,8 @@ class Palette(UserDict):
                 "neg": self.normalizeRGB(252, 141,  98),  # salmon
                 "equiv": self.grey,
 
-                # PLATFORM
+                # SEQUENCING PLATFORM
+                "Agilent": self.lightcyan,
                 "Agilent BI": self.lightcyan,
                 "Agilent CCGD": self.lightgreen,
                 "ICE": self.lightyellow,
@@ -308,9 +353,11 @@ class Palette(UserDict):
                 "Agilent SS 38Mb": self.lightorange,
                 "Agilent SS 50Mb": self.mutedorange,
                 "PanCanPanel": self.lightyellow,
+                "TRACERx": self.lightviolet,
+
                 "WES": self.lightorange,
                 "WGS": self.lightblue,
-                "TRACERx": self.lightviolet,
+                "Panel": self.lightyellow,
                 "ULP": self.lightgrey,
             }
         )
@@ -369,13 +416,13 @@ class Palette(UserDict):
             cnv.high_del_threshold: self.adjust_lightness(del_color, 1.07),
         }
         _cnv_names = [
-            "High Amplification",
             "Amplification",
-            "Low Amplification",
+            "Amplification",
+            "Gain",
             "Baseline",
-            "Shallow Deletion",
+            "Loss",
             "Deletion",
-            "Deep Deletion",
+            "Deletion",
         ]
         cnv_cmap = {}
         cnv_names = []
@@ -536,7 +583,7 @@ class Palette(UserDict):
         add_cmap("ERBB2 status", order=["pos", "neg", "unknown"])
         add_cmap("Histology")
         for col in ["Chemo Tx", "XRT", "Targeted Tx", "Hormone Tx", "Immuno Tx ICI", "ADC"]:
-            add_cmap(col, _palette=[self.normalizeRGB(105, 200, 219), self.lightgrey, self.backgroundgray], order=["yes", "no", "unknown"])
+            add_cmap(col, _palette=[self.normalizeRGB(105, 200, 219), self.lightgrey, self.backgroundgrey], order=["yes", "no", "unknown"])
         add_cmap("WGD", _palette=self.make_diverging_palette(self.violet, n_colors=5*4)[::5], order=list(range(4)))
         add_cont_cmap("Contamination", plt.cm.get_cmap("BuPu"), 0.0, 0.05)
         add_cont_cmap("Tumor Purity", plt.cm.get_cmap("plasma_r"), 0, 1)
