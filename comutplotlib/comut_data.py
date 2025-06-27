@@ -95,7 +95,7 @@ class ComutData(object):
         self.interesting_gene_comut_percent_threshold = interesting_gene_comut_percent_threshold
         self.snv_interesting_genes = set(snv_interesting_genes) if snv_interesting_genes is not None else set()
         self.cnv_interesting_genes = set(cnv_interesting_genes) if cnv_interesting_genes is not None else set()
-        self.interesting_genes = set(interesting_genes) if interesting_genes is not None else set()
+        self.interesting_genes = set(interesting_genes) if interesting_genes is not None else None
         self.ground_truth_genes = ground_truth_genes
         self.total_recurrence_threshold = total_recurrence_threshold
         self.snv_recurrence_threshold = snv_recurrence_threshold
@@ -214,7 +214,7 @@ class ComutData(object):
             self.snv_recurrence_threshold = int(total_mut_in_gene * self.interesting_gene_comut_percent_threshold) + 1
 
         if self.interesting_genes is None:
-            self.interesting_genes |= self.snv_interesting_genes | self.cnv_interesting_genes
+            self.interesting_genes = self.snv_interesting_genes | self.cnv_interesting_genes
 
         # if ground_truth_genes is not None:
         #     for _, ground_truth_gene_list in ground_truth_genes.items():
