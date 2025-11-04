@@ -1,7 +1,9 @@
 from copy import deepcopy
+import numpy as np
 import os
 import pandas as pd
 from tqdm import tqdm
+import pyensembl
 
 
 def join_segs(segs: list["SEG"], verbose=False):
@@ -17,14 +19,16 @@ def join_segs(segs: list["SEG"], verbose=False):
 
 
 class SEG(object):
+    """ ABSOLUTE segtab output
+    """
 
     # Column names of SEG output files
-    _contig = "contig"
-    _start = "start"
-    _end = "end"
-    _sample = "sample_id"
-    _log_tCR = "log_tCR"
-    _call = "call"
+    _sample = "Sample"
+    _contig = "Chromosome"
+    _start = "Start Position"
+    _end = "End Position"
+    _num_markers = "Num Markers"
+    _log2_tCR = "Seg.CN"
     _gene_name = "gene_name"
 
     @classmethod
@@ -40,25 +44,24 @@ class SEG(object):
     def __init__(self, data=None):
         self.data = (
             data if data is not None
-            else pd.DataFrame(None, columns=pd.Index([self._contig, self._start, self._end, self._sample, self._log_tCR, self._call, self._gene_name]))
+            else pd.DataFrame(None, columns=pd.Index([self._sample, self._contig, self._start, self._end, self._log2_tCR, self._gene_name]))
         )
+        self.add_gene_name()
 
     def add_gene_name(self, verbose=False):
-        return NotImplementedError
-
         data_is_incomplete = (
             self._gene_name not in self.data.columns
             or self.data[self._gene_name].isna().any()
         )
         if data_is_incomplete:
-            genome = Genome()
+            genome = pyensembl.ensembl_grch37
 
             def get_gene_names(df):
                 _gene_names = {}
                 for index, segment in tqdm(
                     iterable=df.iterrows(),
                     total=df.shape[0],
-                    desc="Map segs to genes",
+                    desc="Annotate segs with genes",
                     disable=not verbose,
                 ):
                     _gene_names[index] = genome.gene_names_at_locus(
@@ -70,12 +73,26 @@ class SEG(object):
 
             self.data[self._gene_name] = get_gene_names(df=self.data)
 
+    def get_df(self) -> pd.DataFrame:
+        return (
+            self.data[[self._sample, self._log2_tCR, self._gene_name]]
+            .explode(self._gene_name)
+            .groupby([self._sample, self._gene_name])
+            .agg({self._log2_tCR: lambda x: x.values[np.argmax(np.abs(x.values))]})
+            [self._log2_tCR]
+            .unstack(self._sample)
+        )
+
     def select_genes(self, genes: list[str], inplace=True) -> "SEG":
-        mask = self.data[self._gene_name].apply(lambda _genes: any([g in genes for g in _genes]))
+        gene_col = self.data[self._gene_name].apply(lambda _genes: [g in genes for g in _genes])
+        mask = gene_col.apply(lambda l: len(l) > 0)
+        data = self.data.loc[mask]
+        data[self._gene_name] = gene_col
         if inplace:
-            self.data = self.data.loc[mask]
+            self.data = data
             return self
-        return SEG(data=self.data.loc[mask])
+        else:
+            return SEG(data=data)
 
     def select_samples(self, samples: list[str], inplace=True) -> "SEG":
         mask = self.data[self._sample].isin(samples)

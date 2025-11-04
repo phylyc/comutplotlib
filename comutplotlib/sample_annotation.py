@@ -1,7 +1,10 @@
 class SampleAnnotation(object):
 
+    source = "Source"
     sample = "sample_id"  # necessary
+    alt_sample_id = "alt_sample_id"
     patient = "clinical_id"  # necessary
+    alt_patient_id = "alt_clinical_id"
     platform = "platform"
     platform_abv = "Platform"
     data_type = "data_type"
@@ -15,10 +18,16 @@ class SampleAnnotation(object):
     sample_type = "sample_type_abv"
     sample_description = "sample_description"
     material = "specimen_material"
+    date_submitted = "Date_Submitted_Sequencing"
+    accession_nr = "accession"
+    notes = "notes"
     protocol = "Protocol(s)"
     sex = "sex"
     sex_genotype = "SEX_GENOTYPE"
     paired = "Paired"
+
+    is_paired = "is_paired"
+    has_metastasis = "has_metastasis"
 
     contamination = "contamination"
     contamination_error = "contamination_error"
@@ -40,7 +49,9 @@ class SampleAnnotation(object):
     months_bm_dx_to_death = "months_bm_dx_to_death"
     date_p_rx = "date_p_rx"
     date_bm_rx = "date_bm_rx"
+    date_of_resection = "date_of_resection"
     smoking_hx = "smoking_hx"
+    mrn = "MRN"
 
     whole_exome_seq = "WES"
     whole_genome_seq = "WGS"

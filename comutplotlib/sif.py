@@ -30,6 +30,7 @@ class SIF(SampleAnnotation, AnnotationTable):
         selection: Union[Callable[..., bool], dict] = None,
         complement: bool = False,
         encoding: str = "utf8",
+        **kwargs
     ):
         # TODO: refactor redundant double selection
         annot = super().from_file(
@@ -37,6 +38,7 @@ class SIF(SampleAnnotation, AnnotationTable):
             selection=selection,
             complement=complement,
             encoding=encoding,
+            **kwargs
         )
         return SIF(data=annot.data, selection=annot.selection, complement=complement)
 

@@ -147,10 +147,10 @@ class Palette(UserDict):
                 MutA.intron: self.grey,
                 MutA.igr: self.lightgrey,
                 MutA.missense: self.grassgreen,
-                MutA.nonsynonymous: self.black,
-                MutA.structural: self.black,
-                MutA.nonsense: self.black,
-                MutA.stop_codon_ins: self.black,
+                MutA.nonsynonymous: self.orange,
+                MutA.structural: self.orange,
+                MutA.nonsense: self.orange,
+                MutA.stop_codon_ins: self.orange,
                 MutA.nonstop: self.darkbrown,
                 MutA.insertion: self.pink,
                 MutA.deletion: self.cyan,
@@ -169,6 +169,11 @@ class Palette(UserDict):
                 MutA.stop_codon_del: self.brown,
                 MutA.rna: self.yellow,
                 MutA.linc_rna: self.yellow,
+
+                "Amplification": self.red,
+                "Amp": self.red,
+                "Deletion": self.blue,
+                "Del": self.blue,
 
                 # CASE - CONTROL
                 "negative selection": self.darkblue,
@@ -578,6 +583,8 @@ class Palette(UserDict):
         add_cmap("PR status", order=["pos", "neg", "unknown"])
         add_cmap("HER2 status", order=["pos", "neg", "unknown"])
         add_cmap("HER2 Status", order=["pos", "neg", "unknown"])
+        add_cmap("HR Status inferred", order=["pos", "neg", "unknown"])
+        add_cmap("HER2 Status inferred", order=["pos", "neg", "unknown"])
         add_cmap("ESR1 status", order=["pos", "neg", "unknown"])
         add_cmap("PGR status", order=["pos", "neg", "unknown"])
         add_cmap("ERBB2 status", order=["pos", "neg", "unknown"])

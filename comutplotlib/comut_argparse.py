@@ -26,6 +26,18 @@ def validate_args(args):
     if "meta data" not in args.panels_to_plot and "meta data legend" in args.panels_to_plot:
         args.panels_to_plot.remove("meta data legend")
 
+    if args.gene_meta_data is None and "gene meta data" in args.panels_to_plot:
+        args.panels_to_plot.remove("gene meta data")
+
+
+def print_args(args):
+    if args.verbose:
+        print("Calling ComutPlotLib")
+        print("Arguments:")
+        for key, value in vars(args).items():
+            print(f"  {key}: {value}")
+        print()
+
 
 def parse_comma_separated(value):
     """Convert a comma-separated string into a list."""
@@ -107,6 +119,15 @@ def parse_args():
     parser.add_argument(
         "--control-mutsig", type=str, action='append', default=None,
         help="Path to a file containing mutational signature exposures (index: patient, columns: signatures)."
+    )
+
+    parser.add_argument(
+        "--gene-meta-data", type=str, action='append', default=None,
+        help="Path to a file containing a table with binary gene annotations, one gene per row."
+    )
+    parser.add_argument(
+        "--gene-meta-columns", type=parse_comma_separated, default=None,
+        help="Comma-separated names of columns to plot for gene meta data."
     )
 
     parser.add_argument(
@@ -210,6 +231,10 @@ def parse_args():
         help="Comma-separated list of CNV interesting genes."
     )
     parser.add_argument(
+        "--scale-recurrence", action="store_true",
+        help=" "
+    )
+    parser.add_argument(
         "--total-recurrence-threshold", type=float, default=None,
         help="Minimum percentage of patients with a mutation in a gene for it to be plotted."
     )
@@ -220,6 +245,14 @@ def parse_args():
     parser.add_argument(
         "--ground-truth-genes", type=parse_ground_truth_genes, default=None,
         help="Highlight genes with specified colors. Format: 'color1:gene1,gene2,...;color2:gene3,gene4,...'."
+    )
+    parser.add_argument(
+        "--collapse-cytobands", default=False, action="store_true",
+        help="Collapse genes in the same cytoband to one gene label. Keeps genes in --ground-truth-genes uncollapsed."
+    )
+    parser.add_argument(
+        "--collapse-cytobands-range", type=int, default=0,
+        help="Range for collapsing also neighboring cytobands."
     )
 
     parser.add_argument(
@@ -260,6 +293,7 @@ def parse_args():
             "total recurrence overall",
             "total recurrence control",
             "total recurrence overall control",
+            "gene meta data",
             "cytoband",
             "gene names",
             "snv legend",

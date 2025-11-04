@@ -14,6 +14,8 @@ def better_effect_legend(effect):
 
 class FunctionalEffect(object):
     values_map = {
+        None: 1e308,
+
         MutA.gain_of_function: 1000,
         MutA.missense: 100,
         MutA.in_frame_ins: 52,

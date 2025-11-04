@@ -1,6 +1,6 @@
 import numpy as np
 import os
-import pandas as pd
+import pandas as pd, csv
 from typing import Callable, Optional, Union
 
 import comutplotlib.pandas_util as pd_util
@@ -14,6 +14,7 @@ class AnnotationTable(object):
         selection: Union[Callable[..., bool], dict] = None,
         complement: bool = False,
         encoding: str = None,
+        **kwargs
     ):
         if not os.path.exists(path_to_file):
             raise FileNotFoundError(
@@ -22,24 +23,26 @@ class AnnotationTable(object):
             )
         extension = os.path.splitext(path_to_file)[1]
         if extension == ".xls" or extension == ".xlsx":
-            data = pd.read_excel(io=path_to_file)
+            data = pd.read_excel(io=path_to_file, **kwargs)
         else:
+            pd_read_kwargs = dict(
+                sep="\t",
+                engine="python",  # needed for robust QUOTE_NONE behavior
+                quoting=csv.QUOTE_NONE,  # treat " as a normal character
+                # dtype=str,                # avoid type inference surprises
+                on_bad_lines="error",  # or "warn"/"skip" if you prefer,
+                **kwargs
+            )
             if encoding is not None:
                 with open(path_to_file, encoding=encoding) as f:
-                    data = pd.read_csv(
-                        filepath_or_buffer=f, sep="\t", engine="c", # comment="#"
-                    )
+                    data = pd.read_csv(filepath_or_buffer=f, **pd_read_kwargs)
             else:
                 try:
                     with open(path_to_file, encoding="utf8") as f:
-                        data = pd.read_csv(
-                            filepath_or_buffer=f, sep="\t", engine="c", # comment="#"
-                        )
+                        data = pd.read_csv(filepath_or_buffer=f, **pd_read_kwargs)
                 except UnicodeError:
                     with open(path_to_file, encoding="latin1") as f:
-                        data = pd.read_csv(
-                            filepath_or_buffer=f, sep="\t", engine="c", # comment="#"
-                        )
+                        data = pd.read_csv(filepath_or_buffer=f, **pd_read_kwargs)
         # Drop columns with no information:
         cols_to_drop = data.apply(
             lambda col: (

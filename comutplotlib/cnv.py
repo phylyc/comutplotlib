@@ -1,5 +1,7 @@
 from collections import Counter
 
+import pandas as pd
+
 
 class CNV(object):
 
@@ -12,6 +14,7 @@ class CNV(object):
         low_del_threshold: int | float = -1,
         mid_del_threshold: int | float = -1.5,
         high_del_threshold: int | float = -2,
+        higher_amp_thresholds: list[int | float] = tuple(),
     ):
         self.seg = seg
         self.gistic = gistic
@@ -22,10 +25,16 @@ class CNV(object):
         self.low_del_threshold = low_del_threshold
         self.mid_del_threshold = mid_del_threshold
         self.high_del_threshold = high_del_threshold
+        self.higher_amp_thresholds = higher_amp_thresholds
         self.df = self.get_df()
 
     def get_df(self):
-        return self.gistic.sample_table
+        if not self.gistic.data.empty:
+            return self.gistic.sample_table
+        elif not self.seg.data.empty:
+            return self.seg.get_df()
+        else:
+            return pd.DataFrame(None)
 
     def reindex(self, index=None, columns=None):
         if index is not None:
@@ -45,11 +54,11 @@ class CNV(object):
 
     @property
     def has_high_amp(self):
-        return ~self.isna & self.df.fillna(0).ge(self.high_amp_threshold)
+        return ~self.isna & self.df.fillna(self.baseline).ge(self.high_amp_threshold)
 
     @property
     def has_high_del(self):
-        return ~self.isna & self.df.fillna(0).le(self.high_del_threshold)
+        return ~self.isna & self.df.fillna(self.baseline).le(self.high_del_threshold)
 
     @property
     def has_high_cnv(self):
@@ -57,11 +66,11 @@ class CNV(object):
 
     @property
     def has_mid_amp(self):
-        return ~self.isna & self.df.fillna(0).ge(self.mid_amp_threshold) & ~self.has_high_amp
+        return ~self.isna & self.df.fillna(self.baseline).ge(self.mid_amp_threshold) & ~self.has_high_amp
 
     @property
     def has_mid_del(self):
-        return ~self.isna & self.df.fillna(0).le(self.mid_del_threshold) & ~self.has_high_del
+        return ~self.isna & self.df.fillna(self.baseline).le(self.mid_del_threshold) & ~self.has_high_del
 
     @property
     def has_mid_cnv(self):
@@ -69,11 +78,11 @@ class CNV(object):
 
     @property
     def has_low_amp(self):
-        return ~self.isna & self.df.fillna(0).ge(self.low_amp_threshold) & ~self.has_high_amp & ~self.has_mid_amp
+        return ~self.isna & self.df.fillna(self.baseline).ge(self.low_amp_threshold) & ~self.has_high_amp & ~self.has_mid_amp
 
     @property
     def has_low_del(self):
-        return ~self.isna & self.df.fillna(0).le(self.low_del_threshold) & ~self.has_high_del & ~self.has_mid_del
+        return ~self.isna & self.df.fillna(self.baseline).le(self.low_del_threshold) & ~self.has_high_del & ~self.has_mid_del
 
     @property
     def has_low_cnv(self):

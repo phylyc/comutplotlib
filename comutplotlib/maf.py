@@ -2,7 +2,7 @@ from copy import deepcopy
 from functools import reduce
 import numpy as np
 import os
-import pandas as pd
+import pandas as pd, csv
 from tqdm import tqdm
 from typing import Any, Callable, Dict, Optional, Union, Literal
 import warnings
@@ -88,6 +88,8 @@ class MAF(MutationAnnotation, AnnotationTable):
             sep="\t",
             engine="c",
             comment="#",
+            quoting=csv.QUOTE_NONE,  # treat " as a normal character
+            on_bad_lines="error",  # or "warn"/"skip" if you prefer,
             usecols=usecols,
             dtype=dtype,
             low_memory=False,
@@ -163,6 +165,22 @@ class MAF(MutationAnnotation, AnnotationTable):
         end_pos = self.data[self.start_pos] + self.data[self.ref_allele].apply(len) - 1
         self.assign_column(self.end_pos, end_pos, inplace=True)
 
+    def add_residue(self):
+        if self.residue in self.data.columns:
+            return None
+        self.assign_column(
+            name=self.residue,
+            value=self.data[[self.chromosome, self.start_pos, self.protein_change]].apply(
+                lambda row: (
+                    f"{row[self.chromosome]}:{row[self.start_pos]}"
+                    if isinstance(row[self.protein_change], float) and np.isnan(row[self.protein_change]) or row[self.protein_change] == ""
+                    else row[self.protein_change]
+                ),
+                axis=1
+            ),
+            inplace=True
+        )
+
     @property
     def empty(self) -> bool:
         return self.num_variants == 0
@@ -214,7 +232,8 @@ class MAF(MutationAnnotation, AnnotationTable):
             return self
         else:
             merged_data = pd.concat(
-                [d for d in [self.data, other.data] if not d.empty], ignore_index=True
+                [d for d in [self.data.reset_index(drop=True), other.data.reset_index(drop=True)] if not d.empty],
+                ignore_index=True
             ).drop_duplicates(ignore_index=True)
             maf = MAF(
                 data=merged_data,

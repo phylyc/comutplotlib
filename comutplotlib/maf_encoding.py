@@ -56,7 +56,10 @@ class MAFEncoding(object):
         # self.stringify_context(data=data)
 
     def rename_columns(self, data: pd.DataFrame) -> None:
-        return data.rename(columns=self.column_names_to_default, inplace=True)
+        for col, new_col in self.column_names_to_default.items():
+            if new_col not in data.columns:
+                data.rename(columns={col: new_col}, inplace=True)
+        return None
 
     @staticmethod
     def rename_chromosomes(data: pd.DataFrame) -> None:

@@ -9,10 +9,10 @@ class ComutLayout(Layout):
     def __init__(
         self,
         panels_to_plot: list[str],
-        n_genes: int, n_samples: int, n_samples_control: int = 0, n_meta: int = 0, pad: int = 1,
+        n_genes: int, n_samples: int, n_samples_control: int = 0, n_meta: int = 0, n_meta_genes: int = 0, pad: int = 1,
         xfigsize: float = None, max_xfigsize: float = None, max_xfigsize_scale: float = 1, yfigsize: float = None,
         label_columns=False,
-        tmb_cmap=(), snv_cmap=(), cnv_cmap=(), mutsig_cmap=(), meta_cmaps={}
+        tmb_cmap=(), snv_cmap=(), cnv_cmap=(), mutsig_cmap=(), meta_cmaps={},
     ):
         self.panels_to_plot = panels_to_plot
 
@@ -44,20 +44,21 @@ class ComutLayout(Layout):
         # WIDTHS
         snv_recurrence_width = 4
         cnv_recurrence_width = snv_recurrence_width
+        # recurrence_width = snv_recurrence_width + cnv_recurrence_width
+        recurrence_width = 4
         total_recurrence_width = 2
         cytoband_width = 2
         gene_label_width = 6
         model_annotation_width = 2
         model_significance_width = 3
         legend_width = 2
+        genes_meta_width = n_meta_genes
         num_legends = len(meta_cmaps)
         meta_legend_width = num_legends * (legend_width + self.inter_legend_width) - self.inter_legend_width
 
         left_of_comut_width = 0
-        if "recurrence" in panels_to_plot:
-            left_of_comut_width += snv_recurrence_width + cnv_recurrence_width + pad
-        if "total recurrence" in panels_to_plot:
-            left_of_comut_width += total_recurrence_width + pad
+        if "gene meta data" in panels_to_plot:
+            left_of_comut_width += genes_meta_width
         if "cytoband" in panels_to_plot:
             left_of_comut_width += cytoband_width
         if "gene names" in panels_to_plot:
@@ -72,6 +73,10 @@ class ComutLayout(Layout):
             non_heatmap_width += self.small_inter_legend_width + legend_width
         if "model significance" in panels_to_plot:
             non_heatmap_width += model_significance_width
+        if "recurrence" in panels_to_plot:
+            non_heatmap_width += recurrence_width + pad
+        if "total recurrence" in panels_to_plot:
+            non_heatmap_width += total_recurrence_width + pad
         comut_width = (
             min(n_samples, int(10 * max_xfigsize - non_heatmap_width))
             if max_xfigsize is not None
@@ -130,13 +135,14 @@ class ComutLayout(Layout):
 
                 "gene names": [gene_label_width, comut_height],
                 "cytoband": [cytoband_width, comut_height],
+                "gene meta data": [genes_meta_width, comut_height],
 
                 "total recurrence": [total_recurrence_width, comut_height],
                 "total recurrence overall": [total_recurrence_width, 1],
                 "total recurrence control": [total_recurrence_width, comut_height],
                 "total recurrence overall control": [total_recurrence_width, 1],
-                "recurrence": [snv_recurrence_width + cnv_recurrence_width, comut_height],
-                "recurrence control": [snv_recurrence_width + cnv_recurrence_width, comut_height],
+                "recurrence": [recurrence_width, comut_height],
+                "recurrence control": [recurrence_width, comut_height],
 
                 "meta data": [comut_width, meta_height],
                 "meta data control": [comut_width_control, meta_height],
@@ -168,7 +174,7 @@ class ComutLayout(Layout):
         p_ref = self.add_panel(name="model annotation", ref=p_ref, left_of=p_ref, pad=0)
         p_ref = self.add_panel(name="gene names", ref=p_ref, left_of=p_ref, pad=0)
         p_ref = self.add_panel(name="cytoband", ref=p_ref, left_of=p_ref, pad=0)
-        p_ref = self.add_panel(name="recurrence", ref=p_ref, left_of=p_ref)
+        p_ref = self.add_panel(name="gene meta data", ref=p_ref, left_of=p_ref, pad=0 if "cytoband" not in self.panels_to_plot else self.pad)
 
         # TOP PANELS
         p_ref = p_comut
@@ -181,19 +187,23 @@ class ComutLayout(Layout):
         if "meta data legend" in self.panels_to_plot and len(self.meta_data_legend_titles):
             pad = self.pad + (self.column_names_height if self.show_patient_names else 0)
             p_ref = self.add_panel(
-                name=f"meta data legend {self.meta_data_legend_titles[0]}", ref=p_ref, force_add=True,below=p_ref, pad=pad, align="left"
+                name=f"meta data legend {self.meta_data_legend_titles[0]}", ref=p_ref, force_add=True, below=p_ref, pad=pad, align="left"
             )
             for title in self.meta_data_legend_titles[1:]:
-                p_ref = self.add_panel(name=f"meta data legend {title}", ref=p_ref, force_add=True,right_of=p_ref, pad=self.inter_legend_width, align="top")
+                p_ref = self.add_panel(name=f"meta data legend {title}", ref=p_ref, force_add=True, right_of=p_ref, pad=self.inter_legend_width, align="top")
 
         # RIGHT PANELS
         p_ref = p_comut
-        p_ref = self.add_panel(name="total recurrence", ref=p_ref, right_of=p_ref)
-        self.add_panel(name="total recurrence overall", ref=p_ref, below=p_ref, pad=0)
+        p_ref = self.add_panel(name="recurrence", ref=p_ref, right_of=p_ref)
+        # p_ref = self.add_panel(name="total recurrence", ref=p_ref, right_of=p_ref)
+        # self.add_panel(name="total recurrence overall", ref=p_ref, below=p_ref, pad=0)
 
         if "comutation control" in self.panels_to_plot:
-            p_ref = self.add_panel(name="total recurrence control", ref=p_ref, right_of=p_ref, pad=0)
-            self.add_panel(name="total recurrence overall control", ref=p_ref, below=p_ref, pad=0)
+            # p_ref = self.add_panel(name="total recurrence control", ref=p_ref, right_of=p_ref, pad=0)
+            # self.add_panel(name="total recurrence overall control", ref=p_ref, below=p_ref, pad=0)
+
+            # LEFT PANELS
+            p_ref = self.add_panel(name="recurrence control", ref=p_ref, right_of=p_ref, pad=0)
 
             p_ref = self.add_panel(name="comutation control", ref=p_ref, right_of=p_ref)
             p_comut_control = p_ref
@@ -208,10 +218,10 @@ class ComutLayout(Layout):
             p_ref = self.add_panel(name="meta data control", ref=p_ref, below=p_ref)
 
             # RIGHT PANELS
-            p_ref = p_comut_control
-            p_ref = self.add_panel(name="recurrence control", ref=p_ref, right_of=p_ref)
-
             # p_ref = p_comut_control
+            # p_ref = self.add_panel(name="recurrence control", ref=p_ref, right_of=p_ref)
+
+            p_ref = p_comut_control
 
         def first_legend_panel(name, p_ref):
             return self.add_panel(name=name, ref=p_ref, right_of=p_ref, pad=self.small_inter_legend_width, align="top")

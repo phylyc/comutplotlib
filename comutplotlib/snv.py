@@ -1,6 +1,7 @@
 from collections import Counter
 from itertools import chain
 import numpy as np
+import pandas as pd
 
 from comutplotlib.functional_effect import FunctionalEffect, sort_functional_effects
 
@@ -111,23 +112,14 @@ class SNV(object):
         )
         return tmb[[c for c in tmb.columns if isinstance(c, str)]]
 
-    def get_recurrence(self, index):
+    def get_protein_recurrence(self, index) -> dict[str, pd.DataFrame]:
+        self.maf.add_residue()
         mut_recurrence = (
-            self.maf.drop_patient_duplicates()
-            .assign_column(
-                name="__residue",
-                value=self.maf.data[[self.maf.chromosome, self.maf.start_pos, self.maf.protein_change]].apply(
-                    lambda row: (
-                        f"{row[self.maf.chromosome]}:{row[self.maf.start_pos]}"
-                        if isinstance(row[self.maf.protein_change], float) and np.isnan(row[self.maf.protein_change]) or row[self.maf.protein_change] == ""
-                        else row[self.maf.protein_change]
-                    ),
-                    axis=1
-                )
-            )
-            .data[[self.maf.gene_name, self.maf.effect, "__residue"]]
+            self.maf
+            .drop_patient_duplicates()
+            .data[[self.maf.gene_name, self.maf.effect, self.maf.residue]]
             .replace(np.nan, "NaN")
-            .groupby([self.maf.gene_name, self.maf.effect, "__residue"])
+            .groupby([self.maf.gene_name, self.maf.effect, self.maf.residue])
             .agg("size")
         )
         return {
@@ -138,6 +130,9 @@ class SNV(object):
             )
             for g in index
         }
+
+    def get_patient_recurrence(self):
+        return self.df.map(lambda x: x[0] if isinstance(x, list) else None).apply(Counter, axis=1)
 
     def get_effect_prevalence(self):
         return (

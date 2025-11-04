@@ -9,9 +9,11 @@ from comutplotlib.palette import Palette
 
 class Plotter(object):
 
-    def __init__(self, output: str = "./plot.pdf", extra_palette: dict[str, tuple[float]] = None) -> None:
+    def __init__(self, output: str = None, out_dir: str = ".", extra_palette: dict[str, tuple[float]] = None) -> None:
         super().__init__()
-        self.out_dir, self.file_name = os.path.split(output)
+        self.out_dir = out_dir
+        if output is not None:
+            self.out_dir, self.file_name = os.path.split(output)
         self.palette = Palette() | Palette(dict=extra_palette)
         self.mk_out_path()
 
@@ -142,6 +144,7 @@ class Plotter(object):
             if xmin is not None:
                 ax.xaxis.set_minor_locator(ticker.FixedLocator([t for t in ax.xaxis.get_minorticklocs() if t >= xmin]))
             ax.xaxis.set_minor_formatter(ticker.NullFormatter())
+        ax.set_xlim(xlim)
 
     @staticmethod
     def set_spines(ax, **kwargs):

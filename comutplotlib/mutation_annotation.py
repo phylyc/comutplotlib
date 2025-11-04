@@ -92,6 +92,7 @@ class MutationAnnotation(object):
     minus_strand = "-"
     both_strands = "+/-"
 
+    residue = "__residue"
     # columns in the mutation annotation file
     patient = "Patient"
     sample = "SIF_sample_name"
@@ -186,7 +187,7 @@ class MutationAnnotation(object):
     # "UNITIGS"
 
     default_columns = [
-        patient,
+        # patient,
         sample,
         gene_name,
         chromosome,

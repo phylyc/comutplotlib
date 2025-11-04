@@ -8,3 +8,4 @@
 
 # If you want to install the package in an existing environment, just run this line:
 python -m pip install --editable .
+pyensembl install --release 75 --species human

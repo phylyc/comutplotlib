@@ -43,6 +43,9 @@ class Comut(object):
         meta_data_rows: list[str] = (),
         meta_data_rows_per_sample: list[str] = (),
 
+        gene_meta_data: str = None,
+        gene_meta_columns: list[str] = None,
+
         control_maf: list[str] = None,
         control_seg: list[str] = None,
         control_gistic: list[str] = None,
@@ -64,7 +67,10 @@ class Comut(object):
         snv_interesting_genes: set = None,
         cnv_interesting_genes: set = None,
         total_recurrence_threshold: float = None,
+        scale_recurrence: bool = False,
         snv_recurrence_threshold: int = 5,
+        collapse_cytobands: bool = False,
+        collapse_cytobands_range: int = 0,
 
         low_amp_threshold: int | float = 1,
         mid_amp_threshold: int | float = 1.5,
@@ -207,6 +213,16 @@ class Comut(object):
             remove("mutational signatures")
             remove("mutational signatures legend")
 
+        self.gene_meta_data = (
+            pd.read_csv(gene_meta_data, sep="\t")
+                .set_index("symbol")
+                .reindex(index=self.case.genes, columns=gene_meta_columns)
+                .dropna(axis=1, how="all")
+                .fillna(0)
+            if gene_meta_data is not None else None
+        )
+        n_meta_genes = self.gene_meta_data.shape[1] if self.gene_meta_data is not None else 0
+
         self.layout = ComutLayout(
             panels_to_plot=panels_to_plot,
             max_xfigsize=max_xfigsize,
@@ -215,6 +231,7 @@ class Comut(object):
             n_samples=n_samples_case,
             n_samples_control=n_samples_control,
             n_meta=n_meta,
+            n_meta_genes=n_meta_genes,
             label_columns=label_columns,
             tmb_cmap=self.tmb_cmap,
             snv_cmap=self.snv_cmap,
@@ -222,6 +239,7 @@ class Comut(object):
             mutsig_cmap=self.mutsig_cmap,
             meta_cmaps=self.meta_cmaps_condensed,
         )
+        self.scale_recurrence = scale_recurrence
 
         self.case.save(out_dir=self.plotter.out_dir, name=self.plotter.file_name + ".case")
         self.control.save(out_dir=self.plotter.out_dir, name=self.plotter.file_name + ".control")
@@ -266,6 +284,23 @@ class Comut(object):
             tmb_ymin = 0
             tmb_ymax = np.clip(self.joint.tmb.sum(axis=1).max(), a_min=1.01 * 1e2, a_max=1e4)
 
+        amp_thresholds = [self.joint.high_amp_threshold, self.joint.mid_amp_threshold, self.joint.low_amp_threshold]
+        del_thresholds = [self.joint.high_del_threshold, self.joint.mid_del_threshold, self.joint.low_del_threshold]
+
+        case_cnv_recurrence = self.case.cnv.get_prevalence()
+        case_snv_recurrence = self.case.snv.get_patient_recurrence()
+        control_cnv_recurrence = self.control.cnv.get_prevalence()
+        control_snv_recurrence = self.control.snv.get_patient_recurrence()
+
+        recurrence_max_xlim = pd.concat([
+            case_cnv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k in amp_thresholds])),
+            case_cnv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k in del_thresholds])),
+            case_snv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k is not None])),
+            control_cnv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k in amp_thresholds])),
+            control_cnv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k in del_thresholds])),
+            control_snv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k is not None]))
+         ], axis=1).max(axis=1).max() if self.scale_recurrence else max(len(self.case.columns), len(self.control.columns))
+
         has_control = len(self.control.columns) > 0
         for data, label, is_case, special in zip([self.case, self.control], ["", " control"], [True, False], [has_control, False]):
             if len(data.columns) == 0:
@@ -290,7 +325,7 @@ class Comut(object):
                 tmb=data.tmb,
                 ytickpad=0,
                 fontsize=6,
-                shared_y_ax=self.layout.panels.get("tmb").ax if self.layout.panels.get("tmb").plot_func is not None else None,
+                shared_y_ax=self.layout.panels.get("tmb").ax if "tmb" in self.layout.panels and self.layout.panels.get("tmb").plot_func is not None else None,
                 aspect_ratio=self.layout.aspect_ratio,
                 ymin=tmb_ymin,
                 ymax=tmb_ymax
@@ -299,17 +334,17 @@ class Comut(object):
             self.layout.set_plot_func(
                 "recurrence" + label,
                 self.plotter.plot_recurrence,
-                mut_protein_data=data.snv.get_recurrence(index=data.genes),
-                # mut_prevalence_counter=data.snv.get_effect_prevalence().reindex(index=data.genes),
-                cna=data.cnv.df,
-                cna_counter=data.cnv.get_prevalence(),
-                # num_effects=sdata.snv.num_effects,
+                snv=data.snv,
+                cnv=data.cnv,
                 genes=data.genes,
                 columns=data.columns,
                 cnv_cmap=self.cnv_cmap,
-                amp_thresholds=[data.high_amp_threshold, data.mid_amp_threshold, data.low_amp_threshold],
-                del_thresholds=[data.high_del_threshold, data.mid_del_threshold, data.low_del_threshold],
-                snv_recurrence_threshold=data.snv_recurrence_threshold
+                amp_thresholds=amp_thresholds,
+                del_thresholds=del_thresholds,
+                # max_xlim=recurrence_max_xlim,
+                pad=0.01,
+                invert_x=special,
+                set_joint_title=special if has_control else None,
             )
             self.layout.set_plot_func(
                 "total recurrence" + label,
@@ -354,6 +389,12 @@ class Comut(object):
             "cytoband",
             self.plotter.plot_cytoband,
             cytobands=self.case.cnv.gistic.cytoband
+        )
+        self.layout.set_plot_func(
+            "gene meta data",
+            self.plotter.plot_gene_meta_data,
+            gene_meta_data=self.gene_meta_data,
+            fontsize=6,
         )
 
         self.layout.set_plot_func(
