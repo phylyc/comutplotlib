@@ -34,7 +34,7 @@ class MAF(MutationAnnotation, AnnotationTable):
         complement: bool = False,
         usecols: list = None,
         source: str = MAFEncoding.funcotator,
-        ignore_column_requirements: bool = False,
+        ignore_column_requirements: bool = True,
         warn_if_empty: bool = False,
     ):
         """

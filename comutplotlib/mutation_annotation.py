@@ -187,7 +187,7 @@ class MutationAnnotation(object):
     # "UNITIGS"
 
     default_columns = [
-        # patient,
+        patient,
         sample,
         gene_name,
         chromosome,
