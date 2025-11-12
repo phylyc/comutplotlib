@@ -1,3 +1,4 @@
+from collections import defaultdict
 from functools import reduce
 import os
 import pandas as pd
@@ -21,6 +22,7 @@ class ComutData(object):
 
     def __init__(
         self,
+        cohort_name: str = None,
 
         maf_paths: list[str] = None,
         maf_pool_as: dict | None = None,
@@ -59,6 +61,7 @@ class ComutData(object):
         high_del_threshold: int | float = -2,
         show_low_level_cnvs: bool = False,
     ):
+        self.name = cohort_name
         self.maf = join_mafs([MAF.from_file(path_to_file=maf) for maf in maf_paths]) if maf_paths is not None else MAF()
         self.maf.pool_annotations(pool_as=maf_pool_as, inplace=True)
         self.maf.select(selection={MAF.effect: self.uninteresting_effects}, complement=True, inplace=True)
@@ -82,9 +85,6 @@ class ComutData(object):
         self.cnv = None
         self.tmb = None
         self.meta = None
-
-        self.col_order = column_order
-        self.columns = None
 
         self.meta_data_rows = meta_data_rows
         self.meta_data_rows_per_sample = meta_data_rows_per_sample
@@ -196,7 +196,7 @@ class ComutData(object):
             raise ValueError("The argument 'by' needs to be one of {" + f"{MAF.sample}, {MAF.patient}" + "} but received " + f"{self.by}.")
         return columns
 
-    def get_genes(self):
+    def get_genes(self, categories=None):
         if self.genes is not None:
             return self.genes
 
@@ -221,29 +221,74 @@ class ComutData(object):
         #         self.interesting_genes |= set(ground_truth_gene_list)
 
         if self.total_recurrence_threshold is not None:
-            recurrence = self.get_total_recurrence()["high"]
+            recurrence = self.get_total_recurrence(categories=categories)["high"]
             recurrence = recurrence.loc[recurrence >= self.total_recurrence_threshold]
             self.interesting_genes = {g for g in self.interesting_genes if g in recurrence.index}
 
         return pd.Index(self.interesting_genes, name=MAF.gene_name)
 
-    def get_total_recurrence(self):
-        has_high_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv).fillna(False)
-        has_low_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv | self.cnv.has_low_cnv).fillna(False)
-        has_mut = pd.concat([
-            has_high_mut.astype(int).sum(axis=1).to_frame("high"),
-            has_low_mut.astype(int).sum(axis=1).to_frame("low"),
-        ], axis=1) / len(self.columns)
-        return has_mut
+    def get_mutation_status(self, categories) -> dict[str, pd.DataFrame]:
+        """
+            Arguments:
+                categories dict[str, list[str]]: genes to list of categories {'snv', 'amp', 'del'}
+            Output:
+                dict[str, pd.DataFrame]: {'low'/'high': data frame of genes by samples/patients containing booleans whether }
+        """
+        mut_status = defaultdict(list)
+        has_cn_of_at_least_level = self.cnv.has_cn_of_at_least_level
+        for gene_name, cats in categories.items():
+            low_mut_status = [pd.Series(False, index=self.columns)]
+            high_mut_status = [pd.Series(False, index=self.columns)]
+            if "snv" in cats:
+                high_mut_status.append(self.snv.has_snv.loc[gene_name])
+            if "amp" in cats:
+                high_mut_status.append(has_cn_of_at_least_level[self.cnv.high_amp_threshold].loc[gene_name])
+                # high_mut_status.append(has_cn_of_at_least_level[self.cnv.mid_amp_threshold].loc[gene_name])
+                for t in self.cnv.amp_thresholds:  # count high amps/dels to the low amp/del numbers (at least low)
+                    low_mut_status.append(has_cn_of_at_least_level[t].loc[gene_name])
+            if "del" in cats:
+                high_mut_status.append(has_cn_of_at_least_level[self.cnv.high_del_threshold].loc[gene_name])
+                # high_mut_status.append(has_cn_of_at_least_level[self.cnv.mid_del_threshold].loc[gene_name])
+                for t in self.cnv.del_thresholds:  # count high amps/dels to the low amp/del numbers (at least low)
+                    low_mut_status.append(has_cn_of_at_least_level[t].loc[gene_name])
 
-    def get_total_recurrence_overall(self):
-        has_high_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv).fillna(False)
-        has_low_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv | self.cnv.has_low_cnv).fillna(False)
-        has_mut = {
-            "high": has_high_mut.any(axis=0).astype(int).sum(),
-            "low": has_low_mut.any(axis=0).astype(int).sum(),
+            mut_status["low"].append(pd.concat(low_mut_status, axis=1).any(axis=1))
+            mut_status["high"].append(pd.concat(high_mut_status, axis=1).any(axis=1))
+        return {
+            "low": pd.DataFrame(mut_status["low"], index=categories.keys(), columns=self.columns),
+            "high": pd.DataFrame(mut_status["high"], index=categories.keys(), columns=self.columns),
         }
-        return has_mut, len(self.columns)
+
+    def get_total_recurrence(self, categories=None):
+        if categories is not None:
+            return pd.concat([
+                v.sum(axis=1).to_frame(k)
+                for k, v in self.get_mutation_status(categories=categories).items()
+            ], axis=1)
+        else:
+            has_high_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv).fillna(False)
+            has_low_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv | self.cnv.has_low_cnv).fillna(False)
+            has_mut = pd.concat([
+                has_high_mut.astype(int).sum(axis=1).to_frame("high"),
+                has_low_mut.astype(int).sum(axis=1).to_frame("low"),
+            ], axis=1) / len(self.columns)
+            return has_mut
+
+    def get_total_recurrence_overall(self, categories=None):
+        """ Measures percent of all patients that have a mutation of type 'low/high' """
+        if categories is not None:
+            return pd.Series({
+                k: v.any(axis=0).sum()
+                for k, v in self.get_mutation_status(categories=categories).items()
+            }), len(self.columns)
+        else:
+            has_high_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv).fillna(False)
+            has_low_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv | self.cnv.has_low_cnv).fillna(False)
+            has_mut = pd.Series({
+                "high": has_high_mut.any(axis=0).astype(int).sum(),
+                "low": has_low_mut.any(axis=0).astype(int).sum(),
+            })
+            return has_mut, len(self.columns)
 
     def get_tmb(self):
         meta_tmb = self.meta.get_tmb()
@@ -382,7 +427,7 @@ class ComutData(object):
 
     def get_model_annotation(self):
         return pd.DataFrame(
-            [[g in self.snv_interesting_genes, g in self.cnv_interesting_genes] for g in self.genes],
+            [[g in self.cnv_interesting_genes, g in self.snv_interesting_genes] for g in self.genes],
             index=self.genes,
-            columns=["snv", "cnv"]
+            columns=["cnv", "snv"]
         )

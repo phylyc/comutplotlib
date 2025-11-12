@@ -5,9 +5,15 @@ Welcome to **ComutPlotLib**, a Python tool for generating **genomic comutation p
 ![Sample Comut Plot Output](https://raw.githubusercontent.com/phylyc/comutplotlib/main/demo/comut_test.png)  
 This comutation plot (central panel) visualizes the mutation landscape across a patient cohort. Rows represent genes, and columns correspond to patients. Each cell indicates a gene’s mutation status in a patient: rectangles denote copy-number variations (CNVs), and ellipses indicate short nucleotide variations (SNVs), with multiple SNVs shown as subdivided wedges. Colors encode mutation types and functional effects.
 
-The top panel displays tumor mutation burden (TMB) per patient, with high TMB (≥10/Mb) highlighted in red. The mutational signature panel shows the relative fraction of exposures to different mutational signatures for each patient or sample. The left panel summarizes mutation recurrence, showing SNV and CNV frequencies per gene, annotated with recurrent protein alterations. It also reports the percentage of patients with high-level CNVs, supplemented by low-level CNVs in brackets, along with the total percentage of patients carrying either an SNV or a high-level CNV in the gene.
+The top panel displays tumor mutation burden (TMB) per patient, with high TMB (≥10/Mb) highlighted in red. The mutational signature panel shows the relative fraction of exposures to different mutational signatures for each patient or sample. The right panel summarizes mutation recurrence, showing SNV and/or CNV frequencies per gene, reporting the percentage of patients with high-level CNVs or at least low-level CNVs.
 
 The bottom panel presents patient- and sample-level metadata. For patients with multiple samples, metadata cells are subdivided accordingly.
+
+The library also supports case-control plots, featuring fold-change of the mutational frequency between two cohorts:
+
+![Sample Comut Plot Output](https://raw.githubusercontent.com/phylyc/comutplotlib/main/demo/comut_test.control.png)
+
+
 
 
 ## **Features**  

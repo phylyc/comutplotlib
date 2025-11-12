@@ -24,6 +24,7 @@ class ComutLayout(Layout):
         self.inter_heatmap_linewidth = 0.05
 
         # HEIGHTS
+        title_height = 2
         tmb_height = 4
         mut_sig_height = 4
         coverage_height = 5
@@ -42,10 +43,8 @@ class ComutLayout(Layout):
         max_meta_legend_height = max(meta_legend_heights.values()) if len(meta_legend_heights) else 1
 
         # WIDTHS
-        snv_recurrence_width = 4
-        cnv_recurrence_width = snv_recurrence_width
-        # recurrence_width = snv_recurrence_width + cnv_recurrence_width
-        recurrence_width = 4
+        recurrence_width = 5
+        recurrence_fold_change_width = 10
         total_recurrence_width = 2
         cytoband_width = 2
         gene_label_width = 6
@@ -58,7 +57,7 @@ class ComutLayout(Layout):
 
         left_of_comut_width = 0
         if "gene meta data" in panels_to_plot:
-            left_of_comut_width += genes_meta_width
+            left_of_comut_width += genes_meta_width + (pad if "cytoband" in panels_to_plot else 0)
         if "cytoband" in panels_to_plot:
             left_of_comut_width += cytoband_width
         if "gene names" in panels_to_plot:
@@ -75,15 +74,19 @@ class ComutLayout(Layout):
             non_heatmap_width += model_significance_width
         if "recurrence" in panels_to_plot:
             non_heatmap_width += recurrence_width + pad
+        if "recurrence control" in panels_to_plot:
+            non_heatmap_width += recurrence_width + (pad if "recurrence fold change" in panels_to_plot else 0)
+        if "recurrence fold change" in panels_to_plot:
+            non_heatmap_width += recurrence_fold_change_width + pad
         if "total recurrence" in panels_to_plot:
             non_heatmap_width += total_recurrence_width + pad
         comut_width = (
-            min(n_samples, int(10 * max_xfigsize - non_heatmap_width))
+            max(min(n_samples, int(10 * max_xfigsize - non_heatmap_width)), 1)
             if max_xfigsize is not None
             else int(max_xfigsize_scale * n_samples)
         )
         comut_width_control = (
-            min(n_samples_control, int(10 * max_xfigsize - non_heatmap_width))
+            max(min(n_samples_control, int(10 * max_xfigsize - non_heatmap_width)), 1)
             if max_xfigsize is not None
             else int(max_xfigsize_scale * n_samples_control)
         )
@@ -100,7 +103,9 @@ class ComutLayout(Layout):
         self.column_names_height = 5
 
         xsize = left_of_comut_width + comut_width + right_of_comut_width
-        ysize = tmb_height + pad + comut_height
+        ysize = title_height + tmb_height + pad + comut_height
+        if "total recurrence fold change" in panels_to_plot:
+            ysize += 1
         if self.show_patient_names:
             ysize += self.column_names_height
         if "meta data" in panels_to_plot:
@@ -123,6 +128,8 @@ class ComutLayout(Layout):
                 "model annotation": [model_annotation_width, comut_height],
                 "model annotation legend": [legend_width, model_annotation_legend_height],
 
+                "cohort label": [comut_width, title_height],
+                "cohort label control": [comut_width, title_height],
                 "coverage": [comut_width, coverage_height],
                 "coverage control": [comut_width_control, coverage_height],
                 "tmb": [comut_width, tmb_height],
@@ -138,11 +145,13 @@ class ComutLayout(Layout):
                 "gene meta data": [genes_meta_width, comut_height],
 
                 "total recurrence": [total_recurrence_width, comut_height],
-                "total recurrence overall": [total_recurrence_width, 1],
                 "total recurrence control": [total_recurrence_width, comut_height],
-                "total recurrence overall control": [total_recurrence_width, 1],
                 "recurrence": [recurrence_width, comut_height],
                 "recurrence control": [recurrence_width, comut_height],
+                "total recurrence overall": [recurrence_width, 1],
+                "total recurrence overall control": [recurrence_width, 1],
+                "recurrence fold change": [recurrence_fold_change_width, comut_height],
+                "total recurrence fold change": [recurrence_fold_change_width, 1],
 
                 "meta data": [comut_width, meta_height],
                 "meta data control": [comut_width_control, meta_height],
@@ -173,12 +182,12 @@ class ComutLayout(Layout):
         #     p_ref = self.add_panel(name=panel, ref=p_ref, left_of=p_ref, pad=pad)
         p_ref = self.add_panel(name="model annotation", ref=p_ref, left_of=p_ref, pad=0)
         p_ref = self.add_panel(name="gene names", ref=p_ref, left_of=p_ref, pad=0)
-        p_ref = self.add_panel(name="cytoband", ref=p_ref, left_of=p_ref, pad=0)
-        p_ref = self.add_panel(name="gene meta data", ref=p_ref, left_of=p_ref, pad=0 if "cytoband" not in self.panels_to_plot else self.pad)
+        p_ref = self.add_panel(name="cytoband", ref=p_ref, left_of=p_ref, pad=0 if "gene names" in self.panels_to_plot else self.pad)
+        p_ref = self.add_panel(name="gene meta data", ref=p_ref, left_of=p_ref, pad=self.pad if "cytoband" in self.panels_to_plot else 0)
 
         # TOP PANELS
         p_ref = p_comut
-        for panel in ["mutational signatures", "coverage", "tmb"]:
+        for panel in ["mutational signatures", "coverage", "tmb", "cohort label"]:
             p_ref = self.add_panel(name=panel, ref=p_ref, above=p_ref)
 
         # BOTTOM PANELS
@@ -196,21 +205,23 @@ class ComutLayout(Layout):
         p_ref = p_comut
         p_ref = self.add_panel(name="recurrence", ref=p_ref, right_of=p_ref)
         # p_ref = self.add_panel(name="total recurrence", ref=p_ref, right_of=p_ref)
-        # self.add_panel(name="total recurrence overall", ref=p_ref, below=p_ref, pad=0)
+        self.add_panel(name="total recurrence overall", ref=p_ref, below=p_ref, pad=0)
 
         if "comutation control" in self.panels_to_plot:
-            # p_ref = self.add_panel(name="total recurrence control", ref=p_ref, right_of=p_ref, pad=0)
-            # self.add_panel(name="total recurrence overall control", ref=p_ref, below=p_ref, pad=0)
-
             # LEFT PANELS
-            p_ref = self.add_panel(name="recurrence control", ref=p_ref, right_of=p_ref, pad=0)
+            p_ref = self.add_panel(name="recurrence fold change", ref=p_ref, right_of=p_ref)
+            self.add_panel(name="total recurrence fold change", ref=p_ref, below=p_ref, pad=0)
+            p_ref = self.add_panel(name="recurrence control", ref=p_ref, right_of=p_ref, pad=self.pad if "recurrence fold change" in self.panels_to_plot else 0)
+            # p_ref = self.add_panel(name="total recurrence control", ref=p_ref, right_of=p_ref, pad=0)
+            self.add_panel(name="total recurrence overall control", ref=p_ref, below=p_ref, pad=0)
+            p_rec_control = p_ref
 
             p_ref = self.add_panel(name="comutation control", ref=p_ref, right_of=p_ref)
             p_comut_control = p_ref
 
             # TOP PANELS
             p_ref = p_comut_control
-            for panel in ["mutational signatures control", "coverage control", "tmb control"]:
+            for panel in ["mutational signatures control", "coverage control", "tmb control", "cohort label control"]:
                 p_ref = self.add_panel(name=panel, ref=p_ref, above=p_ref)
 
             # BOTTOM PANELS
@@ -222,6 +233,7 @@ class ComutLayout(Layout):
             # p_ref = self.add_panel(name="recurrence control", ref=p_ref, right_of=p_ref)
 
             p_ref = p_comut_control
+            # p_ref = p_rec_control
 
         def first_legend_panel(name, p_ref):
             return self.add_panel(name=name, ref=p_ref, right_of=p_ref, pad=self.small_inter_legend_width, align="top")
@@ -234,7 +246,7 @@ class ComutLayout(Layout):
 
         has_legend = False
         p_ref_top = None
-        for panel in ["snv legend", "cnv legend", "model annotation legend"]:
+        for panel in ["cnv legend", "snv legend", "model annotation legend"]:
             if panel in self.panels_to_plot:
                 p_ref = (
                     first_legend_panel(name=panel, p_ref=p_ref)

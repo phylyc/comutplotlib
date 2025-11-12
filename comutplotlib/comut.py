@@ -1,10 +1,12 @@
 from copy import deepcopy
 import numpy as np
 import pandas as pd
+import scipy.stats as st
 
 from comutplotlib.comut_data import ComutData
 from comutplotlib.comut_layout import ComutLayout
 from comutplotlib.comut_plotter import ComutPlotter
+from comutplotlib.functional_effect import sort_functional_effects
 from comutplotlib.mutation_annotation import MutationAnnotation as MutA
 from comutplotlib.palette import Palette
 from comutplotlib.sample_annotation import SampleAnnotation as SA
@@ -36,6 +38,8 @@ class Comut(object):
 
         mutsig: list[str] = None,
 
+        cohort_label: str = None,
+
         model_significances: list[str] = None,
         model_names: list[str] = (),
 
@@ -51,6 +55,7 @@ class Comut(object):
         control_gistic: list[str] = None,
         control_sif: list[str] = None,
         control_mutsig: list[str] = None,
+        control_cohort_label: str = None,
 
         drop_empty_columns: bool = False,
 
@@ -68,6 +73,7 @@ class Comut(object):
         cnv_interesting_genes: set = None,
         total_recurrence_threshold: float = None,
         scale_recurrence: bool = False,
+        recurrence_categories: dict[str, list[str] | dict[str, list[str]]] = {"global": ["snv", "amp", "del"]},
         snv_recurrence_threshold: int = 5,
         collapse_cytobands: bool = False,
         collapse_cytobands_range: int = 0,
@@ -95,6 +101,7 @@ class Comut(object):
         )
 
         self.case = ComutData(
+            cohort_name=cohort_label,
             maf_paths=maf,
             maf_pool_as=maf_pool_as,
             seg_paths=seg,
@@ -128,6 +135,7 @@ class Comut(object):
         self.case.preprocess()
 
         self.control = ComutData(
+            cohort_name=control_cohort_label,
             maf_paths=control_maf,
             maf_pool_as=maf_pool_as,
             seg_paths=control_seg,
@@ -182,6 +190,8 @@ class Comut(object):
         self.joint.mutsig = pd.concat(mutsigs) if len(mutsigs) else None
         self.joint.preprocess()
 
+        self.amp_thresholds = [self.joint.high_amp_threshold, self.joint.mid_amp_threshold, self.joint.low_amp_threshold]
+        self.del_thresholds = [self.joint.high_del_threshold, self.joint.mid_del_threshold, self.joint.low_del_threshold]
         self.tmb_cmap = self.plotter.palette.get_tmb_cmap(self.joint.tmb)
         self.snv_cmap = self.plotter.palette.get_snv_cmap(self.joint.snv)
         self.cnv_cmap, self.cnv_names = self.plotter.palette.get_cnv_cmap(self.joint.cnv)
@@ -206,10 +216,12 @@ class Comut(object):
             if col in panels_to_plot:
                 panels_to_plot.remove(col)
 
-        if self.case.tmb is None:
+        if "tmb" in self.tmb_cmap.keys():
+            remove("tmb legend")
+        if self.joint.tmb is None:
             remove("tmb")
             remove("tmb legend")
-        if self.case.mutsig is None:
+        if self.joint.mutsig is None:
             remove("mutational signatures")
             remove("mutational signatures legend")
 
@@ -240,9 +252,95 @@ class Comut(object):
             meta_cmaps=self.meta_cmaps_condensed,
         )
         self.scale_recurrence = scale_recurrence
+        self.recurrence_categories = self.get_recurrence_categories_by_gene(recurrence_categories)
 
         self.case.save(out_dir=self.plotter.out_dir, name=self.plotter.file_name + ".case")
         self.control.save(out_dir=self.plotter.out_dir, name=self.plotter.file_name + ".control")
+
+    def get_recurrence_categories_by_gene(self, categories, ref_cohort=None) -> dict[str, list[str]]:
+        ref_cohort = (
+            self.case if ref_cohort in [None, "case", self.case]
+            else self.control if ref_cohort in ["control", self.control]
+            else self.joint
+        )
+        cnv_recurrence = ref_cohort.cnv.get_num_patients_by_gene_by_cn_level().reindex(index=ref_cohort.genes).fillna(0)
+        snv_recurrence = ref_cohort.snv.get_num_patients_by_gene_by_effect().reindex(index=ref_cohort.genes).fillna(0)
+
+        recurrence_categories_by_gene = {}
+        for i, (gene_name, row) in enumerate(cnv_recurrence.iterrows()):
+            non_nan_cnv_counter = {k: v for k, v in row.dropna().items() if v > 0}
+            non_nan_snv_counter = {k: v for k, v in snv_recurrence.loc[gene_name].items() if v > 0}
+
+            non_nan_counts = non_nan_cnv_counter | non_nan_snv_counter
+
+            if not len(non_nan_cnv_counter) and not len(non_nan_snv_counter):
+                continue
+
+            present_amp_thresholds = sorted([t for t in self.amp_thresholds if t in non_nan_cnv_counter], reverse=True)
+            present_del_thresholds = sorted([t for t in self.del_thresholds if t in non_nan_cnv_counter])
+            present_snv_effects = sort_functional_effects([e for e in non_nan_snv_counter.keys()], ascending=False)
+
+            amp_max = max(non_nan_counts[t] for t in present_amp_thresholds) if len(present_amp_thresholds) else 0
+            del_max = max(non_nan_counts[t] for t in present_del_thresholds) if len(present_del_thresholds) else 0
+            snv_max = sum(non_nan_counts[t] for t in present_snv_effects) if len(present_snv_effects) else 0
+
+            idx = np.argmax([amp_max, del_max, snv_max])
+            max_cat = ["amp", "del", "snv"][idx]
+
+            categories_for_gene = categories.get("local", {}).get(gene_name, categories.get("global"))
+            recurrence_categories_by_gene[gene_name] = [max_cat if c == "max" else c for c in categories_for_gene]
+
+        return recurrence_categories_by_gene
+
+    def get_recurrence_fold_change_by_gene(self, fdr=0.1, base=2):
+        case = pd.concat([
+            self.case.snv.get_num_patients_by_gene_by_effect().reindex(columns=self.joint.snv.effects).fillna(0),
+            self.case.cnv.get_num_patients_by_gene_of_at_least_cn_level()
+        ], axis=1)
+        n_case = len(self.case.columns)
+        control = pd.concat([
+            self.control.snv.get_num_patients_by_gene_by_effect().reindex(columns=self.joint.snv.effects).fillna(0),
+            self.control.cnv.get_num_patients_by_gene_of_at_least_cn_level()
+        ], axis=1)
+        n_control = len(self.control.columns)
+
+        p_case = (case + 0.5) / (n_case + 0.5)
+        p_control = (control + 0.5) / (n_control + 0.5)
+        mean = np.log(p_case / p_control) / np.log(base)
+        var = ((1 / p_case - 1) / n_case + (1 / p_control - 1) / n_control + 1e-12) / np.log(base) ** 2
+
+        lo = pd.DataFrame(st.norm.ppf(fdr, loc=mean, scale=np.sqrt(var)), index=mean.index, columns=mean.columns)
+        hi = pd.DataFrame(st.norm.ppf(1 - fdr, loc=mean, scale=np.sqrt(var)), index=mean.index, columns=mean.columns)
+
+        is_present = (case > 0) & (control > 0) & ~case.isna() & ~control.isna()
+        return {
+            "mean": mean.mask(~is_present),
+            "lo": lo.mask(~is_present),
+            "hi": hi.mask(~is_present),
+            "fdr": fdr,
+            "base": base
+        }
+
+    def get_total_recurrence_fold_change(self, fdr=0.1, base=2):
+        case, n_case = self.case.get_total_recurrence_overall(categories=self.recurrence_categories)
+        control, n_control = self.control.get_total_recurrence_overall(categories=self.recurrence_categories)
+
+        p_case = (case + 0.5) / (n_case + 0.5)
+        p_control = (control + 0.5) / (n_control + 0.5)
+        mean = np.log(p_case / p_control) / np.log(base)
+        var = ((1 / p_case - 1) / n_case + (1 / p_control - 1) / n_control + 1e-12) / np.log(base) ** 2
+
+        lo = pd.Series(st.norm.ppf(fdr, loc=mean, scale=np.sqrt(var)), index=mean.index)
+        hi = pd.Series(st.norm.ppf(1 - fdr, loc=mean, scale=np.sqrt(var)), index=mean.index)
+
+        is_present = (case > 0) & (control > 0) | case.isna() | control.isna()
+        return {
+            "mean": mean.mask(~is_present),
+            "lo": lo.mask(~is_present),
+            "hi": hi.mask(~is_present),
+            "fdr": fdr,
+            "base": base
+        }
 
     def make_comut(self):
         self.layout.add_panels()
@@ -284,24 +382,43 @@ class Comut(object):
             tmb_ymin = 0
             tmb_ymax = np.clip(self.joint.tmb.sum(axis=1).max(), a_min=1.01 * 1e2, a_max=1e4)
 
-        amp_thresholds = [self.joint.high_amp_threshold, self.joint.mid_amp_threshold, self.joint.low_amp_threshold]
-        del_thresholds = [self.joint.high_del_threshold, self.joint.mid_del_threshold, self.joint.low_del_threshold]
-
-        case_cnv_recurrence = self.case.cnv.get_prevalence()
-        case_snv_recurrence = self.case.snv.get_patient_recurrence()
-        control_cnv_recurrence = self.control.cnv.get_prevalence()
-        control_snv_recurrence = self.control.snv.get_patient_recurrence()
-
-        recurrence_max_xlim = pd.concat([
-            case_cnv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k in amp_thresholds])),
-            case_cnv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k in del_thresholds])),
-            case_snv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k is not None])),
-            control_cnv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k in amp_thresholds])),
-            control_cnv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k in del_thresholds])),
-            control_snv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k is not None]))
-         ], axis=1).max(axis=1).max() if self.scale_recurrence else max(len(self.case.columns), len(self.control.columns))
+        # case_cnv_recurrence = self.case.cnv.get_prevalence()
+        # case_snv_recurrence = self.case.snv.get_patient_recurrence()
+        # control_cnv_recurrence = self.control.cnv.get_prevalence()
+        # control_snv_recurrence = self.control.snv.get_patient_recurrence()
+        #
+        # recurrence_max_xlim = pd.concat([
+        #     case_cnv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k in amp_thresholds])),
+        #     case_cnv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k in del_thresholds])),
+        #     case_snv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k is not None])),
+        #     control_cnv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k in amp_thresholds])),
+        #     control_cnv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k in del_thresholds])),
+        #     control_snv_recurrence.apply(lambda d: sum([v for k, v in d.items() if k is not None]))
+        #  ], axis=1).max(axis=1).max() if self.scale_recurrence else max(len(self.case.columns), len(self.control.columns))
 
         has_control = len(self.control.columns) > 0
+        if has_control:
+            self.layout.set_plot_func(
+                "recurrence fold change",
+                self.plotter.plot_recurrence_fold_change,
+                fold_change=self.get_recurrence_fold_change_by_gene(fdr=0.1, base=2),
+                genes=self.case.genes,
+                cnv_cmap=self.cnv_cmap,
+                categories=self.recurrence_categories,
+                effects=self.joint.snv.effects,
+                amp_thresholds=self.amp_thresholds,
+                del_thresholds=self.del_thresholds,
+                label_x="total recurrence fold change" not in self.layout.panels,
+                pad=0.01,
+            )
+            self.layout.set_plot_func(
+                "total recurrence fold change",
+                self.plotter.plot_total_recurrence_fold_change,
+                fold_change=self.get_total_recurrence_fold_change(fdr=0.1, base=2),
+                shared_x_ax=self.layout.panels.get("recurrence fold change").ax if "recurrence fold change" in self.layout.panels and self.layout.panels.get("recurrence fold change").plot_func is not None else None,
+                pad=0.01,
+            )
+
         for data, label, is_case, special in zip([self.case, self.control], ["", " control"], [True, False], [has_control, False]):
             if len(data.columns) == 0:
                 continue
@@ -309,6 +426,12 @@ class Comut(object):
             self.layout.set_plot_func(
                 "comutation" + label,
                 plot_comut_gen(data)
+            )
+
+            self.layout.set_plot_func(
+                "cohort label" + label,
+                self.plotter.plot_cohort_label,
+                label=data.name
             )
 
             # self.layout.set_plot_func("coverage", self.plotter.plot_coverage)
@@ -337,30 +460,30 @@ class Comut(object):
                 snv=data.snv,
                 cnv=data.cnv,
                 genes=data.genes,
-                columns=data.columns,
                 cnv_cmap=self.cnv_cmap,
-                amp_thresholds=amp_thresholds,
-                del_thresholds=del_thresholds,
+                categories=self.recurrence_categories,
                 # max_xlim=recurrence_max_xlim,
                 pad=0.01,
-                invert_x=special,
-                set_joint_title=special if has_control else None,
+                invert_x=not is_case,
+                label_bottom=("total recurrence overall" + label) not in self.layout.panels,
+                set_joint_title=special if has_control and "recurrence fold change" not in self.layout.panels_to_plot else None,
             )
-            self.layout.set_plot_func(
-                "total recurrence" + label,
-                self.plotter.plot_total_recurrence,
-                total_recurrence_per_gene=data.get_total_recurrence(),
-                pad=0.01,
-                invert_x=special,
-                set_joint_title=special if has_control else None,
-            )
+            # self.layout.set_plot_func(
+            #     "total recurrence" + label,
+            #     self.plotter.plot_total_recurrence,
+            #     total_recurrence_per_gene=data.get_total_recurrence(),
+            #     pad=0.01,
+            #     invert_x=not is_case,
+            #     set_joint_title=special if has_control and "recurrence fold change" not in self.layout.panels_to_plot else None,
+            # )
             self.layout.set_plot_func(
                 "total recurrence overall" + label,
                 self.plotter.plot_total_recurrence_overall,
-                total_recurrence_overall=data.get_total_recurrence_overall(),
+                total_recurrence_overall=data.get_total_recurrence_overall(categories=self.recurrence_categories),
+                shared_x_ax=self.layout.panels.get("recurrence" + label).ax if ("recurrence" + label) in self.layout.panels and self.layout.panels.get("recurrence" + label).plot_func is not None else None,
                 pad=0.01,
-                invert_x=special,
-                case_control_spacing=special if has_control else None,
+                invert_x=not is_case,
+                # set_joint_title=special if has_control and "recurrence fold change" not in self.layout.panels_to_plot else None,
             )
             self.layout.set_plot_func(
                 "meta data" + label,

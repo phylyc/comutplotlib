@@ -1,33 +1,50 @@
 import argparse
+from collections import defaultdict
 
 
 def validate_args(args):
     """Ensure required arguments are correctly specified."""
+    def remove(panel):
+        if panel in args.panels_to_plot:
+            args.panels_to_plot.remove(panel)
+
     if args.maf is None and args.gistic is None:
         raise ValueError("Either --maf or --gistic must be specified.")
 
-    if args.control_maf is None or args.control_gistic is None:
+    if args.control_maf is None and args.control_gistic is None:
+        remove("recurrence fold change")
         for panel in args.panels_to_plot:
             if panel.endswith("control"):
-                args.panels_to_plot.remove(panel)
+                remove(panel)
+    if "recurrence" not in args.panels_to_plot:
+        remove("total recurrence overall")
+    if "recurrence control" not in args.panels_to_plot:
+        remove("total recurrence overall control")
+    if "recurrence fold change" not in args.panels_to_plot:
+        remove("total recurrence fold change")
 
-    if args.snv_interesting_genes is None and args.cnv_interesting_genes is None and "model annotation" in args.panels_to_plot:
-        args.panels_to_plot.remove("model annotation")
-    if "model annotation" not in args.panels_to_plot and "model annotation legend" in args.panels_to_plot:
-        args.panels_to_plot.remove("model annotation legend")
+    if args.cohort_label is None:
+        remove("cohort label")
+    if args.control_cohort_label is None:
+        remove("cohort label control")
 
-    if args.mutsig is None and "mutational signatures" in args.panels_to_plot:
-        args.panels_to_plot.remove("mutational signatures")
-    if "mutational signatures" not in args.panels_to_plot and "mutational signatures legend" in args.panels_to_plot:
-        args.panels_to_plot.remove("mutational signatures legend")
+    if args.snv_interesting_genes is None and args.cnv_interesting_genes is None:
+        remove("model annotation")
+    if "model annotation" not in args.panels_to_plot:
+        remove("model annotation legend")
 
-    if args.sif is None and "meta data" in args.panels_to_plot:
-        args.panels_to_plot.remove("meta data")
-    if "meta data" not in args.panels_to_plot and "meta data legend" in args.panels_to_plot:
-        args.panels_to_plot.remove("meta data legend")
+    if args.mutsig is None:
+        remove("mutational signatures")
+    if "mutational signatures" not in args.panels_to_plot:
+        remove("mutational signatures legend")
 
-    if args.gene_meta_data is None and "gene meta data" in args.panels_to_plot:
-        args.panels_to_plot.remove("gene meta data")
+    if args.sif is None:
+        remove("meta data")
+    if "meta data" not in args.panels_to_plot:
+        remove("meta data legend")
+
+    if args.gene_meta_data is None:
+        remove("gene meta data")
 
 
 def print_args(args):
@@ -45,7 +62,10 @@ def parse_comma_separated(value):
 
 
 def parse_palette(value):
-    """Parse a color palette definition from a semicolon-separated string."""
+    """ Parse a color palette definition from a semicolon-separated string. Format:
+        value='key1:r,g,b;key2:r,g,b|metaColumn1>key3:r,g,b;key4:r,g,b|metaColumn2>key5:r,g,b'
+        returns {'global': {key1: (r, g, b), key2: {r, g, b)}, 'local': {metaColumn1: {key3: (r, g, b), key4: (r, g, b)}, metaColumn2: {key5: (r, g, b)}}}
+    """
     if not value:
         return None
     palette = {}
@@ -63,6 +83,27 @@ def parse_palette(value):
                 key, rgb = entry.split(":")
                 meta_palette[column][key] = tuple(map(float, rgb.split(",")))
     return {"global": palette, "local": meta_palette}
+
+
+def parse_gene_categories(value):
+    """ Parse a color palette definition from a semicolon-separated string. Format:
+        value='x,y,z|gene1:x,y,z;gene2:x,y,z'
+        returns {'global': [x, y,  z], 'local': {gene1: [x, y, z], gene2: [x, y, z]}
+    """
+    if not value:
+        return None
+    global_categories = []
+    gene_categories = defaultdict(list)
+    cats = value.split("|")
+    if len(cats[0]) > 0:
+        for cat in cats[0].split(","):
+            global_categories.append(cat)
+    if len(cats) > 1:
+        for gene_entry in cats[1].split(";"):
+            gene, gene_cats = gene_entry.split(":")
+            for cat in gene_cats.split(","):
+                gene_categories[gene].append(cat)
+    return {"global": global_categories, "local": gene_categories}
 
 
 def parse_ground_truth_genes(value):
@@ -103,6 +144,10 @@ def parse_args():
         "--mutsig", type=str, action='append', default=None,
         help="Path to a file containing mutational signature exposures (index: patient, columns: signatures)."
     )
+    parser.add_argument(
+        "--cohort-label", type=str, default=None,
+        help="Name of the cohort for panel title."
+    )
 
     parser.add_argument(
         "--control-maf", type=str, action='append', default=None,
@@ -120,6 +165,10 @@ def parse_args():
         "--control-mutsig", type=str, action='append', default=None,
         help="Path to a file containing mutational signature exposures (index: patient, columns: signatures)."
     )
+    parser.add_argument(
+        "--control-cohort-label", type=str, default=None,
+        help="Name of the control cohort for panel title."
+    )
 
     parser.add_argument(
         "--gene-meta-data", type=str, action='append', default=None,
@@ -131,7 +180,7 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--model-names", type=parse_comma_separated, default=["SNV burden model", "CNV burden model"],
+        "--model-names", type=parse_comma_separated, default=["CNV burden model", "SNV burden model"],
         help="Comma-separated names of models corresponding to SNV and CNV interesting genes."
     )
     parser.add_argument(
@@ -235,6 +284,11 @@ def parse_args():
         help=" "
     )
     parser.add_argument(
+        "--recurrence-categories", type=parse_gene_categories, default={"global": ["snv", "amp", "del"], "local": {}},
+        help="List of mutation categories (snv/amp/del) to plot recurrence for; "
+             "optional gene level categories can be added via the format x,y,z|gene1:x,y,z;gene2:x,y,z"
+    )
+    parser.add_argument(
         "--total-recurrence-threshold", type=float, default=None,
         help="Minimum percentage of patients with a mutation in a gene for it to be plotted."
     )
@@ -281,17 +335,21 @@ def parse_args():
         default=[
             "comutation",
             "comutation control",
+            "cohort label",
+            "cohort label control",
             "tmb",
             "tmb control",
-            # "tmb legend",
+            "tmb legend",
             "mutational signatures",
             "mutational signatures control",
             "mutational signatures legend",
             "recurrence",
             "recurrence control",
-            "total recurrence",
+            "recurrence fold change",
+            "total recurrence fold change",
+            # "total recurrence",
+            # "total recurrence control",
             "total recurrence overall",
-            "total recurrence control",
             "total recurrence overall control",
             "gene meta data",
             "cytoband",

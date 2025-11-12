@@ -6,7 +6,6 @@ import numpy as np
 import scipy.stats as st
 
 from comutplotlib.plotter import Plotter
-from comutplotlib.functional_effect import sort_functional_effects
 from comutplotlib.math import decompose_rectangle_into_polygons
 from comutplotlib.palette import Palette
 from comutplotlib.sample_annotation import SampleAnnotation as SA
@@ -16,6 +15,20 @@ class ComutPlotter(Plotter):
 
     def __init__(self, output: str = "./comut.pdf", extra_palette=None) -> None:
         super().__init__(output=output, extra_palette=extra_palette)
+
+    def plot_cohort_label(self, ax, label):
+        ax.text(
+            0.5,
+            0,
+            label,
+            fontsize=8,
+            # fontweight="bold",
+            horizontalalignment="center",
+            verticalalignment="bottom",
+        )
+        ax.set_xticks([])
+        ax.set_yticks([])
+        self.no_spines(ax=ax)
 
     def plot_protein_recurrence(self, ax, snv, genes, columns, snv_recurrence_threshold: int = 5, pad=0.1):
 
@@ -133,112 +146,113 @@ class ComutPlotter(Plotter):
 
         return ax
 
-    def plot_recurrence(self, ax, snv, cnv, genes, columns, cnv_cmap, amp_thresholds, del_thresholds, pad=0.1, max_xlim=None, invert_x=False, set_joint_title=None):
+    def plot_recurrence(self, ax, snv, cnv, genes, cnv_cmap, categories: dict[str, list[str]], pad=0.1, max_xlim=None, invert_x=False, set_joint_title=None, label_bottom=True):
 
-        cnv_recurrence = cnv.get_prevalence()
-        snv_recurrence = snv.get_patient_recurrence()
+        cnv_counts = cnv.get_num_patients_by_gene_by_cn_level().reindex(index=genes).fillna(0)
+        snv_counts = snv.get_num_patients_by_gene_by_effect().reindex(index=genes).fillna(0)
+        counts = pd.concat([cnv_counts, snv_counts], axis=1)
 
-        max_xlim = len(columns) if max_xlim is None else max_xlim
+        thresholds = {
+            "snv": snv.effects,
+            "amp": cnv.amp_thresholds,
+            "del": cnv.del_thresholds
+        }
+
+        n_genes = len(genes)
+        n_columns = max(cnv.df.shape[1], snv.df.shape[1])
+        max_xlim = n_columns if max_xlim is None else max_xlim
 
         cmap = self.palette | cnv_cmap | {None: self.palette.white}
 
-        def make_recurrence(_ax):
-            for row, (gene_name, counter) in enumerate(cnv_recurrence.items()):
-                non_nan_cnv_counter = {k: v for k, v in counter.items() if not np.isnan(k)}
-                non_nan_snv_counter = {k: v for k, v in snv_recurrence.loc[gene_name].items() if k is not None}
+        for i, (gene_name, row) in enumerate(counts.iterrows()):
+            categories_for_gene = categories.get(gene_name, ["snv", "amp", "del"]) if isinstance(categories, dict) else categories
+            n_categories = len(categories_for_gene)
 
-                non_nan_counts = non_nan_cnv_counter | non_nan_snv_counter
+            ypad = (n_categories - 1) / n_categories * (1 - pad)
+            for cat in categories_for_gene:
+                pos = 0
+                prevalence = {}
+                text_kwargs = {
+                    "y": i + pad / 2 + (1 - pad - 1/5) / 2 / n_categories + ypad,
+                    "fontsize": 3.9 / n_categories,
+                    "verticalalignment": "center",
+                    "horizontalalignment": "right" if invert_x else "left"
+                }
+                other_text_kwargs = text_kwargs | {
+                    "horizontalalignment": "left" if invert_x else "right",
+                    "fontsize": 2.6 - (n_categories - 1) * 3.9 / 6
+                }
+                added_text = False
+                for threshold in thresholds[cat]:
+                    value = row.loc[threshold]
+                    if not value:
+                        continue
 
-                if not len(non_nan_cnv_counter) and not len(non_nan_snv_counter):
-                    continue
-
-                present_amp_thresholds = sorted([t for t in amp_thresholds if t in non_nan_cnv_counter], reverse=True)
-                present_del_thresholds = sorted([t for t in del_thresholds if t in non_nan_cnv_counter])
-                present_snv_effects = sort_functional_effects([e for e in non_nan_snv_counter.keys()], ascending=False)
-
-                def make_bars_with_recurrence_text(thresholds, ypad):
-                    pos = 0
-                    prevalence = {}
-                    text_kwargs = {
-                        "y": row + pad / 2 + (1 - pad - 1/5) / 2 / 3 + ypad,
-                        "fontsize": 1.3,
-                        "verticalalignment": "center",
-                        "horizontalalignment": "right" if invert_x else "left"
-                    }
-                    other_text_kwargs = text_kwargs | {
-                        "horizontalalignment": "left" if invert_x else "right"
-                    }
+                    rect = patches.Rectangle(
+                        xy=(pos, i + pad / 2 + ypad),
+                        width=value,
+                        height=(1 - pad) / n_categories,
+                        facecolor=cmap[threshold],
+                        edgecolor=None,
+                        zorder=0.9,
+                    )
+                    ax.add_patch(rect)
+                    pos += value
+                    prevalence[threshold] = value
+                    # Add percentage text for the first and last threshold
                     added_text = False
-                    for threshold in thresholds:
-                        if threshold in non_nan_counts:
-                            value = non_nan_counts[threshold]
-                            rect = patches.Rectangle(
-                                xy=(pos, row + pad / 2 + ypad),
-                                width=value,
-                                height=(1 - pad) / 3,
-                                facecolor=cmap[threshold],
-                                edgecolor=None,
-                                zorder=0.9,
-                            )
-                            _ax.add_patch(rect)
-                            pos += value
-                            prevalence[threshold] = value
-                        # Add percentage text for the first and last threshold
-                        added_text = False
-                        if threshold == amp_thresholds[0] or threshold == del_thresholds[0]:
-                            added_text = True
-                            _ax.text(
-                                s=f"{100 * prevalence.get(threshold, 0) / len(columns):.1f}%",
-                                x=0.11 * max_xlim,
-                                **text_kwargs,
-                            )
-                        if threshold == amp_thresholds[-1] or threshold == del_thresholds[-1]:
-                            added_text = True
-                            _ax.text(
-                                s=f"(+{100 * prevalence.get(threshold, 0) / len(columns):.1f}%)",
-                                x=0.91 * max_xlim,
-                                color=self.palette.grey,
-                                **other_text_kwargs,
-                            )
-                        if not added_text and (threshold == amp_thresholds[1] or threshold == del_thresholds[1]):
-                            added_text = True
-                            _ax.text(
-                                s=f"{100 * prevalence.get(threshold, 0) / len(columns):.1f}%",
-                                x=0.11 * max_xlim,
-                                **text_kwargs,
-                            )
-                    n_patients = sum(prevalence.values()) if len(prevalence) > 0 else 0
-                    if not added_text and n_patients:
-                        _ax.text(
-                            s=f"{100 * n_patients / len(columns):.1f}%",
+                    if threshold == cnv.high_amp_threshold or threshold == cnv.high_del_threshold:
+                        added_text = True
+                        ax.text(
+                            s=f"{100 * pos / n_columns:.0f}%",
                             x=0.11 * max_xlim,
                             **text_kwargs,
                         )
+                    if threshold == cnv.low_amp_threshold or threshold == cnv.low_del_threshold:
+                        added_text = True
+                        ax.text(
+                            s=f"{100 * pos / n_columns:.0f}%",
+                            x=0.91 * max_xlim,
+                            color=self.palette.grey,
+                            **other_text_kwargs,
+                        )
+                    if not added_text and (threshold == cnv.mid_amp_threshold or threshold == cnv.mid_del_threshold):
+                        added_text = True
+                        ax.text(
+                            s=f"{100 * pos / n_columns:.0f}%",
+                            x=0.11 * max_xlim,
+                            **text_kwargs,
+                        )
+                n_patients = sum(prevalence.values()) if len(prevalence) > 0 else 0
+                if not added_text and n_patients:  # snvs
+                    ax.text(
+                        s=f"{100 * n_patients / n_columns:.0f}%",
+                        x=0.11 * max_xlim,
+                        **text_kwargs,
+                    )
 
-                make_bars_with_recurrence_text(present_snv_effects, ypad=2 * (1 - pad) / 3)
-                make_bars_with_recurrence_text(present_amp_thresholds, ypad=(1 - pad) / 3)
-                make_bars_with_recurrence_text(present_del_thresholds, ypad=0)
+                ypad -= 1 / n_categories * (1 - pad)
 
-            self.set_integer_ticks(ax=_ax, xlim=[0, max_xlim], xmin=0.1, n_major=3, n_minor=4)
-            _ax.xaxis.set_ticks_position("top")
-            _ax.xaxis.set_label_position("top")
+        self.set_integer_ticks(ax=ax, xlim=[0, max_xlim], xmin=0.1, n_major=3, n_minor=4)
+        ax.xaxis.set_ticks_position("top")
+        ax.xaxis.set_label_position("top")
 
-            _ax.set_yticks([])
-            _ax.set_ylim([0, len(genes)])
-            _ax.yaxis.set_major_locator(ticker.NullLocator())
+        ax.set_yticks([])
+        ax.set_ylim([0, n_genes])
+        ax.yaxis.set_major_locator(ticker.NullLocator())
 
-            _ax.tick_params(axis="both", labelsize=4, pad=1)
-            # _ax.axvline(0, lw=0.7, color=self.palette.black)
-            self.grid(ax=_ax, axis="x", which="major", zorder=0.5, linewidth=0.4)
-            self.grid(
-                ax=_ax,
-                axis="x",
-                which="minor",
-                zorder=0.1,
-                linewidth=0.3,
-                color=self.palette.white,
-            )
-            self.no_spines(ax=_ax)
+        ax.tick_params(axis="both", labelsize=4, pad=1)
+        # _ax.axvline(0, lw=0.7, color=self.palette.black)
+        self.grid(ax=ax, axis="x", which="major", zorder=0.5, linewidth=0.4)
+        self.grid(
+            ax=ax,
+            axis="x",
+            which="minor",
+            zorder=0.1,
+            linewidth=0.3,
+            color=self.palette.white,
+        )
+        self.no_spines(ax=ax)
 
         def add_percentage_ticks(_ax, xlabel=None):
             percent_ax = _ax.twiny()
@@ -250,7 +264,7 @@ class ComutPlotter(Plotter):
             percent_ax.xaxis.set_ticks_position("bottom")
             percent_ax.xaxis.set_label_position("bottom")
             percent_ax.set_xticklabels(
-                [f"{100 * t / len(columns):.0f}%" for t in percent_ax.get_xticks()]
+                [f"{100 * t / n_columns:.0f}%" for t in percent_ax.get_xticks()]
             )
             percent_ax.tick_params(axis="both", labelsize=3, pad=2)
             percent_ax.xaxis.set_minor_locator(_ax.xaxis.get_minor_locator())
@@ -261,7 +275,6 @@ class ComutPlotter(Plotter):
         label_ax = ax.twiny()
         ax.xaxis.set_ticks_position("top")
         ax.xaxis.set_label_position("top")
-        make_recurrence(_ax=ax)
 
         _by = "Patients"  # if by == MutA.patient else "Samples"
         percent_ax = add_percentage_ticks(ax, xlabel=f"Fraction\nof {_by}")
@@ -283,12 +296,16 @@ class ComutPlotter(Plotter):
             if set_joint_title:
                 label_x = 1.03 if invert_x else -0.03
                 label_ax.set_xlabel(f"Number of {_by}", fontdict=dict(fontsize=4), labelpad=11, x=label_x)
-                percent_ax.set_xlabel(f"Fraction of {_by}", fontdict=dict(fontsize=4), labelpad=2, x=label_x)
+                percent_ax.set_xlabel(f"Fraction of {_by}", fontdict=dict(fontsize=4), labelpad=3, x=label_x)
         else:
             label_ax.set_xlabel(f"Number\nof {_by}", fontdict=dict(fontsize=4), labelpad=11)
-            percent_ax.set_xlabel(f"Fraction\nof {_by}", fontdict=dict(fontsize=4), labelpad=2)
+            percent_ax.set_xlabel(f"Fraction\nof {_by}", fontdict=dict(fontsize=4), labelpad=3)
 
-        # ax.set_title("Recurrence", fontsize=7)
+        if not label_bottom:
+            percent_ax.set_xlabel("")
+            percent_ax.xaxis.set_minor_formatter(ticker.NullFormatter())
+            percent_ax.xaxis.set_major_formatter(ticker.NullFormatter())
+            percent_ax.tick_params(axis="x", which="both", length=0)
 
         return ax
 
@@ -347,14 +364,23 @@ class ComutPlotter(Plotter):
         ax.set_yticks([])
         self.no_spines(ax)
 
-    def plot_total_recurrence_overall(self, ax, total_recurrence_overall: tuple[dict[str, float], int], pad=0.01, invert_x=False, case_control_spacing=None):
+    def plot_total_recurrence_overall(self, ax, total_recurrence_overall: tuple[pd.Series, int], shared_x_ax, pad=0.01, invert_x=False, case_control_spacing=None, set_joint_title=None):
         total_recurrence = total_recurrence_overall[0]
         total = total_recurrence_overall[1]
-        percentage = total_recurrence["low"] / total
-        x = 1 - percentage if invert_x else 0
+        text_kwargs = {
+            "y": 0 + pad / 2 + (1 - pad - 1/5) / 2 / 1 + (1 - 1) / 1 * (1 - pad),
+            "fontsize": 3.9 / 1,
+            "verticalalignment": "center",
+            "horizontalalignment": "right" if invert_x else "left"
+        }
+        other_text_kwargs = text_kwargs | {
+            "horizontalalignment": "left" if invert_x else "right",
+            "fontsize": 2.6 - (1 - 1) * 3.9 / 6
+        }
+        max_xlim = max(*shared_x_ax.get_xlim())
         rect = patches.Rectangle(
-            xy=(x, pad / 2),
-            width=percentage,
+            xy=(0, pad / 2),
+            width=total_recurrence.loc["low"],
             height=1 - pad,
             facecolor=self.palette.offgrey,
             edgecolor=None,
@@ -362,21 +388,16 @@ class ComutPlotter(Plotter):
         )
         ax.add_patch(rect)
         ax.text(
-            -0.08 if invert_x else 1.08,
-            0.4,
-            f"{round(100 * percentage)}%",
-            fontsize=1.5,
-            horizontalalignment="right" if invert_x else "left",
-            verticalalignment="center",
+            x=0.91 * max_xlim,
+            s=f"{round(100 * total_recurrence.loc['low'] / total)}%",
+            # fontsize=1.5,
             fontweight="bold",
-            color=self.palette.grey
+            color=self.palette.darkgrey,
+            **other_text_kwargs
         )
-
-        percentage = total_recurrence["high"] / total
-        x = 1 - percentage if invert_x else 0
         rect = patches.Rectangle(
-            xy=(x, pad / 2),
-            width=percentage,
+            xy=(0, pad / 2),
+            width=total_recurrence.loc["high"],
             height=1 - pad,
             facecolor=self.palette.grey,
             edgecolor=None,
@@ -384,26 +405,265 @@ class ComutPlotter(Plotter):
         )
         ax.add_patch(rect)
         ax.text(
-            0 if invert_x else 1,
-            0.4,
-            f"{round(100 * percentage)}%",
-            fontsize=3,
-            horizontalalignment="left" if invert_x else "right",
-            verticalalignment="center",
-            fontweight="bold"
+            x=0.11 * max_xlim,
+            s=f"{round(100 * total_recurrence.loc['high'] / total)}%",
+            fontweight="bold",
+            **text_kwargs
         )
-        ax.axhline(y=1, xmin=0, xmax=1, color=self.palette.black, linewidth=1)
+        ax.axhline(y=1.1, xmin=0, xmax=1, color=self.palette.black, linewidth=1, clip_on=False)
         ax.set_ylim([0, 1])
-        ax.set_xlim([0, 1])
-        ax.set_xticks([])
+        ax.set_xlim(shared_x_ax.get_xlim())
+        ax.set_xticks(shared_x_ax.get_xticks())
+        ax.xaxis.set_minor_locator(shared_x_ax.xaxis.get_minor_locator())
         ax.set_yticks([])
-        ax.set_xlabel(
-            f"({total_recurrence['high']}/{total})",
-            fontdict=dict(fontsize=3),
-            labelpad=1,
-            loc="center" if case_control_spacing is None else ("right" if case_control_spacing else "left")
-        )
         self.no_spines(ax)
+
+        def add_percentage_ticks(_ax, xlabel=None):
+            percent_ax = _ax.twiny()
+            _ax.xaxis.set_ticks_position("top")
+            _ax.xaxis.set_label_position("top")
+            percent_ax.set_xlim(_ax.get_xlim())
+            percent_ax.set_xticks(_ax.get_xticks())
+            percent_ax.set_xlim(_ax.get_xlim())
+            percent_ax.xaxis.set_ticks_position("bottom")
+            percent_ax.xaxis.set_label_position("bottom")
+            percent_ax.set_xticklabels(
+                [f"{100 * t / total:.0f}%" for t in percent_ax.get_xticks()]
+            )
+            percent_ax.tick_params(axis="both", labelsize=3, pad=2)
+            percent_ax.xaxis.set_minor_locator(_ax.xaxis.get_minor_locator())
+            percent_ax.xaxis.set_minor_formatter(ticker.NullFormatter())
+            self.no_spines(ax=percent_ax)
+            return percent_ax
+
+        label_ax = ax.twiny()
+        ax.xaxis.set_ticks_position("top")
+        ax.xaxis.set_label_position("top")
+
+        _by = "Patients"  # if by == MutA.patient else "Samples"
+        percent_ax = add_percentage_ticks(ax, xlabel=f"Fraction\nof {_by}")
+        ax.xaxis.set_minor_formatter(ticker.NullFormatter())
+        ax.xaxis.set_major_formatter(ticker.NullFormatter())
+        ax.tick_params(axis="x", which="both", length=0)
+
+        label_ax.set_xticks([])
+        label_ax.set_yticks([])
+        label_ax.xaxis.set_ticks_position("top")
+        label_ax.xaxis.set_label_position("top")
+        self.no_spines(ax=label_ax)
+        which_spine = "right" if invert_x else "left"
+        label_ax.spines[which_spine].set(visible=True, linewidth=0.3)
+
+        # if invert_x:
+        #     ax.invert_xaxis()
+        #     label_ax.invert_xaxis()
+        #     percent_ax.invert_xaxis()
+
+        ax.set_xlim(shared_x_ax.get_xlim())
+        percent_ax.set_xlim(shared_x_ax.get_xlim())
+
+        if set_joint_title is not None:
+            if set_joint_title:
+                label_x = 1.03 if invert_x else -0.03
+                # label_ax.set_xlabel(f"Number of {_by}", fontdict=dict(fontsize=4), labelpad=11, x=label_x)
+                percent_ax.set_xlabel(f"Fraction of {_by}", fontdict=dict(fontsize=4), labelpad=3, x=label_x)
+        else:
+            # label_ax.set_xlabel(f"Number\nof {_by}", fontdict=dict(fontsize=4), labelpad=11)
+            percent_ax.set_xlabel(f"Fraction\nof {_by}", fontdict=dict(fontsize=4), labelpad=3)
+
+    def plot_recurrence_fold_change(self, ax, fold_change, genes, cnv_cmap, categories, effects, amp_thresholds, del_thresholds, label_x=True, pad=0.1):
+
+        thresholds = {
+            "snv": effects,
+            "amp": amp_thresholds,
+            "del": del_thresholds
+        }
+        cmap = self.palette | cnv_cmap | {None: self.palette.white}
+
+        xmax = max(2.05, 1.2 * max(np.abs(np.min(fold_change["mean"][amp_thresholds + del_thresholds])), np.max(fold_change["mean"][amp_thresholds + del_thresholds])))
+
+        for i, (gene_name, row) in enumerate(fold_change["mean"].iterrows()):
+            categories_for_gene = categories.get(gene_name, ["snv", "amp", "del"]) if isinstance(categories, dict) else categories
+            n_categories = len(categories_for_gene)
+
+            ypad = (n_categories - 1) / n_categories * (1 - pad)
+            for cat in categories_for_gene:
+                jitter = cat == "snv"
+                yspace = (1 - pad) / n_categories
+                n_snv_thresholds = len(effects)
+                for j, threshold in enumerate(reversed(thresholds[cat])):
+                    value = row.loc[threshold]
+                    if np.isnan(value) or value == 0:
+                        continue
+
+                    is_high_cnv = threshold == amp_thresholds[0] or threshold == del_thresholds[0]
+
+                    lw = (
+                        yspace / (n_snv_thresholds + 1) if jitter
+                        else (yspace / 2 if is_high_cnv else yspace)
+                    )
+                    y = i + pad / 2 + ypad
+                    if jitter:
+                        y += (j + 1) / (n_snv_thresholds + 2) * yspace
+                    if is_high_cnv:
+                        y += yspace / 4
+
+                    error_lw = lw / 2 if jitter else lw / 5
+
+                    lo = fold_change["lo"].loc[gene_name, threshold]
+                    hi = fold_change["hi"].loc[gene_name, threshold]
+                    rect = patches.Rectangle(
+                        xy=(0, y),
+                        width=value,
+                        height=lw,
+                        facecolor=cmap[threshold],
+                        edgecolor=None,
+                        zorder=1 if isinstance(threshold, str) else np.abs(threshold)
+                    )
+                    ax.add_patch(rect)
+
+                    errorbar = patches.Rectangle(
+                        xy=(lo, y + lw / 2 - error_lw / 2),
+                        width=hi-lo,
+                        height=error_lw,
+                        facecolor=self.palette.mix(cmap[threshold], self.palette.grey),
+                        edgecolor=None,
+                        zorder=1 if isinstance(threshold, str) else np.abs(threshold),
+                        # alpha=0.7
+                    )
+                    ax.add_patch(errorbar)
+                    ax.vlines(
+                        x=[lo, hi],
+                        ymin=y,
+                        ymax=y + lw,
+                        color=self.palette.mix(cmap[threshold], self.palette.grey),
+                        zorder=1 if isinstance(threshold, str) else np.abs(threshold),
+                        lw=0.3
+                    )
+
+                    if jitter:
+                        ax.scatter(
+                            x=value,
+                            y=y,
+                            marker="o" if isinstance(threshold, str) else "s",
+                            color=cmap[threshold],
+                            s=3 / n_categories,
+                            zorder=2
+                        )
+
+                ypad -= 1 / n_categories * (1 - pad)
+
+        ax.axvline(x=0, color=self.palette.black, linewidth=1)
+
+        for x, label in zip([xmax, -xmax], ["case", "control"]):
+            patch = patches.FancyArrowPatch(
+                (0, len(genes) + 0.7), (x, len(genes) + 0.7),
+                arrowstyle="-|>", mutation_scale=5, lw=0.7,
+                color=self.palette.black, clip_on=False, zorder=0
+            )
+            ax.add_patch(patch)
+            ax.text(x / 2, len(genes) + 0.9, label, ha="center", va="bottom", fontsize=4)
+
+        major_ticks = np.arange(start=-10, stop=10)
+        minor_ticks = [np.log2(x) for l, r in zip(major_ticks[:-1], major_ticks[1:]) for x in np.linspace(2. ** l, 2. ** r, num=5) if l >= 0]
+        minor_ticks += [-np.log2(x) for l, r in zip(major_ticks[:-1], major_ticks[1:]) for x in np.linspace(2. ** (-l), 2. ** (-r), num=5) if l < 0]
+        minor_ticks = [x for x in minor_ticks if x not in major_ticks]
+        ax.set_xticks(ticks=major_ticks)
+        ax.set_xticks(ticks=minor_ticks, minor=True)
+
+        if label_x:
+            ax.set_xticklabels([f"{2. ** i:g}" if i >= 0 else f"{2. ** (-i):g}" for i in ax.get_xticks()])
+            ax.set_xlabel("Fraction Fold-Change\n(regularized; with 80% CI)", fontdict=dict(fontsize=4), labelpad=3)
+        else:
+            ax.xaxis.set_minor_formatter(ticker.NullFormatter())
+            ax.xaxis.set_major_formatter(ticker.NullFormatter())
+            ax.tick_params(axis="x", which="both", length=0)
+
+        ax.set_xlim([xmax, -xmax])
+        ax.set_ylim([0, len(genes)])
+        ax.set_yticks([])
+        ax.tick_params(axis="both", labelsize=4, pad=1)
+        self.grid(ax=ax, axis="x", which="major", zorder=0.5, linewidth=0.4)
+        self.grid(
+            ax=ax,
+            axis="x",
+            which="minor",
+            zorder=0.1,
+            linewidth=0.3,
+            color=self.palette.backgroundgrey,
+        )
+        self.no_spines(ax=ax)
+
+    def plot_total_recurrence_fold_change(self, ax, fold_change, shared_x_ax, pad=0.1):
+        yspace = (1 - pad)
+        for cat, value in fold_change["mean"].items():
+            lw = yspace / 2 if cat == "high" else yspace
+            y = pad / 2
+            if cat == "high":
+                y += yspace / 4
+
+            error_lw = lw / 5
+
+            lo = fold_change["lo"].loc[cat]
+            hi = fold_change["hi"].loc[cat]
+            # color = self.palette.black if cat == "high" else self.palette.backgroundgrey
+            color = self.palette.grey if cat == "high" else self.palette.offgrey
+            rect = patches.Rectangle(
+                xy=(0, y),
+                width=value,
+                height=lw,
+                facecolor=color,
+                edgecolor=None,
+                zorder=1 if cat == "high" else 0.5,
+            )
+            ax.add_patch(rect)
+
+            errorbar = patches.Rectangle(
+                xy=(lo, y + lw / 2 - error_lw / 2),
+                width=hi - lo,
+                height=error_lw,
+                facecolor=self.palette.mix(color, self.palette.backgroundgrey),
+                edgecolor=None,
+                zorder=1 if cat == "high" else 0.5,
+                # alpha=0.7
+            )
+            ax.add_patch(errorbar)
+            ax.vlines(
+                x=[lo, hi],
+                ymin=y,
+                ymax=y + lw,
+                color=self.palette.mix(color, self.palette.backgroundgrey),
+                zorder=1 if cat == "high" else 0.5,
+                lw=0.3
+            )
+
+        ax.axvline(x=0, color=self.palette.black, linewidth=1)
+        ax.axhline(y=1.1, xmin=0, xmax=1, color=self.palette.black, linewidth=1, clip_on=False)
+
+        major_ticks = np.arange(start=-10, stop=10)
+        minor_ticks = [np.log2(x) for l, r in zip(major_ticks[:-1], major_ticks[1:]) for x in np.linspace(2. ** l, 2. ** r, num=5) if l >= 0]
+        minor_ticks += [-np.log2(x) for l, r in zip(major_ticks[:-1], major_ticks[1:]) for x in np.linspace(2. ** (-l), 2. ** (-r), num=5) if l < 0]
+        minor_ticks = [x for x in minor_ticks if x not in major_ticks]
+        ax.set_xticks(ticks=major_ticks)
+        ax.set_xticks(ticks=minor_ticks, minor=True)
+        ax.set_xticklabels([f"{2. ** i:g}" if i >= 0 else f"{2. ** (-i):g}" for i in ax.get_xticks()])
+
+        ax.set_xlim(shared_x_ax.get_xlim())
+        ax.set_ylim([0, 1])
+        ax.set_yticks([])
+
+        ax.tick_params(axis="both", labelsize=4, pad=1)
+        ax.set_xlabel("Fraction Fold-Change\n(regularized; with 80% CI)", fontdict=dict(fontsize=4), labelpad=3)
+        self.grid(ax=ax, axis="x", which="major", zorder=0.5, linewidth=0.4)
+        self.grid(
+            ax=ax,
+            axis="x",
+            which="minor",
+            zorder=0.1,
+            linewidth=0.3,
+            color=self.palette.backgroundgrey,
+        )
+        self.no_spines(ax=ax)
 
     def plot_cytoband(self, ax, cytobands: pd.Series):
         for y, (gene, cytoband) in enumerate(cytobands.items()):
@@ -809,15 +1069,15 @@ class ComutPlotter(Plotter):
     def plot_model_significance(self, ax):
         pass
 
-    def plot_model_annotation_legend(self, ax, names=("SNV", "CNV"), title=None, title_loc="top"):
+    def plot_model_annotation_legend(self, ax, names=("CNV", "SNV"), title=None, title_loc="top"):
         # width = 0.5
         # height = 0.5
         # sep = 0.1 / np.sqrt(2)
         # patch = snv_model_annotation(0, 1, width, height, sep)
-        patch = self.snv_model_annotation(0, 1)
+        patch = self.cnv_model_annotation(0, 1)
         ax.add_patch(patch)
         # patch = cnv_model_annotation(0, 0, width, height, sep)
-        patch = self.cnv_model_annotation(0, 0)
+        patch = self.snv_model_annotation(0, 0)
         ax.add_patch(patch)
         ax.set_xlim([-0.5, 1.5])
         ax.set_ylim([0, 2])

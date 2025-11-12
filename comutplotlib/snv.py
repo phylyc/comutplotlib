@@ -32,11 +32,18 @@ class SNV(object):
             self.df = self.df.reindex(columns=columns)
 
     @property
-    def has_snv(self):
+    def has_snv(self) -> pd.DataFrame:
         return ~self.df.isna()
 
     @property
-    def effects(self):
+    def has_snv_by_effect(self) -> dict[str, pd.DataFrame]:
+        return {
+            effect: self.df.map(lambda effect_list: effect in effect_list if isinstance(effect_list, list) else False)
+            for effect in self.effects
+        }
+
+    @property
+    def effects(self) -> list[str]:
         effects = set(chain.from_iterable([l for _, l in np.ndenumerate(self.df) if isinstance(l, list)]))
         return sort_functional_effects(effects)
 
@@ -134,12 +141,16 @@ class SNV(object):
     def get_patient_recurrence(self):
         return self.df.map(lambda x: x[0] if isinstance(x, list) else None).apply(Counter, axis=1)
 
-    def get_effect_prevalence(self):
-        return (
-            self.maf.drop_patient_duplicates()
-            .data
-            .drop_duplicates(subset=[self.maf.patient, self.maf.gene_name, self.maf.effect])
-            .groupby(by=[self.maf.gene_name])
-            .agg({self.maf.effect: Counter})
-            .get(self.maf.effect)
-        )
+    def get_num_patients_by_gene_by_effect(self):
+        num_patients = pd.DataFrame({effect: has_snv.sum(axis=1) for effect, has_snv in self.has_snv_by_effect.items()})
+        return num_patients.reindex(index=self.df.index, columns=sort_functional_effects(num_patients.columns))
+
+    # def get_effect_prevalence(self):
+    #     return (
+    #         self.maf.drop_patient_duplicates()
+    #         .data
+    #         .drop_duplicates(subset=[self.maf.patient, self.maf.gene_name, self.maf.effect])
+    #         .groupby(by=[self.maf.gene_name])
+    #         .agg({self.maf.effect: Counter})
+    #         .get(self.maf.effect)
+    #     )

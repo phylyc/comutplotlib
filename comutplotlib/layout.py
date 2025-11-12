@@ -75,5 +75,13 @@ class Layout(object):
         self.gs = self.fig.add_gridspec(nrows=max_y, ncols=max_x)
         for panel in self.panels.values():
             if panel.width and panel.height:
-                panel.ax = self.fig.add_subplot(self.gs[panel.y:panel.y + panel.height, panel.x:panel.x + panel.width])
+                try:
+                    panel.ax = self.fig.add_subplot(self.gs[panel.y:panel.y + panel.height, panel.x:panel.x + panel.width])
+                except Exception as e:
+                    print(
+                        f"Failed to place panel '{panel.name}' onto the grid "
+                        f"of shape (ncols={self.gs.ncols}, nrows={self.gs.nrows}) "
+                        f"at positions (cols={panel.y}:{panel.y + panel.height}, rows={panel.x}:{panel.x + panel.width})"
+                    )
+                    raise Exception(e)
         return self.fig, self.gs
