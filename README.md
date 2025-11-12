@@ -89,7 +89,6 @@ pip install -r requirements.txt
 
 ## **Author**:
 Developed by Philipp Hähnel.
-For questions, send an **[email](mailto:phylyc.ai@gmail.com)**.
 
 
 ## **License**  
