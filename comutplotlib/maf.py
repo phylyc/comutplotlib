@@ -137,6 +137,9 @@ class MAF(MutationAnnotation, AnnotationTable):
                 f"required columns.. The columns '{absent_columns}' are missing."
             )
 
+    def select_minimal_columns(self):
+        self.data = self.data[self.default_columns + [self.ref_count, self.alt_count, self.gene_id, self.context]]
+
     def add_required_columns(
         self, verbose: bool = True, inplace: bool = False
     ) -> Optional["MAF"]:
