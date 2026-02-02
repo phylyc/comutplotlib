@@ -1,10 +1,14 @@
 import pandas as pd
+from comutplotlib.gistic import Gistic
+from comutplotlib.seg import SEG
 
 
 class CNV(object):
 
     def __init__(
-        self, seg, gistic,
+        self,
+        seg = None,
+        gistic = None,
         high_amp_threshold: int | float = 2,
         mid_amp_threshold: int | float = 1.5,
         low_amp_threshold: int | float = 1,
@@ -14,8 +18,8 @@ class CNV(object):
         high_del_threshold: int | float = -2,
         higher_amp_thresholds: list[int | float] = tuple(),
     ):
-        self.seg = seg
-        self.gistic = gistic
+        self.seg = seg if seg is not None else SEG()
+        self.gistic = gistic if gistic is not None else Gistic()
         self.high_amp_threshold = high_amp_threshold
         self.mid_amp_threshold = mid_amp_threshold
         self.low_amp_threshold = low_amp_threshold
