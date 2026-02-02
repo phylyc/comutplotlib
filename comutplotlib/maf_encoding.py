@@ -9,8 +9,9 @@ class MAFEncoding(object):
     oncotator = "Oncotator"
     funcotator = "Funcotator"
     tumorportal = "Tumorportal"
+    tcga_mc3 = "mc3"
 
-    available_sources = [oncotator, funcotator, tumorportal]
+    available_sources = [oncotator, funcotator, tumorportal, tcga_mc3]
 
     default = funcotator
 
@@ -39,10 +40,12 @@ class MAFEncoding(object):
                 "context65": MutA.context,
                 "cons46": MutA.conservation,
             }
-        else:
+        elif self.from_source == self.tcga_mc3:
             return {
-                "HGNC_Ensembl_gene_ID": MutA.gene_id,
+                "CONTEXT": MutA.context
             }
+        else:
+            return {}
 
     @property
     def column_names_from_default(self):
@@ -54,12 +57,10 @@ class MAFEncoding(object):
         self.rename_chromosomes(data=data)
         self.rename_effects(data=data)
         # self.stringify_context(data=data)
+        self.format_mc3(data=data)
 
     def rename_columns(self, data: pd.DataFrame) -> None:
-        for col, new_col in self.column_names_to_default.items():
-            if new_col not in data.columns:
-                data.rename(columns={col: new_col}, inplace=True)
-        return None
+        return data.rename(columns=self.column_names_to_default, inplace=True)
 
     @staticmethod
     def rename_chromosomes(data: pd.DataFrame) -> None:
@@ -68,13 +69,13 @@ class MAFEncoding(object):
 
     def rename_types(self, data: pd.DataFrame) -> None:
         if self.from_source == self.funcotator:
-            data[MutA.type] = data[MutA.type].replace(
+            data[MutA.type] = data.get(MutA.type).replace(
                 {
                     "ONP": MutA.mnv,
                 },
             )
 
-    def rename_effects(self, data: pd.DataFrame) -> None:
+    def rename_effects(self, data: pd.DataFrame) -> pd.DataFrame:
         if self.from_source == self.funcotator:
             data[MutA.effect] = data[MutA.effect].replace(
                 {
@@ -98,11 +99,19 @@ class MAFEncoding(object):
                     "Splice_Site_SNP": MutA.splice_site,
                 },
             )
+        return data
 
     # def stringify_context(self, data: pd.DataFrame) -> None:
-    #     if self.from_source == self.tumorportal:
-    #         data[MutA.context] = data.get(MutA.context).apply(
-    #             lambda c: NucleotideContext.from_index(
-    #                 index=c - 1, ordering=(1, 0, 2)  # contexts are encoded 1-based
-    #             ).string
-    #         )
+    #     if self.from_source != self.tumorportal:
+    #         return None
+    #     data[MutA.context] = data.get(MutA.context).apply(
+    #         lambda c: NucleotideContext.from_index(
+    #             index=c - 1, ordering=(1, 0, 2)  # contexts are encoded 1-based
+    #         ).string
+    #     )
+
+    def format_mc3(self, data: pd.DataFrame) -> None:
+        if not self.from_source == self.tcga_mc3:
+            return None
+        data[MutA.sample] = data[MutA.sample_barcode].apply(lambda s: s[:-12] if isinstance(s, str) else s)
+        data[MutA.patient] = data[MutA.sample].apply(lambda s: s[:-4] if isinstance(s, str) else s)
