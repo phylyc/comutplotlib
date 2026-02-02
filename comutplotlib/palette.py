@@ -364,6 +364,28 @@ class Palette(UserDict):
                 "WGS": self.lightblue,
                 "Panel": self.lightyellow,
                 "ULP": self.lightgrey,
+            } | {
+                "generic": self.lightgrey,
+                "general signaling": self.grey,
+                "cell cycle": self.green,
+                "development-differentiation": self.lightgreen,
+                "ECM-microenvironment": self.red,
+                "cytoskleton motility": self.lightred,
+                "trafficking": self.lightyellow,
+                "immune": self.blue,
+                "mito-ion-redox-stress": self.lightcyan,
+                "muscle": self.lightbrown,
+                "metabolism": self.brown,
+
+                "neural": self.pink,
+                "adhesion junctions": self.lightviolet,
+                "transcription": self.mix(self.cyan, self.grey),
+                "DNA replication repair": self.cyan,
+                "apoptosis": self.black,
+                "chromatin": self.lightblue,
+                "PI3K signaling": self.orange,
+                "MAPK signaling": self.yellow,
+                "TGFB signaling": self.violet,
             }
         )
 
@@ -506,15 +528,15 @@ class Palette(UserDict):
             "Unknown": []
         }
         mutsigset_palette = {
-            "clock-like": self.lightbrown,
-            "APOBEC": self.lightred,
-            "MMR": self.lightgreen,
-            "PolE/D/H": self.lightcyan,
-            "Other": self.lightviolet,
-            "UV": self.lightorange,
-            "Smoking": self.lightblue,
-            "Treatment": self.lightpink,
-            "Error": self.lightgrey
+            "clock-like": self.brown,
+            "APOBEC": self.red,
+            "MMR": self.green,
+            "PolE/D/H": self.cyan,
+            "Other": self.violet,
+            "UV": self.orange,
+            "Smoking": self.blue,
+            "Treatment": self.pink,
+            "Error": self.grey
         }
         signature_colors = {color: signature_sets[key] for key, color in mutsigset_palette.items()}
         for color, signatures in signature_colors.items():
