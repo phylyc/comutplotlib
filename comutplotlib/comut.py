@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from copy import deepcopy
 import numpy as np
 import pandas as pd
@@ -75,6 +77,8 @@ class Comut(object):
         scale_recurrence: bool = False,
         recurrence_categories: dict[str, list[str] | dict[str, list[str]]] = {"global": ["snv", "amp", "del"]},
         snv_recurrence_threshold: int = 5,
+        min_fold_change: float = None,
+        max_fold_change: float = None,
         collapse_cytobands: bool = False,
         collapse_cytobands_range: int = 0,
 
@@ -155,7 +159,6 @@ class Comut(object):
             ground_truth_genes=self.case.ground_truth_genes,
             snv_interesting_genes=self.case.snv_interesting_genes,
             cnv_interesting_genes=self.case.cnv_interesting_genes,
-            total_recurrence_threshold=0,
             snv_recurrence_threshold=snv_recurrence_threshold,
             low_amp_threshold=low_amp_threshold,
             mid_amp_threshold=mid_amp_threshold,
@@ -176,11 +179,6 @@ class Comut(object):
         ) if model_significances is not None else None
         self.model_names = model_names
 
-        n_genes, n_samples_case, n_meta_case = self.case.get_dimensions()
-        _, n_samples_control, n_meta_control = self.control.get_dimensions()
-
-        n_meta = max(n_meta_case, n_meta_control)
-
         self.joint = deepcopy(self.case)
         self.joint.gistic = join_gistics([self.case.gistic, self.control.gistic])
         self.joint.seg = join_segs([self.case.seg, self.control.seg])
@@ -190,8 +188,37 @@ class Comut(object):
         self.joint.mutsig = pd.concat(mutsigs) if len(mutsigs) else None
         self.joint.preprocess()
 
+        self.case.meta.reindex(index=self.joint.meta.rows)
+        self.control.meta.reindex(index=self.joint.meta.rows)
+
         self.amp_thresholds = [self.joint.high_amp_threshold, self.joint.mid_amp_threshold, self.joint.low_amp_threshold]
         self.del_thresholds = [self.joint.high_del_threshold, self.joint.mid_del_threshold, self.joint.low_del_threshold]
+
+        self.scale_recurrence = scale_recurrence
+        self.recurrence_categories = self.get_recurrence_categories_by_gene(recurrence_categories)
+        recurrence_fold_change = self.get_recurrence_fold_change_by_gene(fdr=0.1, base=2)
+        categories = {
+            "snv": self.joint.snv.effects,
+            "amp": self.amp_thresholds,
+            "del": self.del_thresholds
+        }
+        good_genes = []
+        for g, row in recurrence_fold_change["mean"].iterrows():
+            relevant_columns = [c for cat in self.recurrence_categories[g] for c in categories[cat]]
+            is_good = True
+            if min_fold_change is not None:
+                is_good &= (row[relevant_columns] > np.log(min_fold_change) / np.log(2)).any()
+            if max_fold_change is not None:
+                is_good &= (row[relevant_columns] < np.log(max_fold_change) / np.log(2)).any()
+            if is_good:
+                good_genes.append(g)
+
+        for data in [self.case, self.control, self.joint]:
+            data.genes = good_genes
+            data.reindex_data()
+
+        self.recurrence_categories = self.get_recurrence_categories_by_gene(recurrence_categories)
+
         self.tmb_cmap = self.plotter.palette.get_tmb_cmap(self.joint.tmb)
         self.snv_cmap = self.plotter.palette.get_snv_cmap(self.joint.snv)
         self.cnv_cmap, self.cnv_names = self.plotter.palette.get_cnv_cmap(self.joint.cnv)
@@ -204,9 +231,6 @@ class Comut(object):
                 else:
                     self.meta_cmaps[col] = pal
         self.meta_cmaps_condensed = self.plotter.palette.condense(self.meta_cmaps)
-
-        self.case.meta.reindex(index=self.joint.meta.rows)
-        self.control.meta.reindex(index=self.joint.meta.rows)
 
         if len(self.control.columns) > 0:
             self.case.columns = self.case.columns[::-1]
@@ -225,15 +249,25 @@ class Comut(object):
             remove("mutational signatures")
             remove("mutational signatures legend")
 
-        self.gene_meta_data = (
-            pd.read_csv(gene_meta_data, sep="\t")
-                .set_index("symbol")
-                .reindex(index=self.case.genes, columns=gene_meta_columns)
-                .dropna(axis=1, how="all")
-                .fillna(0)
-            if gene_meta_data is not None else None
-        )
-        n_meta_genes = self.gene_meta_data.shape[1] if self.gene_meta_data is not None else 0
+        if gene_meta_data is not None:
+            self.gene_meta_data = (
+                pd.read_csv(gene_meta_data, sep="\t")
+                    .set_index("Gene")
+                    .reindex(index=self.case.genes, columns=gene_meta_columns)
+                    .replace(0, np.nan)
+                    .dropna(axis=1, how="all")
+                    .fillna(0)
+            )
+            self.gene_meta_data = self.gene_meta_data[self.gene_meta_data.sum().sort_values().index]
+            n_meta_genes = self.gene_meta_data.shape[1]
+        else:
+            self.gene_meta_data = None
+            n_meta_genes = 0
+
+        n_genes, n_samples_case, n_meta_case = self.case.get_dimensions()
+        _, n_samples_control, n_meta_control = self.control.get_dimensions()
+
+        n_meta = max(n_meta_case, n_meta_control)
 
         self.layout = ComutLayout(
             panels_to_plot=panels_to_plot,
@@ -251,8 +285,6 @@ class Comut(object):
             mutsig_cmap=self.mutsig_cmap,
             meta_cmaps=self.meta_cmaps_condensed,
         )
-        self.scale_recurrence = scale_recurrence
-        self.recurrence_categories = self.get_recurrence_categories_by_gene(recurrence_categories)
 
         self.case.save(out_dir=self.plotter.out_dir, name=self.plotter.file_name + ".case")
         self.control.save(out_dir=self.plotter.out_dir, name=self.plotter.file_name + ".control")
@@ -313,6 +345,7 @@ class Comut(object):
         hi = pd.DataFrame(st.norm.ppf(1 - fdr, loc=mean, scale=np.sqrt(var)), index=mean.index, columns=mean.columns)
 
         is_present = (case > 0) & (control > 0) & ~case.isna() & ~control.isna()
+
         return {
             "mean": mean.mask(~is_present),
             "lo": lo.mask(~is_present),
@@ -566,5 +599,6 @@ class Comut(object):
                 panel.plot_func(panel.ax)
 
         self.plotter.save_figure(fig=self.layout.fig, bbox_inches="tight")
+        self.plotter.close_figure(fig=self.layout.fig)
 
         return self.case.genes, self.case.columns

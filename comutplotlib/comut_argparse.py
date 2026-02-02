@@ -297,6 +297,14 @@ def parse_args():
         help="Minimum number of patients with the same protein change for annotation."
     )
     parser.add_argument(
+        "--min-fold-change", type=float, default=None,
+        help="Minimum total fold-change of fraction of patients carrying a mutation in a gene for it to be plotted."
+    )
+    parser.add_argument(
+        "--max-fold-change", type=float, default=None,
+        help="Maximum total fold-change of fraction of patients carrying a mutation in a gene for it to be plotted."
+    )
+    parser.add_argument(
         "--ground-truth-genes", type=parse_ground_truth_genes, default=None,
         help="Highlight genes with specified colors. Format: 'color1:gene1,gene2,...;color2:gene3,gene4,...'."
     )
