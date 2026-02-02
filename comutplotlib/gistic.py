@@ -55,6 +55,9 @@ class Gistic(object):
             "C15orf2": "NPAP1",
             "CCDC76": "TRMT13",
             "DIET1": "MALRD1",
+            "FAM55A": "NXPE1",
+            "FAM55D": "NXPE4",
+            "FAM55B": "NXPE2",
             "FYB": "FYB1",
             "HIST1H3A": "H3C1",
             "HIST1H3B": "H3C2",
@@ -77,6 +80,7 @@ class Gistic(object):
             "MLL3": "KMT2C",
             "JMJD5": "KDM8",
             "LRRC33": "NRROS",
+            "GPER": "GPER1",
         }
 
         for gene_name, replacement in gene_name_map.items():
