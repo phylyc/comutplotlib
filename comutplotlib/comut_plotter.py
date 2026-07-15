@@ -174,13 +174,14 @@ class ComutPlotter(Plotter):
                 prevalence = {}
                 text_kwargs = {
                     "y": i + pad / 2 + (1 - pad - 1/5) / 2 / n_categories + ypad,
-                    "fontsize": 3.9 / n_categories,
+                    "fontsize": 2.6 - (n_categories - 1) * 3.9 / 6,
                     "verticalalignment": "center",
                     "horizontalalignment": "right" if invert_x else "left"
                 }
                 other_text_kwargs = text_kwargs | {
-                    "horizontalalignment": "left" if invert_x else "right",
-                    "fontsize": 2.6 - (n_categories - 1) * 3.9 / 6
+                    # "horizontalalignment": "left" if invert_x else "right",
+                    "horizontalalignment": "right" if invert_x else "left",
+                    "fontsize": 3.9 / n_categories,
                 }
                 added_text = False
                 for threshold in thresholds[cat]:
@@ -205,15 +206,17 @@ class ComutPlotter(Plotter):
                         added_text = True
                         ax.text(
                             s=f"{100 * pos / n_columns:.0f}%",
-                            x=0.11 * max_xlim,
+                            # x=0.11 * max_xlim,
+                            x=pos + 0.05 * max_xlim,
+                            color=self.palette.grey,
                             **text_kwargs,
                         )
                     if threshold == cnv.low_amp_threshold or threshold == cnv.low_del_threshold:
                         added_text = True
                         ax.text(
                             s=f"{100 * pos / n_columns:.0f}%",
-                            x=0.91 * max_xlim,
-                            color=self.palette.grey,
+                            # x=0.91 * max_xlim,
+                            x=max(pos + 0.05 * max_xlim, 0.27 * max_xlim),  # TODO: make padding conditional on high amp threshold being present
                             **other_text_kwargs,
                         )
                     if not added_text and (threshold == cnv.mid_amp_threshold or threshold == cnv.mid_del_threshold):
@@ -326,10 +329,9 @@ class ComutPlotter(Plotter):
                 -0.08 if invert_x else 1.08,
                 row + 0.4,
                 f"{round(100 * width)}%",
-                fontsize=1.5,
+                fontsize=3,
                 horizontalalignment="right" if invert_x else "left",
-                verticalalignment="center",
-                color=self.palette.grey
+                verticalalignment="center"
             )
 
             width = percentage["high"]
@@ -347,9 +349,10 @@ class ComutPlotter(Plotter):
                 0 if invert_x else 1,
                 row + 0.4,
                 f"{round(100 * width)}%",
-                fontsize=3,
+                fontsize=1.5,
                 horizontalalignment="left" if invert_x else "right",
                 verticalalignment="center",
+                color=self.palette.grey
             )
         ax.set_ylim([0, total_recurrence_per_gene.shape[0]])
         ax.set_xlim([0, 1])
@@ -815,13 +818,13 @@ class ComutPlotter(Plotter):
             for tick in ax2.yaxis.get_major_ticks():
                 tick.set_pad(ytickpad)
 
-    def plot_mutsig(self, ax, mutsig, mutsig_cmap, ytickpad=0, fontsize=5, add_ylabel=True):
-        fractions = mutsig / mutsig.sum(axis=1).to_numpy()[:, None]
+    def plot_signatures(self, ax, signatures, signatures_cmap, ytickpad=0, fontsize=5, add_ylabel=True):
+        fractions = signatures / signatures.sum(axis=1).to_numpy()[:, None]
         fractions = fractions[fractions.columns[::-1]]
         fractions.plot.bar(
             stacked=True,
             width=1,
-            color=[mutsig_cmap[c] for c in fractions.columns],
+            color=[signatures_cmap[c] for c in fractions.columns],
             ax=ax,
             legend=False,
         )

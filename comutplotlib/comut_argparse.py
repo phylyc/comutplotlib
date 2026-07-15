@@ -33,7 +33,7 @@ def validate_args(args):
     if "model annotation" not in args.panels_to_plot:
         remove("model annotation legend")
 
-    if args.mutsig is None:
+    if args.signatures is None:
         remove("mutational signatures")
     if "mutational signatures" not in args.panels_to_plot:
         remove("mutational signatures legend")
@@ -141,7 +141,7 @@ def parse_args():
         help="Path to a GISTIC output file (e.g., 'all_thresholded.by_gene.txt')."
     )
     parser.add_argument(
-        "--mutsig", type=str, action='append', default=None,
+        "--signatures", type=str, action='append', default=None,
         help="Path to a file containing mutational signature exposures (index: patient, columns: signatures)."
     )
     parser.add_argument(
@@ -162,7 +162,7 @@ def parse_args():
         help="Path to a GISTIC output file (e.g., 'all_thresholded.by_gene.txt')."
     )
     parser.add_argument(
-        "--control-mutsig", type=str, action='append', default=None,
+        "--control-signatures", type=str, action='append', default=None,
         help="Path to a file containing mutational signature exposures (index: patient, columns: signatures)."
     )
     parser.add_argument(

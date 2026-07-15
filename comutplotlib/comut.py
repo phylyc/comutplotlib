@@ -9,6 +9,7 @@ from comutplotlib.comut_data import ComutData
 from comutplotlib.comut_layout import ComutLayout
 from comutplotlib.comut_plotter import ComutPlotter
 from comutplotlib.functional_effect import sort_functional_effects
+from comutplotlib.math import fold_change
 from comutplotlib.mutation_annotation import MutationAnnotation as MutA
 from comutplotlib.palette import Palette
 from comutplotlib.sample_annotation import SampleAnnotation as SA
@@ -38,7 +39,7 @@ class Comut(object):
         seg: list[str] = None,
         gistic: list[str] = None,
 
-        mutsig: list[str] = None,
+        signatures: list[str] = None,
 
         cohort_label: str = None,
 
@@ -56,7 +57,7 @@ class Comut(object):
         control_seg: list[str] = None,
         control_gistic: list[str] = None,
         control_sif: list[str] = None,
-        control_mutsig: list[str] = None,
+        control_signatures: list[str] = None,
         control_cohort_label: str = None,
 
         drop_empty_columns: bool = False,
@@ -67,6 +68,7 @@ class Comut(object):
         control_column_order: tuple[str] = None,
         index_order: tuple[str] = None,
         column_sort_by: tuple[str] = ("COMUT",),
+        sort_method: str = None,
 
         interesting_gene: str = None,
         interesting_gene_comut_percent_threshold: float = None,
@@ -89,9 +91,9 @@ class Comut(object):
         low_del_threshold: int | float = -1,
         mid_del_threshold: int | float = -1.5,
         high_del_threshold: int | float = -2,
-        show_low_level_cnvs: bool = False,
+        show_low_level_cnvs: bool = True,
 
-        panels_to_plot: list = None,
+        panels_to_plot: list[str] = (),
         palette: dict[str, dict[str, tuple[float]], dict[str, dict[str, tuple[float]]]] = None,
         ground_truth_genes: dict[str, list[str]] = None,  # todo: refactor as a palette class
         max_xfigsize: int = None,
@@ -110,7 +112,7 @@ class Comut(object):
             maf_pool_as=maf_pool_as,
             seg_paths=seg,
             gistic_paths=gistic,
-            mutsig_paths=mutsig,
+            signatures_paths=signatures,
             sif_paths=sif,
             meta_data_rows=meta_data_rows,
             meta_data_rows_per_sample=meta_data_rows_per_sample,
@@ -119,6 +121,7 @@ class Comut(object):
             column_order=column_order,
             index_order=index_order,
             column_sort_by=column_sort_by,
+            sort_method=sort_method,
             interesting_gene=interesting_gene,
             interesting_gene_comut_percent_threshold=interesting_gene_comut_percent_threshold,
             interesting_genes=interesting_genes,
@@ -144,7 +147,7 @@ class Comut(object):
             maf_pool_as=maf_pool_as,
             seg_paths=control_seg,
             gistic_paths=control_gistic,
-            mutsig_paths=control_mutsig,
+            signatures_paths=control_signatures,
             sif_paths=control_sif,
             meta_data_rows=meta_data_rows,
             meta_data_rows_per_sample=meta_data_rows_per_sample,
@@ -153,6 +156,7 @@ class Comut(object):
             column_order=control_column_order,
             index_order=self.case.genes,
             column_sort_by=column_sort_by,
+            sort_method=sort_method,
             interesting_gene=self.case.interesting_gene,
             interesting_gene_comut_percent_threshold=interesting_gene_comut_percent_threshold,
             interesting_genes=self.case.interesting_genes,
@@ -184,8 +188,8 @@ class Comut(object):
         self.joint.seg = join_segs([self.case.seg, self.control.seg])
         self.joint.maf = join_mafs([self.case.maf, self.control.maf])
         self.joint.sif = join_sifs([self.case.sif, self.control.sif])
-        mutsigs = [s for s in [self.case.mutsig, self.control.mutsig] if s is not None]
-        self.joint.mutsig = pd.concat(mutsigs) if len(mutsigs) else None
+        signatures = [s for s in [self.case.signatures, self.control.signatures] if s is not None]
+        self.joint.signatures = pd.concat(signatures) if len(signatures) else None
         self.joint.preprocess()
 
         self.case.meta.reindex(index=self.joint.meta.rows)
@@ -196,7 +200,7 @@ class Comut(object):
 
         self.scale_recurrence = scale_recurrence
         self.recurrence_categories = self.get_recurrence_categories_by_gene(recurrence_categories)
-        recurrence_fold_change = self.get_recurrence_fold_change_by_gene(fdr=0.1, base=2)
+        recurrence_fold_change = self.get_recurrence_fold_change_by_gene(alpha_ci=0.1, base=2)
         categories = {
             "snv": self.joint.snv.effects,
             "amp": self.amp_thresholds,
@@ -204,7 +208,7 @@ class Comut(object):
         }
         good_genes = []
         for g, row in recurrence_fold_change["mean"].iterrows():
-            relevant_columns = [c for cat in self.recurrence_categories[g] for c in categories[cat]]
+            relevant_columns = [c for cat in self.recurrence_categories.get(g, categories.keys()) for c in categories[cat]]
             is_good = True
             if min_fold_change is not None:
                 is_good &= (row[relevant_columns] > np.log(min_fold_change) / np.log(2)).any()
@@ -214,7 +218,8 @@ class Comut(object):
                 good_genes.append(g)
 
         for data in [self.case, self.control, self.joint]:
-            data.genes = good_genes
+            data.genes = pd.Index(good_genes, name=MutA.gene_name)
+            data.sort_columns()
             data.reindex_data()
 
         self.recurrence_categories = self.get_recurrence_categories_by_gene(recurrence_categories)
@@ -222,7 +227,7 @@ class Comut(object):
         self.tmb_cmap = self.plotter.palette.get_tmb_cmap(self.joint.tmb)
         self.snv_cmap = self.plotter.palette.get_snv_cmap(self.joint.snv)
         self.cnv_cmap, self.cnv_names = self.plotter.palette.get_cnv_cmap(self.joint.cnv)
-        self.mutsig_cmap = self.plotter.palette.get_mutsig_cmap(self.joint.mutsig)
+        self.signatures_cmap = self.plotter.palette.get_signatures_cmap(self.joint.signatures)
         self.meta_cmaps = self.plotter.palette.get_meta_cmaps(self.joint.meta)
         if palette is not None:
             for col, pal in palette["local"].items():
@@ -245,7 +250,7 @@ class Comut(object):
         if self.joint.tmb is None:
             remove("tmb")
             remove("tmb legend")
-        if self.joint.mutsig is None:
+        if self.joint.signatures is None:
             remove("mutational signatures")
             remove("mutational signatures legend")
 
@@ -282,7 +287,7 @@ class Comut(object):
             tmb_cmap=self.tmb_cmap,
             snv_cmap=self.snv_cmap,
             cnv_cmap=self.cnv_cmap,
-            mutsig_cmap=self.mutsig_cmap,
+            mutsig_cmap=self.signatures_cmap,
             meta_cmaps=self.meta_cmaps_condensed,
         )
 
@@ -324,7 +329,7 @@ class Comut(object):
 
         return recurrence_categories_by_gene
 
-    def get_recurrence_fold_change_by_gene(self, fdr=0.1, base=2):
+    def get_recurrence_fold_change_by_gene(self, alpha_ci=0.2, base=2):
         case = pd.concat([
             self.case.snv.get_num_patients_by_gene_by_effect().reindex(columns=self.joint.snv.effects).fillna(0),
             self.case.cnv.get_num_patients_by_gene_of_at_least_cn_level()
@@ -335,45 +340,12 @@ class Comut(object):
             self.control.cnv.get_num_patients_by_gene_of_at_least_cn_level()
         ], axis=1)
         n_control = len(self.control.columns)
+        return fold_change(case, n_case, control, n_control, alpha_ci=alpha_ci, base=base)
 
-        p_case = (case + 0.5) / (n_case + 0.5)
-        p_control = (control + 0.5) / (n_control + 0.5)
-        mean = np.log(p_case / p_control) / np.log(base)
-        var = ((1 / p_case - 1) / n_case + (1 / p_control - 1) / n_control + 1e-12) / np.log(base) ** 2
-
-        lo = pd.DataFrame(st.norm.ppf(fdr, loc=mean, scale=np.sqrt(var)), index=mean.index, columns=mean.columns)
-        hi = pd.DataFrame(st.norm.ppf(1 - fdr, loc=mean, scale=np.sqrt(var)), index=mean.index, columns=mean.columns)
-
-        is_present = (case > 0) & (control > 0) & ~case.isna() & ~control.isna()
-
-        return {
-            "mean": mean.mask(~is_present),
-            "lo": lo.mask(~is_present),
-            "hi": hi.mask(~is_present),
-            "fdr": fdr,
-            "base": base
-        }
-
-    def get_total_recurrence_fold_change(self, fdr=0.1, base=2):
+    def get_total_recurrence_fold_change(self, alpha_ci=0.2, base=2):
         case, n_case = self.case.get_total_recurrence_overall(categories=self.recurrence_categories)
         control, n_control = self.control.get_total_recurrence_overall(categories=self.recurrence_categories)
-
-        p_case = (case + 0.5) / (n_case + 0.5)
-        p_control = (control + 0.5) / (n_control + 0.5)
-        mean = np.log(p_case / p_control) / np.log(base)
-        var = ((1 / p_case - 1) / n_case + (1 / p_control - 1) / n_control + 1e-12) / np.log(base) ** 2
-
-        lo = pd.Series(st.norm.ppf(fdr, loc=mean, scale=np.sqrt(var)), index=mean.index)
-        hi = pd.Series(st.norm.ppf(1 - fdr, loc=mean, scale=np.sqrt(var)), index=mean.index)
-
-        is_present = (case > 0) & (control > 0) | case.isna() | control.isna()
-        return {
-            "mean": mean.mask(~is_present),
-            "lo": lo.mask(~is_present),
-            "hi": hi.mask(~is_present),
-            "fdr": fdr,
-            "base": base
-        }
+        return fold_change(case, n_case, control, n_control, alpha_ci=alpha_ci, base=base)
 
     def make_comut(self):
         self.layout.add_panels()
@@ -434,7 +406,7 @@ class Comut(object):
             self.layout.set_plot_func(
                 "recurrence fold change",
                 self.plotter.plot_recurrence_fold_change,
-                fold_change=self.get_recurrence_fold_change_by_gene(fdr=0.1, base=2),
+                fold_change=self.get_recurrence_fold_change_by_gene(alpha_ci=0.2, base=2),
                 genes=self.case.genes,
                 cnv_cmap=self.cnv_cmap,
                 categories=self.recurrence_categories,
@@ -447,7 +419,7 @@ class Comut(object):
             self.layout.set_plot_func(
                 "total recurrence fold change",
                 self.plotter.plot_total_recurrence_fold_change,
-                fold_change=self.get_total_recurrence_fold_change(fdr=0.1, base=2),
+                fold_change=self.get_total_recurrence_fold_change(alpha_ci=0.2, base=2),
                 shared_x_ax=self.layout.panels.get("recurrence fold change").ax if "recurrence fold change" in self.layout.panels and self.layout.panels.get("recurrence fold change").plot_func is not None else None,
                 pad=0.01,
             )
@@ -470,9 +442,9 @@ class Comut(object):
             # self.layout.set_plot_func("coverage", self.plotter.plot_coverage)
             self.layout.set_plot_func(
                 "mutational signatures" + label,
-                self.plotter.plot_mutsig,
-                mutsig=data.mutsig,
-                mutsig_cmap=self.mutsig_cmap,
+                self.plotter.plot_signatures,
+                signatures=data.signatures,
+                signatures_cmap=self.signatures_cmap,
                 add_ylabel=is_case,
             )
             self.layout.set_plot_func(
@@ -561,7 +533,7 @@ class Comut(object):
         self.layout.set_plot_func(
             "mutational signatures legend",
             self.plotter.plot_legend,
-            cmap=self.mutsig_cmap,
+            cmap=self.signatures_cmap,
             title="Mutational Signatures"
         )
         self.layout.set_plot_func(

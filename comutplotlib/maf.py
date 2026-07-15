@@ -138,7 +138,7 @@ class MAF(MutationAnnotation, AnnotationTable):
             )
 
     def select_minimal_columns(self):
-        self.data = self.data[self.default_columns + [self.ref_count, self.alt_count, self.gene_id, self.context]]
+        self.data = self.data[self.default_columns + [self.ref_count, self.alt_count, self.gene_id, self.context, self.annotation_transcript]]
 
     def add_required_columns(
         self, verbose: bool = True, inplace: bool = False
@@ -234,10 +234,8 @@ class MAF(MutationAnnotation, AnnotationTable):
         if other is None:
             return self
         else:
-            merged_data = pd.concat(
-                [d for d in [self.data.reset_index(drop=True), other.data.reset_index(drop=True)] if not d.empty],
-                ignore_index=True
-            ).drop_duplicates(ignore_index=True)
+            _data = [d for d in [self.data.reset_index(drop=True), other.data.reset_index(drop=True)] if not d.empty]
+            merged_data = pd.concat(_data, ignore_index=True).drop_duplicates(ignore_index=True) if _data else pd.DataFrame(None, columns=self.data.columns)
             maf = MAF(
                 data=merged_data,
                 name=".".join([maf.name for maf in [self, other] if maf.name]),

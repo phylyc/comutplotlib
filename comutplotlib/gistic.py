@@ -51,14 +51,32 @@ class Gistic(object):
 
     def _standardize_gene_names(self):
         gene_name_map = {
+            "BRP44L": "MPC1",
+            "C1orf187": "DRAXIN",
+            "C2orf89": "TRABD2A",
+            "C5orf35": "SETD9",
+            "C7orf41": "MTURN",
             "C10orf54": "VSIR",
+            "C12orf52": "RITA1",
+            "C13orf15": "RGCC",
             "C15orf2": "NPAP1",
+            "C16orf5": "CDIP1",
+            "C18orf1": "LDLRAD4",
+            "C20orf11": "GID8",
             "CCDC76": "TRMT13",
+            "CXCR7": "ACKR3",
             "DIET1": "MALRD1",
+            "FAM5B": "BRINP2",
+            "FAM40A": "STRIP1",
             "FAM55A": "NXPE1",
             "FAM55D": "NXPE4",
             "FAM55B": "NXPE2",
+            "FAM123B": "AMER1",
+            "FAM123A": "AMER2",
+            "FAM123C": "AMER3",
             "FYB": "FYB1",
+            "GPER": "GPER1",
+            "KIAA1967": "CCAR2",
             "HIST1H3A": "H3C1",
             "HIST1H3B": "H3C2",
             "HIST1H3C": "H3C3",
@@ -72,17 +90,25 @@ class Gistic(object):
             "HIST2H3D": "H3C13",
             "HIST2H3C": "H3C14",
             "HIST2H3A": "H3C15",
+            "has-mir-224": "MIR224",
+            "hsa-mir-342": "MIR342",
+            "hsa-mir-361": "MIR361",
             "IL8": "CXCL8",
             "IGHG3": "HDC",
+            "JMJD5": "KDM8",
+            "LRRC33": "NRROS",
             "MLL": "KMT2A",
             "MLL1": "KMT2A",
             "MLL2": "KMT2D",
             "MLL3": "KMT2C",
-            "JMJD5": "KDM8",
-            "LRRC33": "NRROS",
-            "GPER": "GPER1",
+            "NEURL": "NEURL1",
+            "O3FAR1": "FFAR4",
+            "PHF17": "JADE1",
+            "RDBP": "NELFE",
+            "ZNF238": "ZBTB18"
         }
 
+        # self.data.index = self.data.index.map(lambda g: g.split("|")[0])
         for gene_name, replacement in gene_name_map.items():
             if gene_name in self.data.index:
                 self.data.rename(index={gene_name: replacement}, inplace=True)

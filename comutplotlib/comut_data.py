@@ -1,8 +1,11 @@
 from collections import defaultdict
 from functools import reduce
 import os
+import numpy as np
 import pandas as pd
 import re
+from scipy.cluster.hierarchy import linkage, leaves_list, optimal_leaf_ordering
+from scipy.spatial.distance import squareform
 
 from comutplotlib.gistic import Gistic, join_gistics
 from comutplotlib.maf import MAF, join_mafs
@@ -10,6 +13,7 @@ from comutplotlib.seg import SEG, join_segs
 from comutplotlib.sif import SIF, join_sifs
 from comutplotlib.snv import SNV
 from comutplotlib.cnv import CNV
+from comutplotlib.mutational_signature_set import MutationalSignatureSet
 from comutplotlib.meta import Meta
 
 
@@ -30,7 +34,7 @@ class ComutData(object):
         seg_paths: list[str] = None,
         gistic_paths: list[str] = None,
 
-        mutsig_paths: list[str] = None,
+        signatures_paths: list[str] = None,
 
         sif_paths: list[str] = None,
         meta_data_rows: list[str] = (),
@@ -42,6 +46,7 @@ class ComutData(object):
         column_order: tuple[str] = None,
         index_order: tuple[str] = None,
         column_sort_by: tuple[str] = None,
+        sort_method: str = None,
 
         interesting_gene: str = None,
         interesting_gene_comut_percent_threshold: float = None,
@@ -76,7 +81,10 @@ class ComutData(object):
                 .replace([high_del_threshold], mid_del_threshold)
             )
 
-        self.mutsig = pd.concat([pd.read_csv(path_to_file, index_col=0, sep="\t") for path_to_file in mutsig_paths]) if mutsig_paths is not None else None
+        self.signatures = pd.concat([
+            pd.read_csv(path_to_file, index_col=0, sep="," if path_to_file.endswith(".csv") else "\t").fillna(0)
+            for path_to_file in signatures_paths]
+        ) if signatures_paths is not None else None
 
         self.sif = join_sifs([SIF.from_file(path_to_file=sif) for sif in sif_paths]) if sif_paths is not None else SIF()
         self.sif.add_annotations(inplace=True)
@@ -114,6 +122,10 @@ class ComutData(object):
         self.column_sort_by = column_sort_by
         self.columns = None
         self.genes = None
+        self.gene_sort_method = sort_method
+        self.column_sort_method = sort_method
+        self.cluster_cnv_weight = 1
+        self.cluster_snv_weight = 0.75
 
     def get_dimensions(self):
         n_genes = len(self.genes) if self.genes is not None else 0
@@ -122,6 +134,7 @@ class ComutData(object):
         return n_genes, n_samples, n_meta
 
     def preprocess(self):
+        self.align_signatures()
         self.columns = self.get_columns()
         self.snv = SNV(maf=self.maf, by=self.by)
         self.cnv = CNV(seg=self.seg, gistic=self.gistic, baseline=self.baseline,
@@ -131,13 +144,21 @@ class ComutData(object):
         self.reindex_data()
         self.genes = self.get_genes()
         self.tmb = self.get_tmb()
-        self.reindex_data()
-        if self.drop_empty_columns:
-            self._drop_empty_columns()
-        self.sort_genes()
-        self.reindex_data()
-        self.sort_columns()
-        self.reindex_data()
+        self.resort_data()
+
+    def align_signatures(self):
+        if self.signatures is None:
+            return None
+        self.signatures.columns = pd.Index([c.replace("Signature_", "SBS") for c in self.signatures.columns])
+        sorted_columns = MutationalSignatureSet.sort_signatures(signatures=self.signatures.columns)
+        self.signatures = self.signatures.reindex(columns=sorted_columns)
+        if self.sif is None or self.by != MAF.patient:
+            return None
+        if self.signatures.index.name == SIF.patient:
+            return None
+        sample_to_patient_map = self.sif.data[[SIF.sample, SIF.patient]].set_index(SIF.sample)[SIF.patient].to_dict()
+        self.signatures[SIF.patient] = self.signatures.index.map(lambda s: sample_to_patient_map.get(s))
+        self.signatures = self.signatures.groupby(SIF.patient).agg("sum")
 
     def save(self, out_dir, name):
         # Write columns and genes to file, each comma separated
@@ -153,6 +174,15 @@ class ComutData(object):
         self.columns = self.columns[not_empty]
         self.reindex_data()
 
+    def resort_data(self):
+        self.reindex_data()
+        if self.drop_empty_columns:
+            self._drop_empty_columns()
+        self.sort_genes()
+        self.reindex_data()
+        self.sort_columns()
+        self.reindex_data()
+
     def reindex_data(self):
         if self.genes is not None:
             self.snv.reindex(index=self.genes)
@@ -166,8 +196,8 @@ class ComutData(object):
             self.snv.reindex(columns=self.columns)
             self.cnv.reindex(columns=self.columns)
             self.meta.reindex(columns=self.columns)
-            if self.mutsig is not None:
-                self.mutsig = self.mutsig.reindex(index=self.columns)
+            if self.signatures is not None:
+                self.signatures = self.signatures.reindex(index=self.columns)
             if self.tmb is not None:
                 self.tmb = self.tmb.reindex(index=self.columns)
         else:
@@ -175,8 +205,8 @@ class ComutData(object):
             self.snv.reindex(columns=columns)
             self.cnv.reindex(columns=columns)
             self.meta.reindex(columns=columns)
-            if self.mutsig is not None:
-                self.mutsig = self.mutsig.reindex(index=columns)
+            if self.signatures is not None:
+                self.signatures = self.signatures.reindex(index=columns)
             if self.tmb is not None:
                 self.tmb = self.tmb.reindex(index=columns)
 
@@ -274,16 +304,22 @@ class ComutData(object):
             ], axis=1) / len(self.columns)
             return has_mut
 
-    def get_total_recurrence_overall(self, categories=None):
+    def get_total_recurrence_overall(self, categories=None, ground_truth_only=False):
         """ Measures percent of all patients that have a mutation of type 'low/high' """
-        if categories is not None:
-            return pd.Series({
-                k: v.any(axis=0).sum()
+        if categories is not None and self.ground_truth_genes is not None:
+            gt_genes = pd.Index(set([g for glist in self.ground_truth_genes.values() for g in glist]))
+            if not ground_truth_only or not len(gt_genes):
+                gt_genes = self.genes
+            has_mut = pd.Series({
+                k: v.loc[gt_genes].any(axis=0).sum()
                 for k, v in self.get_mutation_status(categories=categories).items()
-            }), len(self.columns)
+            })
+            return has_mut, len(self.columns)
         else:
             has_high_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv).fillna(False)
             has_low_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv | self.cnv.has_low_cnv).fillna(False)
+            if ground_truth_only:
+                has_high_mut = has_high_mut.loc[pd.Index(ground_truth_only.keys())]
             has_mut = pd.Series({
                 "high": has_high_mut.any(axis=0).astype(int).sum(),
                 "low": has_low_mut.any(axis=0).astype(int).sum(),
@@ -300,130 +336,269 @@ class ComutData(object):
         else:
             return None
 
+    def _cnv_cell_distance(self, a, b):
+        if pd.isna(a) or pd.isna(b):
+            return 0.0
+
+        if a == b:
+            return 0.0
+
+        if a == self.baseline or b == self.baseline:
+            return 1.0
+
+        if np.sign(a) == np.sign(b):
+            return 0.35 * abs(abs(a) - abs(b))
+
+        return 2.0 + 0.25 * abs(abs(a) - abs(b))
+
+    def _pairwise_gene_distance_for_hclust(
+        self,
+        cnv_weight: float = 1.0,
+        snv_weight: float = 1.0,
+    ):
+        cnv = (
+            self.cnv.df
+            .reindex(index=self.genes, columns=self.columns)
+            .fillna(self.baseline)
+        )
+
+        snv = (
+            self.snv.has_snv
+            .reindex(index=self.genes, columns=self.columns)
+            .fillna(False)
+            .astype(int)
+        )
+
+        genes = cnv.index
+        n = len(genes)
+        D = np.zeros((n, n), dtype=float)
+
+        for i in range(n):
+            cnv_i = cnv.iloc[i].to_numpy()
+            snv_i = snv.iloc[i].to_numpy()
+
+            for j in range(i + 1, n):
+                cnv_j = cnv.iloc[j].to_numpy()
+                snv_j = snv.iloc[j].to_numpy()
+
+                cnv_dist = np.mean([
+                    self._cnv_cell_distance(a, b)
+                    for a, b in zip(cnv_i, cnv_j)
+                ])
+
+                snv_dist = np.mean(snv_i != snv_j)
+
+                D[i, j] = D[j, i] = (
+                        cnv_weight * cnv_dist +
+                        snv_weight * snv_dist
+                )
+
+        return pd.DataFrame(D, index=genes, columns=genes)
+
+    def _pairwise_column_distance_for_hclust(
+        self,
+        cnv_weight: float = 1.0,
+        snv_weight: float = 1.0,
+    ):
+        cnv = (
+            self.cnv.df
+            .reindex(index=self.genes, columns=self.columns)
+            .fillna(self.baseline)
+            .T
+        )
+
+        snv = (
+            self.snv.has_snv
+            .reindex(index=self.genes, columns=self.columns)
+            .fillna(False)
+            .astype(int)
+            .T
+        )
+
+        columns = cnv.index
+        n = len(columns)
+        D = np.zeros((n, n), dtype=float)
+
+        for i in range(n):
+            cnv_i = cnv.iloc[i].to_numpy()
+            snv_i = snv.iloc[i].to_numpy()
+
+            for j in range(i + 1, n):
+                cnv_j = cnv.iloc[j].to_numpy()
+                snv_j = snv.iloc[j].to_numpy()
+
+                cnv_dist = np.mean([
+                    self._cnv_cell_distance(a, b)
+                    for a, b in zip(cnv_i, cnv_j)
+                ])
+
+                snv_dist = np.mean(snv_i != snv_j)
+
+                D[i, j] = D[j, i] = (
+                        cnv_weight * cnv_dist +
+                        snv_weight * snv_dist
+                )
+
+        return pd.DataFrame(D, index=columns, columns=columns)
+
+    def _order_from_distance(self, D, method="average", optimal_ordering=True):
+        if len(D) <= 2:
+            return D.index
+
+        condensed = squareform(D.to_numpy(), checks=False)
+
+        if np.all(condensed == 0):
+            return D.index
+
+        Z = linkage(condensed, method=method)
+
+        if optimal_ordering:
+            Z = optimal_leaf_ordering(Z, condensed)
+
+        return pd.Index(D.index[leaves_list(Z)], name=D.index.name)
+
     def sort_genes(self):
         if self.idx_order is not None:
             self.genes = pd.Index([c for c in self.idx_order if c in self.genes], name=self.genes.name)
-        else:
-            sorted_features = (
-                (self.snv.has_snv.astype(int) + self.cnv.has_high_cnv.astype(int) + self.cnv.has_mid_cnv.astype(int))
-                .fillna(0)
-                .sum(axis=1)
-                .to_frame("mut_count")
-                .join(self.snv.has_snv.any(axis=1).to_frame("has_snv"))
-                .join(self.cnv.has_low_cnv.any(axis=1).to_frame("has_low_cnv"))
-                .join(self.cnv.has_low_cnv.astype(int).sum(axis=1).to_frame("low_cnv_count"))
-                .sort_values(by=["mut_count", "has_snv", "has_low_cnv", "low_cnv_count"], ascending=True)
+            return None
+
+        if self.gene_sort_method == "hierarchical":
+            D = self._pairwise_gene_distance_for_hclust(
+                cnv_weight=self.cluster_cnv_weight,
+                snv_weight=self.cluster_snv_weight,
             )
-            genes = sorted_features.index.to_list()
-            # bring the interesting gene to the front if the heatmap:
-            if self.interesting_gene is not None:
-                genes.pop(genes.index(self.interesting_gene))
-                genes += [self.interesting_gene]
+            self.genes = self._order_from_distance(D)
+            return None
 
-            if not len(genes):
-                return None
+        sorted_features = (
+            (self.snv.has_snv.astype(int) + self.cnv.has_high_cnv.astype(int) + self.cnv.has_mid_cnv.astype(int))
+            .fillna(0)
+            .sum(axis=1)
+            .to_frame("mut_count")
+            .join(self.snv.has_snv.any(axis=1).to_frame("has_snv"))
+            .join(self.cnv.has_low_cnv.any(axis=1).to_frame("has_low_cnv"))
+            .join(self.cnv.has_low_cnv.astype(int).sum(axis=1).to_frame("low_cnv_count"))
+            .sort_values(by=["mut_count", "has_snv", "has_low_cnv", "low_cnv_count"], ascending=True)
+        )
+        genes = sorted_features.index.to_list()
+        # bring the interesting gene to the front if the heatmap:
+        if self.interesting_gene is not None:
+            genes.pop(genes.index(self.interesting_gene))
+            genes += [self.interesting_gene]
 
-            # group genes in the same cytoband together since they are co-amplified or co-deleted.
-            cytobands = self.cnv.gistic.cytoband.reindex(index=genes).fillna("")
-            cytoband_groups = cytobands[::-1].drop_duplicates().values
-            cytoband_key = {cb: i for i, cb in enumerate(cytoband_groups)}
+        if not len(genes):
+            return None
 
-            gene_key = {}
-            feature_count = 0
-            previous_row_tuple = None
-            for gene, row in sorted_features.loc[genes[::-1]].iterrows():
-                row_tuple = tuple(row)
-                if previous_row_tuple is None or row_tuple != previous_row_tuple:
-                    feature_count += 1
-                gene_key[gene] = feature_count
-                previous_row_tuple = row_tuple
+        # group genes in the same cytoband together since they are co-amplified or co-deleted.
+        cytobands = self.cnv.gistic.cytoband.reindex(index=genes).fillna("")
+        cytoband_groups = cytobands[::-1].drop_duplicates().values
+        cytoband_key = {cb: i for i, cb in enumerate(cytoband_groups)}
 
-            genes = cytobands.reset_index().set_axis(genes, axis=0).apply(
-                lambda row: (cytoband_key[row[Gistic._cytoband]], gene_key[row[MAF.gene_name]], row[MAF.gene_name]),
-                axis=1
-            ).sort_values(ascending=False).index.to_list()
+        gene_key = {}
+        feature_count = 0
+        previous_row_tuple = None
+        for gene, row in sorted_features.loc[genes[::-1]].iterrows():
+            row_tuple = tuple(row)
+            if previous_row_tuple is None or row_tuple != previous_row_tuple:
+                feature_count += 1
+            gene_key[gene] = feature_count
+            previous_row_tuple = row_tuple
 
-            # bring the interesting gene to the front (again):
-            # and remove genes in the same or neighboring cytobands
-            if self.interesting_gene is not None:
-                # genes.pop(genes.index(interesting_gene))
-                sorted_cytoband_groups = sorted(
-                    cytoband_groups,
-                    key=lambda cytoband: [c if i % 2 else int(c) for i, c in enumerate(re.split(r'(\d+)', cytoband)[1:-1])]
-                )
-                sorted_cytoband_key = {cb: i for i, cb in enumerate(sorted_cytoband_groups)}
-                cytoband_diff = cytobands.apply(lambda c: sorted_cytoband_key[c]) - sorted_cytoband_key[cytobands.loc[self.interesting_gene]]
-                close_genes = cytoband_diff.abs() < 5
-                for g in close_genes.loc[close_genes].index:
-                    genes.pop(genes.index(g))
-                genes += [self.interesting_gene]
+        genes = cytobands.reset_index().set_axis(genes, axis=0).apply(
+            lambda row: (cytoband_key[row[Gistic._cytoband]], gene_key[row[MAF.gene_name]], row[MAF.gene_name]),
+            axis=1
+        ).sort_values(ascending=False).index.to_list()
 
-            self.genes = pd.Index(genes, name=MAF.gene_name)
+        # bring the interesting gene to the front (again):
+        # and remove genes in the same or neighboring cytobands
+        if self.interesting_gene is not None:
+            # genes.pop(genes.index(interesting_gene))
+            sorted_cytoband_groups = sorted(
+                cytoband_groups,
+                key=lambda cytoband: [c if i % 2 else int(c) for i, c in enumerate(re.split(r'(\d+)', cytoband)[1:-1])]
+            )
+            sorted_cytoband_key = {cb: i for i, cb in enumerate(sorted_cytoband_groups)}
+            cytoband_diff = cytobands.apply(lambda c: sorted_cytoband_key[c]) - sorted_cytoband_key[cytobands.loc[self.interesting_gene]]
+            close_genes = cytoband_diff.abs() < 5
+            for g in close_genes.loc[close_genes].index:
+                genes.pop(genes.index(g))
+            genes += [self.interesting_gene]
+
+        self.genes = pd.Index(genes, name=MAF.gene_name)
 
     def sort_columns(self):
         if self.col_order is not None:
             self.columns = pd.Index([c for c in self.col_order if c in self.columns], name=self.columns.name)
-        else:
-            # COMUT: ORDER BY:
-            # 1. has high amplification
-            # 2. has mid-level amplification
-            # 3. has high deletion
-            # 4. has mid-level deletion
-            # 5. has high/mid CNV and no SNV
-            # 6. has SNV
-            # 7. todo: SNV type
-            def get_score(criterion_list):
-                log_weights = range(len(criterion_list), 0, -1)
-                return reduce(lambda a, b: a + b, [10 ** w * c for w, c in zip(log_weights, criterion_list)])
+            return None
 
-            has_high_mut = get_score([
-                self.cnv.has_high_amp.astype(int),
-                self.cnv.has_mid_amp.astype(int),
-                self.cnv.has_high_del.astype(int),
-                self.cnv.has_mid_del.astype(int),
-                (~self.snv.has_snv & (self.cnv.has_high_cnv | self.cnv.has_mid_cnv)).fillna(False).astype(int),
-                self.snv.has_snv.astype(int),
-            ])
-            if self.tmb is not None:
-                if SIF.tmb in self.tmb:
-                    has_burden = self.tmb[SIF.tmb].gt(0).astype(int).to_frame("has_burden").T
-                    burden = self.tmb[[SIF.tmb]].T
-                else:
-                    has_burden = self.tmb.sum(axis=1).gt(0).astype(int).to_frame("has_burden").T
-                    burden = self.tmb.sum(axis=1).to_frame(SIF.tmb).T
+        if self.column_sort_method == "hierarchical":
+            D = self._pairwise_column_distance_for_hclust(
+                cnv_weight=self.cluster_cnv_weight,
+                snv_weight=self.cluster_snv_weight,
+            )
+            self.columns = self._order_from_distance(D)
+            return
+
+        # COMUT: ORDER BY:
+        # 1. has high amplification
+        # 2. has mid-level amplification
+        # 3. has high deletion
+        # 4. has mid-level deletion
+        # 5. has high/mid CNV and no SNV
+        # 6. has SNV
+        # 7. todo: SNV type
+        def get_score(criterion_list):
+            log_weights = range(len(criterion_list), 0, -1)
+            return reduce(lambda a, b: a + b, [10 ** w * c for w, c in zip(log_weights, criterion_list)])
+
+        has_high_mut = get_score([
+            self.cnv.has_high_amp.astype(int),
+            self.cnv.has_mid_amp.astype(int),
+            self.cnv.has_high_del.astype(int),
+            self.cnv.has_mid_del.astype(int),
+            (~self.snv.has_snv & (self.cnv.has_high_cnv | self.cnv.has_mid_cnv)).fillna(False).astype(int),
+            self.snv.has_snv.astype(int),
+        ])
+        if self.tmb is not None:
+            if SIF.tmb in self.tmb:
+                has_burden = self.tmb[SIF.tmb].gt(0).astype(int).to_frame("has_burden").T
+                burden = self.tmb[[SIF.tmb]].T
             else:
-                has_burden = pd.DataFrame()
-                burden = pd.DataFrame()
-            has_any_cnv = self.cnv.has_cnv.any(axis=0).astype(int).to_frame("has_cnv").T
-            has_low_cnv = get_score([
-                self.cnv.has_low_amp.astype(int),
-                self.cnv.has_low_del.astype(int),
-            ])
-            comut_features = [df for df in [self.snv.deleteriousness_score, burden, has_low_cnv, has_any_cnv, has_burden, has_high_mut] if not df.empty]
+                has_burden = self.tmb.sum(axis=1).gt(0).astype(int).to_frame("has_burden").T
+                burden = self.tmb.sum(axis=1).to_frame(SIF.tmb).T
+        else:
+            has_burden = pd.DataFrame()
+            burden = pd.DataFrame()
+        has_any_cnv = self.cnv.has_cnv.any(axis=0).astype(int).to_frame("has_cnv").T
+        has_low_cnv = get_score([
+            self.cnv.has_low_amp.astype(int),
+            self.cnv.has_low_del.astype(int),
+        ])
+        comut_features = [df for df in [self.snv.deleteriousness_score, burden, has_low_cnv, has_any_cnv, has_burden, has_high_mut] if not df.empty]
 
-            features = []
-            for col in reversed(self.column_sort_by):
-                if col == "COMUT":
-                    features += comut_features
-                elif col == "TMB":
-                    features += [burden]
-                elif col in self.meta_data_rows:
-                    if col in self.meta_data_rows_per_sample:
-                        features.append(self.meta.df[col].apply(lambda l: l[0] if len(l) else 0).to_frame(col).T)
-                    else:
-                        features.append(self.meta.df[[col]].T)
+        features = []
+        for col in reversed(self.column_sort_by):
+            if col == "COMUT":
+                features += comut_features
+            elif col == "TMB":
+                features += [burden]
+            elif col in self.meta_data_rows:
+                if col in self.meta_data_rows_per_sample:
+                    features.append(self.meta.df[col].apply(lambda l: l[0] if len(l) else 0).to_frame(col).T)
                 else:
-                    pass
+                    features.append(self.meta.df[[col]].T)
+            else:
+                pass
 
-            if len(features):
-                columns = (
-                    pd.concat(features)
-                    .T
-                    .apply(lambda x: tuple(reversed(tuple(x))), axis=1)
-                    .sort_values(ascending=False)
-                    .index
-                )
-                self.columns = pd.Index(columns, name=self.columns.name)
+        if len(features):
+            columns = (
+                pd.concat(features)
+                .T
+                .apply(lambda x: tuple(reversed(tuple(x))), axis=1)
+                .sort_values(ascending=False)
+                .index
+            )
+            self.columns = pd.Index(columns, name=self.columns.name)
 
     def get_model_annotation(self):
         return pd.DataFrame(

@@ -355,9 +355,7 @@ class SIF(SampleAnnotation, AnnotationTable):
                 return "P"
             elif "Brain metastasis" in sample_type or "Brain Metastasis" in sample_type:
                 return "BM"
-            elif (
-                sample_type == "Extracranial metastasis" or sample_type == "Metastatic"
-            ):
+            elif sample_type in ["Extracranial metastasis", "Extracranial Metastasis", "Metastatic"]:
                 return "EM"
             elif sample_type == "Tumor":
                 if isinstance(sample_description, str) and (

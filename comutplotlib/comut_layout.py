@@ -84,12 +84,12 @@ class ComutLayout(Layout):
             max(min(n_samples, int(10 * max_xfigsize - non_heatmap_width)), 1)
             if max_xfigsize is not None
             else int(max_xfigsize_scale * n_samples)
-        )
+        ) if "comutation" in panels_to_plot else 0
         comut_width_control = (
             max(min(n_samples_control, int(10 * max_xfigsize - non_heatmap_width)), 1)
             if max_xfigsize is not None
             else int(max_xfigsize_scale * n_samples_control)
-        )
+        ) if "comutation control" in panels_to_plot else 0
         right_of_comut_width = 0
         if any([part in panels_to_plot for part in right_panel_legends]):
             right_of_comut_width += self.small_inter_legend_width + legend_width
@@ -118,6 +118,8 @@ class ComutLayout(Layout):
 
         self.dimensions = pd.DataFrame.from_dict(
             {
+                "_anchor": [0, 0],
+
                 "comutation": [comut_width, comut_height],
                 "comutation control": [comut_width_control, comut_height],
                 "snv legend": [legend_width, snv_legend_height],
@@ -172,12 +174,13 @@ class ComutLayout(Layout):
             return ref
 
     def add_panels(self):
+        p_anchor = self.add_panel(name="_anchor", force_add=True)
+
         # CENTER PANEL - CORE
-        assert "comutation" in self.panels_to_plot
-        p_comut = self.add_panel(name="comutation")
+        p_comut = self.add_panel(name="comutation", ref=p_anchor, right_of=p_anchor)
 
         # LEFT PANELS
-        p_ref = p_comut
+        p_ref = p_anchor
         # for panel, pad in zip(["model significance", "model annotation", "gene names", "cytoband", "recurrence"], [1, 0, 0, 0, 1]):
         #     p_ref = self.add_panel(name=panel, ref=p_ref, left_of=p_ref, pad=pad)
         p_ref = self.add_panel(name="model annotation", ref=p_ref, left_of=p_ref, pad=0)
@@ -186,12 +189,12 @@ class ComutLayout(Layout):
         p_ref = self.add_panel(name="gene meta data", ref=p_ref, left_of=p_ref, pad=self.pad if "cytoband" in self.panels_to_plot else 0)
 
         # TOP PANELS
-        p_ref = p_comut
+        p_ref = p_anchor
         for panel in ["mutational signatures", "coverage", "tmb", "cohort label"]:
             p_ref = self.add_panel(name=panel, ref=p_ref, above=p_ref)
 
         # BOTTOM PANELS
-        p_ref = p_comut
+        p_ref = p_anchor
         p_ref = self.add_panel(name="meta data", ref=p_ref, below=p_ref)
         if "meta data legend" in self.panels_to_plot and len(self.meta_data_legend_titles):
             pad = self.pad + (self.column_names_height if self.show_patient_names else 0)
@@ -207,33 +210,32 @@ class ComutLayout(Layout):
         # p_ref = self.add_panel(name="total recurrence", ref=p_ref, right_of=p_ref)
         self.add_panel(name="total recurrence overall", ref=p_ref, below=p_ref, pad=0)
 
-        if "comutation control" in self.panels_to_plot:
-            # LEFT PANELS
-            p_ref = self.add_panel(name="recurrence fold change", ref=p_ref, right_of=p_ref)
-            self.add_panel(name="total recurrence fold change", ref=p_ref, below=p_ref, pad=0)
-            p_ref = self.add_panel(name="recurrence control", ref=p_ref, right_of=p_ref, pad=self.pad if "recurrence fold change" in self.panels_to_plot else 0)
-            # p_ref = self.add_panel(name="total recurrence control", ref=p_ref, right_of=p_ref, pad=0)
-            self.add_panel(name="total recurrence overall control", ref=p_ref, below=p_ref, pad=0)
-            p_rec_control = p_ref
+        # LEFT PANELS
+        p_ref = self.add_panel(name="recurrence fold change", ref=p_ref, right_of=p_ref)
+        self.add_panel(name="total recurrence fold change", ref=p_ref, below=p_ref, pad=0)
+        p_ref = self.add_panel(name="recurrence control", ref=p_ref, right_of=p_ref, pad=self.pad if "recurrence fold change" in self.panels_to_plot else 0)
+        # p_ref = self.add_panel(name="total recurrence control", ref=p_ref, right_of=p_ref, pad=0)
+        self.add_panel(name="total recurrence overall control", ref=p_ref, below=p_ref, pad=0)
+        p_rec_control = p_ref
 
-            p_ref = self.add_panel(name="comutation control", ref=p_ref, right_of=p_ref)
-            p_comut_control = p_ref
+        p_ref = self.add_panel(name="comutation control", ref=p_ref, right_of=p_ref)
+        p_comut_control = p_ref
 
-            # TOP PANELS
-            p_ref = p_comut_control
-            for panel in ["mutational signatures control", "coverage control", "tmb control", "cohort label control"]:
-                p_ref = self.add_panel(name=panel, ref=p_ref, above=p_ref)
+        # TOP PANELS
+        p_ref = p_comut_control
+        for panel in ["mutational signatures control", "coverage control", "tmb control", "cohort label control"]:
+            p_ref = self.add_panel(name=panel, ref=p_ref, above=p_ref)
 
-            # BOTTOM PANELS
-            p_ref = p_comut_control
-            p_ref = self.add_panel(name="meta data control", ref=p_ref, below=p_ref)
+        # BOTTOM PANELS
+        p_ref = p_comut_control
+        p_ref = self.add_panel(name="meta data control", ref=p_ref, below=p_ref)
 
-            # RIGHT PANELS
-            # p_ref = p_comut_control
-            # p_ref = self.add_panel(name="recurrence control", ref=p_ref, right_of=p_ref)
+        # RIGHT PANELS
+        # p_ref = p_comut_control
+        # p_ref = self.add_panel(name="recurrence control", ref=p_ref, right_of=p_ref)
 
-            p_ref = p_comut_control
-            # p_ref = p_rec_control
+        p_ref = p_comut_control
+        # p_ref = p_rec_control
 
         def first_legend_panel(name, p_ref):
             return self.add_panel(name=name, ref=p_ref, right_of=p_ref, pad=self.small_inter_legend_width, align="top")
@@ -246,21 +248,21 @@ class ComutLayout(Layout):
 
         has_legend = False
         p_ref_top = None
+        for panel in ["tmb legend", "mutational signatures legend"]:
+            if panel in self.panels_to_plot:
+                p_ref = (
+                    first_legend_panel(name=panel, p_ref=p_ref)
+                    if not has_legend
+                    else below_legend_panel(name=panel, p_ref=p_ref_top)
+                )
+                p_ref_top = p_ref if p_ref_top is None else p_ref_top
+                has_legend = True
         for panel in ["cnv legend", "snv legend", "model annotation legend"]:
             if panel in self.panels_to_plot:
                 p_ref = (
                     first_legend_panel(name=panel, p_ref=p_ref)
                     if not has_legend
                     else below_legend_panel(name=panel, p_ref=p_ref)
-                )
-                p_ref_top = p_ref if p_ref_top is None else p_ref_top
-                has_legend = True
-        for panel in ["mutational signatures legend", "tmb legend"]:
-            if panel in self.panels_to_plot:
-                p_ref = (
-                    first_legend_panel(name=panel, p_ref=p_ref)
-                    if not has_legend
-                    else above_legend_panel(name=panel, p_ref=p_ref_top)
                 )
                 p_ref_top = p_ref if p_ref_top is None else p_ref_top
                 has_legend = True

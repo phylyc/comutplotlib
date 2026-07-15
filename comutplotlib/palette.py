@@ -7,6 +7,7 @@ import seaborn as sns
 
 from comutplotlib.functional_effect import better_effect_legend
 from comutplotlib.mutation_annotation import MutationAnnotation as MutA
+from comutplotlib.mutational_signature_set import MutationalSignatureSet
 
 
 class Palette(UserDict):
@@ -365,27 +366,26 @@ class Palette(UserDict):
                 "Panel": self.lightyellow,
                 "ULP": self.lightgrey,
             } | {
+                "oncogenic": self.red,
                 "generic": self.lightgrey,
                 "general signaling": self.grey,
                 "cell cycle": self.green,
-                "development-differentiation": self.lightgreen,
-                "ECM-microenvironment": self.red,
+                "development-differentiation": self.mix(self.cyan, self.grey, 0.5),
+                "ECM-microenvironment": self.orange,
                 "cytoskleton motility": self.lightred,
                 "trafficking": self.lightyellow,
                 "immune": self.blue,
                 "mito-ion-redox-stress": self.lightcyan,
                 "muscle": self.lightbrown,
                 "metabolism": self.brown,
-
                 "neural": self.pink,
-                "adhesion junctions": self.lightviolet,
-                "transcription": self.mix(self.cyan, self.grey),
+                "adhesion junctions": self.violet,
+                "transcription": self.lightgreen,
+                "translation": self.mix(self.lightviolet, self.grey),
                 "DNA replication repair": self.cyan,
                 "apoptosis": self.black,
                 "chromatin": self.lightblue,
-                "PI3K signaling": self.orange,
-                "MAPK signaling": self.yellow,
-                "TGFB signaling": self.violet,
+                "proteostasis": self.yellow,
             }
         )
 
@@ -466,87 +466,30 @@ class Palette(UserDict):
         } if tmb is not None else {}
         return Palette(tmb_cmap)
 
-    def get_mutsig_cmap(self, mutsig):
-        # The listed order determines the order in which the signatures are plotted
-        signature_sets = {
-            "clock-like": ["SBS1", "SBS5"],
-            "PolE/D/H": ["SBS9", "SBS10a", "SBS10b", "SBS10c", "SBS10d", "DBS3"],
-            "MMR": [
-                "SBS3",
-                "SBS6",
-                "SBS14",
-                "SBS15",
-                "SBS20",
-                "SBS21",
-                "SBS26",
-                "SBS30",
-                "SBS36",
-                "SBS44",
-                "DBS7",
-                "DBS10",
-                "DBS13",
-                "ID6",
-                "ID7",
-                "ID8",  # TOP2A
-                "ID17",  # TOP2A
-            ],
-            "Other": [
-                "SBS18",  # Oxog
-                "SBS22a",  # Aristolochic acid
-                "SBS22b",  # Aristolochic acid
-                "SBS24",  # aflatoxin
-                "SBS42",  # haloalkane
-                "SBS85",  # ind eff of AID
-                "SBS88",  # colibactin
-                "SBS90",  # duocarmycin
-                "SBS99",  # melphalan
-                "DBS20",  # Aristolochic acid
-                "ID23",  # Aristolochic acid
-                "ID18",  # e.coli
-            ],
-            "APOBEC": ["SBS2", "SBS13"],
-            "Smoking": ["SBS4", "SBS29", "SBS92", "DBS2", "ID3"],
-            "UV": ["SBS7a", "SBS7b", "SBS7c", "SBS7d", "SBS38", "DBS1", "ID13"],
-            "Treatment": [
-                "SBS11",  # Temozolomide
-                "SBS25",  # Chemotherapy
-                "SBS31",  # Platinum chemotherapy
-                "SBS32",  # Azathioprine
-                "SBS35",  # Platinum chemotherapy
-                "SBS86",  # Unknown chemotherapy
-                "SBS87",  # Thiopurine chemotherapy
-                "DBS5",  # Platinum chemotherapy
-            ],
-            "Error": [
-                "SBS27",
-                "SBS43", "SBS45", "SBS46", "SBS47", "SBS48", "SBS49",
-                "SBS50", "SBS51", "SBS52", "SBS53", "SBS54", "SBS55", "SBS56", "SBS57", "SBS58", "SBS59",
-                "SBS60",
-                "SBS95",
-                "DBS14"
-            ],
-            "Unknown": []
-        }
-        mutsigset_palette = {
+    def get_signatures_cmap(self, signatures):
+        signature_sets = MutationalSignatureSet.signature_sets
+        signature_set_palette = {
             "clock-like": self.brown,
             "APOBEC": self.red,
             "MMR": self.green,
-            "PolE/D/H": self.cyan,
-            "Other": self.violet,
+            "HRD": self.cyan,
+            "PolE/D/H": self.violet,
+            "Other": self.yellow,
             "UV": self.orange,
             "Smoking": self.blue,
             "Treatment": self.pink,
-            "Error": self.grey
+            "Error": self.grey,
+            "Unknown": self.grey,
         }
-        signature_colors = {color: signature_sets[key] for key, color in mutsigset_palette.items()}
-        for color, signatures in signature_colors.items():
-            for s, c in zip(signatures, self.make_diverging_palette(color=color, n_colors=len(signatures))):
-                mutsigset_palette[s] = c
-        mutsig_cmap = {
-            sig: mutsigset_palette.get(sig, color)
-            for sig, color in zip(mutsig.columns, sns.color_palette("husl", n_colors=len(mutsig.columns)))
-        } if mutsig is not None else {}
-        return Palette(mutsig_cmap)
+        signature_colors = {color: signature_sets[key] for key, color in signature_set_palette.items()}
+        for color, signature_set in signature_colors.items():
+            for s, c in zip(signature_set, self.make_diverging_palette(color=color, n_colors=len(signature_set))):
+                signature_set_palette[s] = c
+        signatures_cmap = {
+            sig: signature_set_palette.get(sig, color)
+            for sig, color in zip(signatures.columns, sns.color_palette("husl", n_colors=len(signatures.columns)))
+        } if signatures is not None else {}
+        return Palette(signatures_cmap)
 
     def get_meta_cmaps(self, meta):
         meta_cmaps = {}

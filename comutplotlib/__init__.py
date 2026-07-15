@@ -27,7 +27,7 @@ from comutplotlib.plotter import Plotter
 from comutplotlib.math import decompose_rectangle_into_polygons
 from comutplotlib.pandas_util import *
 
-from pkg_resources import get_distribution
+from importlib.metadata import version
 
-__version__ = get_distribution("comutplotlib").version
+__version__ = version("comutplotlib")
 __all__ = ["__version__"]

@@ -95,7 +95,7 @@ class SEG(object):
         gene_col = self.data[self._gene_name].apply(lambda _genes: [g in genes for g in _genes])
         mask = gene_col.apply(lambda l: len(l) > 0)
         data = self.data.loc[mask]
-        data[self._gene_name] = gene_col
+        data.loc[:, self._gene_name] = gene_col
         if inplace:
             self.data = data
             return self
