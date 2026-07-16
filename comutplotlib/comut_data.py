@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections.abc import Sequence
 from functools import reduce
 import os
 import numpy as np
@@ -26,35 +27,35 @@ class ComutData(object):
 
     def __init__(
         self,
-        cohort_name: str = None,
+        cohort_name: str | None = None,
 
-        maf_paths: list[str] = None,
+        maf_paths: list[str] | None = None,
         maf_pool_as: dict | None = None,
 
-        seg_paths: list[str] = None,
-        gistic_paths: list[str] = None,
+        seg_paths: list[str] | None = None,
+        gistic_paths: list[str] | None = None,
 
-        signatures_paths: list[str] = None,
+        signatures_paths: list[str] | None = None,
 
-        sif_paths: list[str] = None,
-        meta_data_rows: list[str] = (),
-        meta_data_rows_per_sample: list[str] = (),
+        sif_paths: list[str] | None = None,
+        meta_data_rows: Sequence[str] = (),
+        meta_data_rows_per_sample: Sequence[str] = (),
 
         drop_empty_columns: bool = False,
 
         by: str = MAF.patient,
-        column_order: tuple[str] = None,
-        index_order: tuple[str] = None,
-        column_sort_by: tuple[str] = None,
-        sort_method: str = None,
+        column_order: tuple[str] | None = None,
+        index_order: tuple[str] | None = None,
+        column_sort_by: tuple[str] | None = None,
+        sort_method: str | None = None,
 
-        interesting_gene: str = None,
-        interesting_gene_comut_percent_threshold: float = None,
-        interesting_genes: set = None,
-        ground_truth_genes: dict[str, list[str]] = None,
-        snv_interesting_genes: set = None,
-        cnv_interesting_genes: set = None,
-        total_recurrence_threshold: float = None,
+        interesting_gene: str | None = None,
+        interesting_gene_comut_percent_threshold: float | None = None,
+        interesting_genes: set | None = None,
+        ground_truth_genes: dict[str, list[str]] | None = None,
+        snv_interesting_genes: set | None = None,
+        cnv_interesting_genes: set | None = None,
+        total_recurrence_threshold: float | None = None,
         snv_recurrence_threshold: int = 5,
 
         low_amp_threshold: int | float = 1,
@@ -119,7 +120,7 @@ class ComutData(object):
         self.by = by
         self.col_order = column_order
         self.idx_order = index_order
-        self.column_sort_by = column_sort_by
+        self.column_sort_by = column_sort_by if column_sort_by is not None else ()
         self.columns = None
         self.genes = None
         self.gene_sort_method = sort_method
@@ -127,7 +128,7 @@ class ComutData(object):
         self.cluster_cnv_weight = 1
         self.cluster_snv_weight = 0.75
 
-    def get_dimensions(self):
+    def get_dimensions(self) -> tuple[int, int, int]:
         n_genes = len(self.genes) if self.genes is not None else 0
         n_samples = len(self.columns) if self.columns is not None else 0
         n_meta = len(self.meta.rows) if self.meta.rows is not None else 0
@@ -318,8 +319,11 @@ class ComutData(object):
         else:
             has_high_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv).fillna(False)
             has_low_mut = (self.snv.has_snv | self.cnv.has_high_cnv | self.cnv.has_mid_cnv | self.cnv.has_low_cnv).fillna(False)
-            if ground_truth_only:
-                has_high_mut = has_high_mut.loc[pd.Index(ground_truth_only.keys())]
+            if ground_truth_only and self.ground_truth_genes is not None:
+                gt_genes = pd.Index({g for glist in self.ground_truth_genes.values() for g in glist})
+                gt_genes = gt_genes.intersection(has_high_mut.index)
+                has_high_mut = has_high_mut.loc[gt_genes]
+                has_low_mut = has_low_mut.loc[gt_genes]
             has_mut = pd.Series({
                 "high": has_high_mut.any(axis=0).astype(int).sum(),
                 "low": has_low_mut.any(axis=0).astype(int).sum(),

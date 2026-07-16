@@ -1,0 +1,38 @@
+{
+  "_comment": "Default metadata rows rendered in the bottom panel, and the subset that is displayed per-sample (subdivided cells) rather than per-patient. These names must match the harmonized column names produced by Meta/SIF (see comutplotlib/meta.py) and the keys in the palette. Override via $COMUTPLOTLIB_CONFIG_DIR/meta_data_rows.json or the --meta-data-rows / --meta-data-rows-per-sample CLI flags.",
+  "rows": [
+    "WGD",
+    "Ploidy",
+    "Tumor Purity",
+    "Subclonal Fraction",
+    "Contamination",
+    "Material",
+    "Platform",
+    "has matched N",
+    "HR Status",
+    "HER2 Status",
+    "Chemo Tx",
+    "XRT",
+    "Targeted Tx",
+    "Hormone Tx",
+    "Immuno Tx ICI",
+    "ADC",
+    "Age at P Dx",
+    "Sex",
+    "Sample Type",
+    "Histology"
+  ],
+  "rows_per_sample": [
+    "WGD",
+    "Ploidy",
+    "Tumor Purity",
+    "Subclonal Fraction",
+    "Contamination",
+    "Material",
+    "Platform",
+    "HR Status",
+    "HER2 Status",
+    "Sample Type"
+  ]
+}
+

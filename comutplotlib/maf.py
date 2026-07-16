@@ -30,9 +30,9 @@ class MAF(MutationAnnotation, AnnotationTable):
     def from_file(
         cls,
         path_to_file: str,
-        selection: Union[Callable[..., bool], Dict[str, Any]] = None,
+        selection: Union[Callable[..., bool], Dict[str, Any], None] = None,
         complement: bool = False,
-        usecols: list = None,
+        usecols: list | None = None,
         source: str = MAFEncoding.funcotator,
         ignore_column_requirements: bool = True,
         warn_if_empty: bool = False,
@@ -68,7 +68,7 @@ class MAF(MutationAnnotation, AnnotationTable):
 
     @classmethod
     def __load(
-        cls, path_to_file: str, encoding: MAFEncoding, usecols: list = None
+        cls, path_to_file: str, encoding: MAFEncoding, usecols: list | None = None
     ) -> pd.DataFrame:
         """Load file and return a pandas.DataFrame.
 
@@ -98,12 +98,12 @@ class MAF(MutationAnnotation, AnnotationTable):
 
     def __init__(
         self,
-        data: pd.DataFrame = None,
-        selection: Union[Callable[..., bool], dict] = None,
+        data: pd.DataFrame | None = None,
+        selection: Union[Callable[..., bool], dict, None] = None,
         complement: bool = False,
-        file: str = None,
-        name: str = None,
-        encoding: MAFEncoding = None,
+        file: str | None = None,
+        name: str | None = None,
+        encoding: MAFEncoding | None = None,
         ignore_column_requirements: bool = False,
     ) -> None:
         """
@@ -238,7 +238,7 @@ class MAF(MutationAnnotation, AnnotationTable):
             merged_data = pd.concat(_data, ignore_index=True).drop_duplicates(ignore_index=True) if _data else pd.DataFrame(None, columns=self.data.columns)
             maf = MAF(
                 data=merged_data,
-                name=".".join([maf.name for maf in [self, other] if maf.name]),
+                name=".".join(filter(None, [self.name, other.name])),
                 ignore_column_requirements=(
                     self.ignore_column_requirements and other.ignore_column_requirements
                 ),
@@ -281,7 +281,7 @@ class MAF(MutationAnnotation, AnnotationTable):
     ####################################################################
 
     def pool_annotations(
-        self, pool_as: dict, regex: bool = False, inplace: bool = False
+        self, pool_as: dict | None, regex: bool = False, inplace: bool = False
     ):
         if pool_as is None:
             return None if inplace else self
@@ -307,7 +307,7 @@ class MAF(MutationAnnotation, AnnotationTable):
 
     def select(
         self,
-        selection: Union[Callable[..., bool], dict],
+        selection: Union[Callable[..., bool], dict, None],
         complement: bool = False,
         inplace: bool = False,
     ) -> Optional["MAF"]:
@@ -427,8 +427,8 @@ class MAF(MutationAnnotation, AnnotationTable):
                 # then broadcast missing values across each gene:
                 mutation_counts = (
                     mutation_counts.unstack(level=-1)  # map gene stratum to columns
-                    .fillna(method="ffill", axis=0)
-                    .fillna(method="bfill", axis=0)
+                    .ffill(axis=0)
+                    .bfill(axis=0)
                     .stack(level=-1)  # map gene stratum back to index
                 )
 

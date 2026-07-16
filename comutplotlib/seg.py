@@ -30,7 +30,7 @@ class SEG(object):
     _gene_name = "gene_name"
 
     @classmethod
-    def from_file(cls, path_to_file: str, encoding: str = "utf8", columns: list[str] = None, log_tCR_base: float = 2):
+    def from_file(cls, path_to_file: str, encoding: str = "utf8", columns: list[str] | None = None, log_tCR_base: float = 2):
         if not os.path.exists(path_to_file):
             raise FileNotFoundError(
                 f"No SEG instance created. No such file or directory: '{path_to_file}'"
@@ -92,15 +92,22 @@ class SEG(object):
         return df.loc[idx, [g, s, v]].pivot(index=g, columns=s, values=v)
 
     def select_genes(self, genes: list[str], inplace=True) -> "SEG":
-        gene_col = self.data[self._gene_name].apply(lambda _genes: [g in genes for g in _genes])
-        mask = gene_col.apply(lambda l: len(l) > 0)
-        data = self.data.loc[mask]
-        data.loc[:, self._gene_name] = gene_col
+        gene_set = set(genes)
+        # For each segment, keep only the selected genes that overlap it.
+        selected_genes = self.data[self._gene_name].apply(
+            lambda _genes: [g for g in _genes if g in gene_set]
+            if isinstance(_genes, (list, tuple, np.ndarray))
+            else []
+        )
+        # Keep only segments that overlap at least one selected gene.
+        mask = selected_genes.apply(lambda _genes: len(_genes) > 0)
+        data = self.data.loc[mask].copy()
+        data[self._gene_name] = selected_genes.loc[mask]
         if inplace:
             self.data = data
             return self
         else:
-            return SEG(data=data)
+            return SEG(data=data, add_gene_names=False)
 
     def select_samples(self, samples: list[str], inplace=True) -> "SEG":
         mask = self.data[self._sample].isin(samples)

@@ -5,7 +5,7 @@ from comutplotlib.panel import Panel
 
 class Layout(object):
 
-    def __init__(self, xfigsize: float = 6.4, yfigsize: float = 4.8, panels: dict[str, Panel] = None, pad: int = 1, fig=None, gs=None, **kwargs):
+    def __init__(self, xfigsize: float = 6.4, yfigsize: float = 4.8, panels: dict[str, Panel] | None = None, pad: int = 1, fig=None, gs=None, **kwargs):
         self.xfigsize = xfigsize
         self.yfigsize = yfigsize
         self.panels = panels if panels is not None else {}
@@ -16,8 +16,8 @@ class Layout(object):
 
     def add_panel(
         self, name, width, height, x=0, y=0,
-        left_of: Panel = None, right_of: Panel = None, below: Panel = None, above: Panel = None,
-        pad: int = None, align: str | float = "center",
+        left_of: Panel | None = None, right_of: Panel | None = None, below: Panel | None = None, above: Panel | None = None,
+        pad: int | None = None, align: str | float = "center",
         **kwargs
     ):
         """ Add a panel to the layout.

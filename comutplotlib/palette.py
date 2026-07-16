@@ -125,7 +125,7 @@ class Palette(UserDict):
     def from_hash(cls, hash):
         return Palette({entry.split(":")[0]: [float(c) for c in entry.split(":")[1].split(",")] for entry in hash.split(";")})
 
-    def __init__(self, dict: dict = None) -> None:
+    def __init__(self, dict: dict | None = None) -> None:
         self.high_tmb = self.mix(self.darkred, self.grey)
         super().__init__(
             dict if dict is not None else {
@@ -557,12 +557,12 @@ class Palette(UserDict):
         for col in ["Chemo Tx", "XRT", "Targeted Tx", "Hormone Tx", "Immuno Tx ICI", "ADC"]:
             add_cmap(col, _palette=[self.normalizeRGB(105, 200, 219), self.lightgrey, self.backgroundgrey], order=["yes", "no", "unknown"])
         add_cmap("WGD", _palette=self.make_diverging_palette(self.violet, n_colors=5*4)[::5], order=list(range(4)))
-        add_cont_cmap("Contamination", plt.cm.get_cmap("BuPu"), 0.0, 0.05)
-        add_cont_cmap("Tumor Purity", plt.cm.get_cmap("plasma_r"), 0, 1)
-        add_cont_cmap("Ploidy", plt.cm.get_cmap("PiYG"), 1, 6, center=2)
-        add_cont_cmap("Subclonal Fraction", plt.cm.get_cmap("RdPu"), 0, 0.5)
-        add_cont_cmap("Age at BM Dx", plt.cm.get_cmap("bone_r"), 0, 100)
-        add_cont_cmap("Age at P Dx", plt.cm.get_cmap("bone_r"), 0, 100)
+        add_cont_cmap("Contamination", plt.get_cmap("BuPu"), 0.0, 0.05)
+        add_cont_cmap("Tumor Purity", plt.get_cmap("plasma_r"), 0, 1)
+        add_cont_cmap("Ploidy", plt.get_cmap("PiYG"), 1, 6, center=2)
+        add_cont_cmap("Subclonal Fraction", plt.get_cmap("RdPu"), 0, 0.5)
+        add_cont_cmap("Age at BM Dx", plt.get_cmap("bone_r"), 0, 100)
+        add_cont_cmap("Age at P Dx", plt.get_cmap("bone_r"), 0, 100)
 
         # For all custom columns:
         for col in meta.rows:

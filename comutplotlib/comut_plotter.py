@@ -6,7 +6,7 @@ import numpy as np
 import scipy.stats as st
 
 from comutplotlib.plotter import Plotter
-from comutplotlib.math import decompose_rectangle_into_polygons
+from comutplotlib.mathutils import decompose_rectangle_into_polygons
 from comutplotlib.palette import Palette
 from comutplotlib.sample_annotation import SampleAnnotation as SA
 

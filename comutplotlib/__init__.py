@@ -2,6 +2,7 @@ from comutplotlib.comut_argparse import parse_args
 from comutplotlib.comut import Comut
 from comutplotlib.comut_data import ComutData
 from comutplotlib.comut_layout import ComutLayout
+from comutplotlib.comut_panels import ComutPanels, DEFAULT_PANELS
 from comutplotlib.comut_plotter import ComutPlotter
 from comutplotlib.functional_effect import sort_functional_effects
 
@@ -24,10 +25,15 @@ from comutplotlib.panel import Panel
 from comutplotlib.palette import Palette
 from comutplotlib.plotter import Plotter
 
-from comutplotlib.math import decompose_rectangle_into_polygons
+from comutplotlib.mathutils import decompose_rectangle_into_polygons
 from comutplotlib.pandas_util import *
 
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 
-__version__ = version("comutplotlib")
+try:
+    __version__ = version("comutplotlib")
+except PackageNotFoundError:
+    # Package metadata is unavailable when running from a source checkout
+    # that has not been installed (e.g. `pip install -e .`).
+    __version__ = "0.0.0+unknown"
 __all__ = ["__version__"]

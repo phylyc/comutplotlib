@@ -43,7 +43,7 @@ class PandasChainedAssignmentWarnHandler:
 
 
 def as_sparse_dtype(
-    df: pd.DataFrame, dtype: str = None, precision: int = None, fill_value: Any = None
+    df: pd.DataFrame, dtype: str | None = None, precision: int | None = None, fill_value: Any = None
 ):
     """
     :param df:
@@ -187,8 +187,8 @@ def unstack(
 
 def subframe(
     df: Union[pd.DataFrame, pd.Series],
-    batch: Union[pd.Index, List[str]],
-    batch_level: Union[str, List[str]],
+    batch: Union[pd.Index, List[str], np.ndarray],
+    batch_level: Union[str, list],
     apply_along_batch_level=None,
 ) -> Union[pd.DataFrame, pd.Series]:
     if not isinstance(batch, pd.Index):
@@ -197,7 +197,7 @@ def subframe(
     # cast Index (of tuples) to 2darray
     try:
         _batch = pd.MultiIndex.from_tuples(batch).to_frame().to_numpy()
-    except TypeError or ValueError:
+    except (TypeError, ValueError):
         _batch = batch.to_frame().to_numpy()
 
     def get_batch_idx(names):
@@ -431,11 +431,11 @@ def merge_selections(*selections: Union[dict, None]) -> dict:
 
 def __merge_selections(
     selection_1: Union[dict, None], selection_2: Union[dict, None]
-) -> Dict[Any, list]:
+) -> Dict[Any, list] | None:
     """
     :param selection_1: dict with lists as values, or None
     :param selection_2: dict with lists as values, or None
-    :return: dict
+    :return: dict | None
     """
     if selection_1 is None:
         return selection_2
@@ -462,8 +462,8 @@ def __merge_selections(
 
 def position_outside_intervals(
     positions: pd.Series,
-    interval_starts: np.array,
-    interval_ends: np.array,
+    interval_starts: np.ndarray,
+    interval_ends: np.ndarray,
     include=False,
 ) -> pd.Series:
     # More intuitive solution, but complexity scales worse than below:
@@ -502,7 +502,7 @@ def position_outside_intervals(
             left_index=True,
             right_index=True,
         )
-        .fillna(method="ffill")
+        .ffill()
         .fillna(0)  # replace NANs for positions that are before first interval
         .loc[positions_df.index]
         .get("transition")

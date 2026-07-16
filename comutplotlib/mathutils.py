@@ -38,20 +38,33 @@ def fold_change(n, N, m, M, alpha_ci=0.2, base=2, method="fisher"):
     mean = np.log(p_n / p_m) / np.log(base)
     var = ((1 / p_n - 1) / N + (1 / p_m - 1) / M + 1e-12) / np.log(base) ** 2
 
-    if isinstance(mean, pd.Series):
-        lo = pd.Series(st.norm.ppf(alpha_ci / 2, loc=mean, scale=np.sqrt(var)), index=mean.index)
-        hi = pd.Series(st.norm.ppf(1 - alpha_ci / 2, loc=mean, scale=np.sqrt(var)), index=mean.index)
-    elif isinstance(mean, pd.DataFrame):
-        lo = pd.DataFrame(st.norm.ppf(alpha_ci / 2, loc=mean, scale=np.sqrt(var)), index=mean.index, columns=mean.columns)
-        hi = pd.DataFrame(st.norm.ppf(1 - alpha_ci / 2, loc=mean, scale=np.sqrt(var)), index=mean.index, columns=mean.columns)
+    scale = np.sqrt(var)
+    lo_raw = st.norm.ppf(alpha_ci / 2, loc=mean, scale=scale)
+    hi_raw = st.norm.ppf(1 - alpha_ci / 2, loc=mean, scale=scale)
 
-    is_present = (n > 0) & (m > 0) & ~n.isna() & ~m.isna()
+    if isinstance(mean, pd.Series):
+        lo = pd.Series(lo_raw, index=mean.index)
+        hi = pd.Series(hi_raw, index=mean.index)
+    elif isinstance(mean, pd.DataFrame):
+        lo = pd.DataFrame(lo_raw, index=mean.index, columns=mean.columns)
+        hi = pd.DataFrame(hi_raw, index=mean.index, columns=mean.columns)
+    else:  # scalar or numpy array
+        lo, hi = lo_raw, hi_raw
+
+    is_present = (n > 0) & (m > 0) & pd.notna(n) & pd.notna(m)
+
+    def _mask_absent(value):
+        # set entries where the mutation is absent in either cohort to NaN
+        if isinstance(value, (pd.Series, pd.DataFrame)):
+            return value.mask(~is_present)
+        return np.where(is_present, value, np.nan)
 
     return {
-        "mean": mean.mask(~is_present),
-        "lo": lo.mask(~is_present),
-        "hi": hi.mask(~is_present),
+        "mean": _mask_absent(mean),
+        "lo": _mask_absent(lo),
+        "hi": _mask_absent(hi),
         "fdr": alpha_ci,
         "base": base,
         # "p": p
     }
+

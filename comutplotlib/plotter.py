@@ -9,7 +9,7 @@ from comutplotlib.palette import Palette
 
 class Plotter(object):
 
-    def __init__(self, output: str = None, out_dir: str = ".", extra_palette: dict[str, tuple[float]] = None) -> None:
+    def __init__(self, output: str | None = None, out_dir: str = ".", extra_palette: dict[str, tuple[float]] | None = None) -> None:
         super().__init__()
         self.out_dir = out_dir
         if output is not None:

@@ -1,6 +1,12 @@
 import argparse
 from collections import defaultdict
 
+from comutplotlib.config import load_config
+from comutplotlib.comut_panels import DEFAULT_PANELS, ComutPanels, control
+
+# Default metadata rows are shipped as editable config (see comutplotlib/config/).
+_META_ROWS = load_config("meta_data_rows.json", default={"rows": [], "rows_per_sample": []})
+
 
 def validate_args(args):
     """Ensure required arguments are correctly specified."""
@@ -12,39 +18,39 @@ def validate_args(args):
         raise ValueError("Either --maf or --gistic must be specified.")
 
     if args.control_maf is None and args.control_gistic is None:
-        remove("recurrence fold change")
+        remove(ComutPanels.recurrence_fold_change)
         for panel in args.panels_to_plot:
             if panel.endswith("control"):
                 remove(panel)
-    if "recurrence" not in args.panels_to_plot:
-        remove("total recurrence overall")
-    if "recurrence control" not in args.panels_to_plot:
-        remove("total recurrence overall control")
-    if "recurrence fold change" not in args.panels_to_plot:
-        remove("total recurrence fold change")
+    if ComutPanels.recurrence not in args.panels_to_plot:
+        remove(ComutPanels.total_recurrence_overall)
+    if control(ComutPanels.recurrence) not in args.panels_to_plot:
+        remove(control(ComutPanels.total_recurrence_overall))
+    if ComutPanels.recurrence_fold_change not in args.panels_to_plot:
+        remove(ComutPanels.total_recurrence_fold_change)
 
     if args.cohort_label is None:
-        remove("cohort label")
+        remove(ComutPanels.cohort_label)
     if args.control_cohort_label is None:
-        remove("cohort label control")
+        remove(control(ComutPanels.cohort_label))
 
     if args.snv_interesting_genes is None and args.cnv_interesting_genes is None:
-        remove("model annotation")
-    if "model annotation" not in args.panels_to_plot:
-        remove("model annotation legend")
+        remove(ComutPanels.model_annotation)
+    if ComutPanels.model_annotation not in args.panels_to_plot:
+        remove(ComutPanels.model_annotation_legend)
 
     if args.signatures is None:
-        remove("mutational signatures")
-    if "mutational signatures" not in args.panels_to_plot:
-        remove("mutational signatures legend")
+        remove(ComutPanels.mutational_signatures)
+    if ComutPanels.mutational_signatures not in args.panels_to_plot:
+        remove(ComutPanels.mutational_signatures_legend)
 
     if args.sif is None:
-        remove("meta data")
-    if "meta data" not in args.panels_to_plot:
-        remove("meta data legend")
+        remove(ComutPanels.meta_data)
+    if ComutPanels.meta_data not in args.panels_to_plot:
+        remove(ComutPanels.meta_data_legend)
 
     if args.gene_meta_data is None:
-        remove("gene meta data")
+        remove(ComutPanels.gene_meta_data)
 
 
 def print_args(args):
@@ -219,43 +225,11 @@ def parse_args():
 
     parser.add_argument(
         "--meta-data-rows", type=parse_comma_separated,
-        default=[
-            "WGD",
-            "Ploidy",
-            "Tumor Purity",
-            "Subclonal Fraction",
-            "Contamination",
-            "Material",
-            "Platform",
-            "has matched N",
-            "HR Status",
-            "HER2 Status",
-            "Chemo Tx",
-            "XRT",
-            "Targeted Tx",
-            "Hormone Tx",
-            "Immuno Tx ICI",
-            "ADC",
-            "Age at P Dx",
-            "Sex",
-            "Sample Type",
-            "Histology"
-        ],
+        default=list(_META_ROWS.get("rows", [])),
         help="Comma-separated list of metadata fields to display.")
     parser.add_argument(
         "--meta-data-rows-per-sample", type=parse_comma_separated,
-        default=[
-            "WGD",
-            "Ploidy",
-            "Tumor Purity",
-            "Subclonal Fraction",
-            "Contamination",
-            "Material",
-            "Platform",
-            "HR Status",
-            "HER2 Status",
-            "Sample Type",
-        ],
+        default=list(_META_ROWS.get("rows_per_sample", [])),
         help="Metadata fields to display per sample."
     )
 
@@ -318,58 +292,41 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--low-amp-threshold", type=int, default=1,
+        "--low-amp-threshold", type=float, default=1,
         help="Threshold for low-level amplification."
     )
     parser.add_argument(
-        "--high-amp-threshold", type=int, default=2,
+        "--mid-amp-threshold", type=float, default=1.5,
+        help="Threshold for mid-level amplification."
+    )
+    parser.add_argument(
+        "--high-amp-threshold", type=float, default=2,
         help="Threshold for high-level amplification."
     )
     parser.add_argument(
-        "--low-del-threshold", type=int, default=-1,
+        "--baseline", type=float, default=0,
+        help="Copy-number value representing the neutral baseline."
+    )
+    parser.add_argument(
+        "--low-del-threshold", type=float, default=-1,
         help="Threshold for low-level deletion."
     )
     parser.add_argument(
-        "--high-del-threshold", type=int, default=-2,
+        "--mid-del-threshold", type=float, default=-1.5,
+        help="Threshold for mid-level deletion."
+    )
+    parser.add_argument(
+        "--high-del-threshold", type=float, default=-2,
         help="Threshold for high-level deletion."
     )
     parser.add_argument(
-        "--show-low-level-cnvs", default=True, action="store_true",
-        help="Include low-level CNVs in the plot."
+        "--show-low-level-cnvs", default=True, action=argparse.BooleanOptionalAction,
+        help="Include low-level CNVs in the plot (use --no-show-low-level-cnvs to hide them)."
     )
 
     parser.add_argument(
         "--panels-to-plot", type=parse_comma_separated,
-        default=[
-            "comutation",
-            "comutation control",
-            "cohort label",
-            "cohort label control",
-            "tmb",
-            "tmb control",
-            "tmb legend",
-            "mutational signatures",
-            "mutational signatures control",
-            "mutational signatures legend",
-            "recurrence",
-            "recurrence control",
-            "recurrence fold change",
-            "total recurrence fold change",
-            # "total recurrence",
-            # "total recurrence control",
-            "total recurrence overall",
-            "total recurrence overall control",
-            "gene meta data",
-            "cytoband",
-            "gene names",
-            "snv legend",
-            "cnv legend",
-            "model annotation",
-            "model annotation legend",
-            "meta data",
-            "meta data control",
-            "meta data legend"
-        ],
+        default=list(DEFAULT_PANELS),
         help="Comma-separated list of plot panels to include.")
     parser.add_argument(
         "--palette", type=parse_palette, default=None,
@@ -382,7 +339,7 @@ def parse_args():
         help="Maximum x-axis figure size; the comutation plot scales to fit."
     )
     parser.add_argument(
-        "--max-xfigsize-scale", type=int, default=1,
+        "--max-xfigsize-scale", type=float, default=1,
         help="Parameter by which xfigsize scales with the number of columns."
     )
 

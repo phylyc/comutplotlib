@@ -6,6 +6,7 @@ from typing import Callable, Optional, Union
 
 from comutplotlib.annotation_table import AnnotationTable
 from comutplotlib.sample_annotation import SampleAnnotation
+from comutplotlib.sample_classification import classify
 from comutplotlib import pandas_util as pd_util
 
 
@@ -27,7 +28,7 @@ class SIF(SampleAnnotation, AnnotationTable):
     def from_file(
         cls,
         path_to_file: str,
-        selection: Union[Callable[..., bool], dict] = None,
+        selection: Union[Callable[..., bool], dict, None] = None,
         complement: bool = False,
         encoding: str = "utf8",
         **kwargs
@@ -100,7 +101,7 @@ class SIF(SampleAnnotation, AnnotationTable):
 
     def select(
         self,
-        selection: Union[Callable[..., bool], dict],
+        selection: Union[Callable[..., bool], dict, None],
         complement: bool = False,
         inplace: bool = False,
     ) -> Optional["SIF"]:
@@ -114,11 +115,11 @@ class SIF(SampleAnnotation, AnnotationTable):
 
     def get_entry(
         self,
-        sample: str = None,
-        platform: str = None,
-        data_type: str = None,
-        histology: str = None,
-        sample_type: str = None,
+        sample: str | None = None,
+        platform: str | None = None,
+        data_type: str | None = None,
+        histology: str | None = None,
+        sample_type: str | None = None,
     ):
         mask = True
         if sample is not None:
@@ -182,214 +183,10 @@ class SIF(SampleAnnotation, AnnotationTable):
 
         # remove leading and trailing whitespace
         for column_name, column in sif.data.items():
-            if isinstance(sif.data[column_name].dtype, str):
-                sif.data[column_name] = column.str.strip()
-
-        def get_histology(cancer_type, histotype):
-            if "Breast" in cancer_type:
-                return "BRCA"
-
-            elif "Lung adenocarcinoma" in histotype or "Lung Adenocarcinoma" in histotype:
-                return "LUAD"
-            # elif "Adenosquamous lung carcinoma" in histotype:
-            #     return "ALCA"
-            # elif "Pleomorphic lung carcinoma" in histotype:
-            #     return "PLCA"
-            # elif "Squamous cell lung carcinoma" in histotype:
-            #     return "SCLC"
-            # elif "Non-small cell lung carcinoma" in histotype:
-            #     return "NSCLC"
-            # elif "Large cell lung carcinoma" in histotype:
-            #     return "LCLC"
-            elif "Lung cancer" in cancer_type:
-                return "LUCA"
-
-            elif "Melanoma" in cancer_type:
-                return "MEL"
-
-            elif "Renal cell carcinoma" in cancer_type or "Renal Clear Cell Carcinoma" in cancer_type:
-                return "RCC"
-
-            elif "Glioma" in cancer_type:
-                return "GLIO"
-            elif "Ependymoma" in cancer_type:
-                return "GLIO"
-
-            elif "Central Neurocytoma" in cancer_type:
-                return "CNC"
-
-            elif "Meningioma" in cancer_type:
-                return "MEN"
-
-            elif "Colon cancer" in cancer_type:
-                return "GI"
-            elif "Rectal cancer" in cancer_type:
-                return "GI"
-            elif "Colorectal cancer" in cancer_type:
-                return "GI"
-            elif "Duodenal cancer" in cancer_type:
-                return "GI"
-            elif "Esophageal cancer" in cancer_type:
-                return "GI"
-            elif "Pancreatic cancer" in cancer_type:
-                return "GI"
-            elif "GI cancer" in cancer_type:
-                return "GI"
-            elif "Gastric cancer" in cancer_type:
-                return "GI"
-
-            elif "Head & neck cancer" in cancer_type:
-                return "HNC"
-            elif "Oral cancer" in cancer_type:
-                return "HNC"  # "ORCA"
-
-            elif "Laryngeal cancer" in cancer_type:
-                return "LACA"
-
-            elif "Leukemia" in cancer_type:
-                return "LEUK"
-
-            elif "PCNSL" in histotype:  # Lymphoma
-                return "PCNSL"
-            # elif "Lymphoma" in cancer_type:
-            #     return "LYM"
-
-            elif "Esthesioneuroblastoma" in cancer_type:
-                return "ESNB"
-
-            elif "Sarcoma" in histotype or "Sarcoma" in cancer_type:
-                return "SARC"
-
-            elif "Pituitary tumor" in cancer_type:
-                return "PITT"
-
-            elif "Thyroid cancer" in cancer_type:
-                return "THCA"
-
-            elif "Cholangiocarcinoma (Bile duct cancer)" in cancer_type:
-                return "CHOL"
-
-            elif "Endocrine" in cancer_type:
-                return "ECRI"
-
-            elif "Urothelial cancer" in cancer_type:
-                return "BLCA"
-
-            elif "Prostate cancer" in cancer_type:
-                return "PRAD"
-
-            elif "Testicular cancer" in cancer_type:
-                return "TECA"
-
-            elif "Ovarian cancer" in cancer_type:
-                return "GynOnc"  # "OVCA"
-            elif "Ovarian  cancer" in cancer_type:
-                return "GynOnc"  # "OVCA"
-            elif "Serous ovarian carcinoma" in histotype:
-                return "GynOnc"  # "OVCA"
-            elif "Endometrial cancer" in cancer_type:
-                return "GynOnc"  # "UCEC"
-            elif "Uterine" in cancer_type:
-                return "GynOnc"  # "UCEC"
-            elif "Vaginal cancer" in cancer_type:
-                return "GynOnc"  # "VACA"
-
-            elif "Healthy donor" in cancer_type:
-                return "hd"
-
-            elif cancer_type == "N/A" and histotype == "N/A":
-                return "unknown"
-            elif cancer_type == "N/A":
-                return histotype
-            else:
-                return cancer_type
-
-        def get_platform(platform, center):
-            if "Custom V2 Exome Bait, 48 RXN X 16 tubes" in platform:
-                return "Agilent BI"
-            elif "NimbleGen hg18 Exome v2" in platform:
-                return "NimGen hg18"
-            elif "NimbleGen SeqCap EZ Human Exome Library v2.0" in platform:
-                return "NimGen v2"
-            elif "NimbleGen SeqCap EZ Human Exome Library v3.0" in platform:
-                return "NimGen v3"
-            elif "NimbleGen SeqCap EZ HGSC VCRome v2.1" in platform:
-                return "NimGen VCRome"
-            elif "NimbleGen SeqCap EZ HGSC VCRome v2.1-PKv1" in platform:
-                return "NimGen VCRome-PKv1"
-            elif "SureSelect Human All Exon 38 Mb v2" in platform:
-                return "Agilent SS 38Mb"
-            elif "SureSelect Human All Exon 50Mb Kit" in platform:
-                return "Agilent SS 50Mb"
-            elif platform == "Agilent":
-                return "Agilent CCGD" if center == "CCGD" else "Agilent BI"
-            elif platform == "ICE":
-                return "ICE"
-            elif platform == "TWIST":
-                return "TWIST"
-            elif "RNA" in platform:
-                return "RNAseq"
-            elif "Transcriptome" in platform:
-                return "Transcr"
-            elif "ULP" in platform:
-                return "ULP"
-            elif "HISEQ" in platform:
-                return "HiSeq"
-            elif "MiSeq" in platform:
-                return "MiSeq"
-            elif "Nova" in platform:
-                return "NovaSeq"
-            elif platform == "NA" and center == "NA":
-                return "unknown"
-            elif platform == "NA":
-                return center
-            else:
-                return platform.replace(" ", "-")
-
-        def get_sample_type(sample_type, sample_description):
-            if isinstance(sample_type, float) or sample_type in ["Unknown", "unknown"]:
-                return "unknown"
-            elif sample_type == "Normal":
-                return "N"
-            elif "Primary" in sample_type:
-                return "P"
-            elif "Brain metastasis" in sample_type or "Brain Metastasis" in sample_type:
-                return "BM"
-            elif sample_type in ["Extracranial metastasis", "Extracranial Metastasis", "Metastatic"]:
-                return "EM"
-            elif sample_type == "Tumor":
-                if isinstance(sample_description, str) and (
-                    "cfDNA" in sample_description or sample_description == "cfDNa"
-                ):
-                    return "cfDNA"
-                else:
-                    return "T"
-            else:
-                return sample_type
-
-        def get_sample_material(sample_material):
-            if (
-                isinstance(sample_material, float)
-                or sample_material == "Unknown"
-                or sample_material == "unknown"
-            ):
-                return "unknown"
-            elif "FFPE" in sample_material:
-                return "FFPE"
-            elif "FF" in sample_material:
-                return "FF"
-            elif "Blood" in sample_material:
-                return "Blood"
-            elif "Buffycoat" in sample_material:
-                return "Buffycoat"
-            elif "Plasma" in sample_material:
-                return "Plasma"
-            elif "CSF" in sample_material:
-                return "CSF"
-            elif "Urine" in sample_material:
-                return "Urine"
-            else:
-                return sample_material
+            if column.dtype == object:
+                sif.data[column_name] = column.map(
+                    lambda v: v.strip() if isinstance(v, str) else v
+                )
 
         if self.cancer_type in sif.data.columns:
             sif.data.loc[sif.data[self.cancer_type].isna(), self.cancer_type] = "NA"
@@ -399,7 +196,10 @@ class SIF(SampleAnnotation, AnnotationTable):
 
         if self.histology not in sif.data.columns and (self.cancer_type in sif.data.columns):
             sif.data[self.histology] = sif.data.apply(
-                lambda s: get_histology(s.get(self.cancer_type, ""), s.get(self.histotype, "")),
+                lambda s: classify("histology", {
+                    "cancer_type": s.get(self.cancer_type, ""),
+                    "histotype": s.get(self.histotype, ""),
+                }),
                 axis=1,
             )
 
@@ -411,7 +211,10 @@ class SIF(SampleAnnotation, AnnotationTable):
 
         if self.platform_abv not in sif.data.columns and (self.platform in sif.data.columns or self.center in sif.data.columns):
             sif.data[self.platform_abv] = sif.data.apply(
-                lambda s: get_platform(s.get(self.platform, ""), s.get(self.center, "")),
+                lambda s: classify("platform", {
+                    "platform": s.get(self.platform, ""),
+                    "center": s.get(self.center, ""),
+                }),
                 axis=1,
             )
 
@@ -420,15 +223,19 @@ class SIF(SampleAnnotation, AnnotationTable):
 
         if self.sample_type not in sif.data.columns and (self.sample_type_long in sif.data.columns):
             sif.data[self.sample_type] = sif.data.apply(
-                lambda s: get_sample_type(
-                    s.get(self.sample_type_long, ""), s.get(self.sample_description, "")
-                ),
+                lambda s: classify("sample_type", {
+                    "sample_type": s.get(self.sample_type_long, ""),
+                    "sample_description": s.get(self.sample_description, ""),
+                }),
                 axis=1,
             )
 
         if self.material in sif.data.columns:
             sif.data[self.material] = sif.data.apply(
-                lambda s: get_sample_material(s.get(self.material, "")), axis=1
+                lambda s: classify("sample_material", {
+                    "sample_material": s.get(self.material, ""),
+                }),
+                axis=1,
             )
 
         if self.sex in sif.data.columns:

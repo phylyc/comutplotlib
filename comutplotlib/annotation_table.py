@@ -11,9 +11,9 @@ class AnnotationTable(object):
     def from_file(
         cls,
         path_to_file: str,
-        selection: Union[Callable[..., bool], dict] = None,
+        selection: Union[Callable[..., bool], dict, None] = None,
         complement: bool = False,
-        encoding: str = None,
+        encoding: str | None = None,
         **kwargs
     ):
         if not os.path.exists(path_to_file):
@@ -61,7 +61,7 @@ class AnnotationTable(object):
         self,
         data: pd.DataFrame,
         *args,
-        selection: Union[Callable[..., bool], dict] = None,
+        selection: Union[Callable[..., bool], dict, None] = None,
         complement: bool = False,
         **kwargs,
     ):
@@ -82,7 +82,7 @@ class AnnotationTable(object):
 
     def select(
         self,
-        selection: Union[Callable[..., bool], dict],
+        selection: Union[Callable[..., bool], dict, None],
         complement: bool = False,
         inplace: bool = False,
     ) -> Optional["AnnotationTable"]:

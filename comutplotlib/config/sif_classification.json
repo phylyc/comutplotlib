@@ -1,0 +1,121 @@
+{
+  "_comment": "Ordered rule tables that harmonize free-text SIF fields into short, plot-friendly category codes. These encode institution/study-specific vocabulary that used to be hard-coded in comutplotlib/sif.py. Rules are evaluated top-to-bottom; the first match wins. Ops: 'contains' (any listed substring occurs in the field), 'equals' (field equals value, or is in values), 'na_or_in' (field is a float/NaN or in values), 'all'/'any' (combine nested conditions), 'default' (always matches). A 'return' of '@field' yields that field's raw value; transform 'replace_space_dash' replaces spaces with dashes. Adapt via $COMUTPLOTLIB_CONFIG_DIR/sif_classification.json.",
+  "histology": {
+    "fields": ["cancer_type", "histotype"],
+    "rules": [
+      {"op": "contains", "field": "cancer_type", "values": ["Breast"], "return": "BRCA"},
+      {"op": "contains", "field": "histotype", "values": ["Lung adenocarcinoma", "Lung Adenocarcinoma"], "return": "LUAD"},
+      {"op": "contains", "field": "cancer_type", "values": ["Lung cancer"], "return": "LUCA"},
+      {"op": "contains", "field": "cancer_type", "values": ["Melanoma"], "return": "MEL"},
+      {"op": "contains", "field": "cancer_type", "values": ["Renal cell carcinoma", "Renal Clear Cell Carcinoma"], "return": "RCC"},
+      {"op": "contains", "field": "cancer_type", "values": ["Glioma"], "return": "GLIO"},
+      {"op": "contains", "field": "cancer_type", "values": ["Ependymoma"], "return": "GLIO"},
+      {"op": "contains", "field": "cancer_type", "values": ["Central Neurocytoma"], "return": "CNC"},
+      {"op": "contains", "field": "cancer_type", "values": ["Meningioma"], "return": "MEN"},
+      {"op": "contains", "field": "cancer_type", "values": ["Colon cancer"], "return": "GI"},
+      {"op": "contains", "field": "cancer_type", "values": ["Rectal cancer"], "return": "GI"},
+      {"op": "contains", "field": "cancer_type", "values": ["Colorectal cancer"], "return": "GI"},
+      {"op": "contains", "field": "cancer_type", "values": ["Duodenal cancer"], "return": "GI"},
+      {"op": "contains", "field": "cancer_type", "values": ["Esophageal cancer"], "return": "GI"},
+      {"op": "contains", "field": "cancer_type", "values": ["Pancreatic cancer"], "return": "GI"},
+      {"op": "contains", "field": "cancer_type", "values": ["GI cancer"], "return": "GI"},
+      {"op": "contains", "field": "cancer_type", "values": ["Gastric cancer"], "return": "GI"},
+      {"op": "contains", "field": "cancer_type", "values": ["Head & neck cancer"], "return": "HNC"},
+      {"op": "contains", "field": "cancer_type", "values": ["Oral cancer"], "return": "HNC"},
+      {"op": "contains", "field": "cancer_type", "values": ["Laryngeal cancer"], "return": "LACA"},
+      {"op": "contains", "field": "cancer_type", "values": ["Leukemia"], "return": "LEUK"},
+      {"op": "contains", "field": "histotype", "values": ["PCNSL"], "return": "PCNSL"},
+      {"op": "contains", "field": "cancer_type", "values": ["Esthesioneuroblastoma"], "return": "ESNB"},
+      {"op": "any", "conditions": [
+        {"op": "contains", "field": "histotype", "values": ["Sarcoma"]},
+        {"op": "contains", "field": "cancer_type", "values": ["Sarcoma"]}
+      ], "return": "SARC"},
+      {"op": "contains", "field": "cancer_type", "values": ["Pituitary tumor"], "return": "PITT"},
+      {"op": "contains", "field": "cancer_type", "values": ["Thyroid cancer"], "return": "THCA"},
+      {"op": "contains", "field": "cancer_type", "values": ["Cholangiocarcinoma (Bile duct cancer)"], "return": "CHOL"},
+      {"op": "contains", "field": "cancer_type", "values": ["Endocrine"], "return": "ECRI"},
+      {"op": "contains", "field": "cancer_type", "values": ["Urothelial cancer"], "return": "BLCA"},
+      {"op": "contains", "field": "cancer_type", "values": ["Prostate cancer"], "return": "PRAD"},
+      {"op": "contains", "field": "cancer_type", "values": ["Testicular cancer"], "return": "TECA"},
+      {"op": "contains", "field": "cancer_type", "values": ["Ovarian cancer"], "return": "GynOnc"},
+      {"op": "contains", "field": "cancer_type", "values": ["Ovarian  cancer"], "return": "GynOnc"},
+      {"op": "contains", "field": "histotype", "values": ["Serous ovarian carcinoma"], "return": "GynOnc"},
+      {"op": "contains", "field": "cancer_type", "values": ["Endometrial cancer"], "return": "GynOnc"},
+      {"op": "contains", "field": "cancer_type", "values": ["Uterine"], "return": "GynOnc"},
+      {"op": "contains", "field": "cancer_type", "values": ["Vaginal cancer"], "return": "GynOnc"},
+      {"op": "contains", "field": "cancer_type", "values": ["Healthy donor"], "return": "hd"},
+      {"op": "all", "conditions": [
+        {"op": "equals", "field": "cancer_type", "value": "N/A"},
+        {"op": "equals", "field": "histotype", "value": "N/A"}
+      ], "return": "unknown"},
+      {"op": "equals", "field": "cancer_type", "value": "N/A", "return": "@histotype"},
+      {"op": "default", "return": "@cancer_type"}
+    ]
+  },
+  "platform": {
+    "fields": ["platform", "center"],
+    "rules": [
+      {"op": "contains", "field": "platform", "values": ["Custom V2 Exome Bait, 48 RXN X 16 tubes"], "return": "Agilent BI"},
+      {"op": "contains", "field": "platform", "values": ["NimbleGen hg18 Exome v2"], "return": "NimGen hg18"},
+      {"op": "contains", "field": "platform", "values": ["NimbleGen SeqCap EZ Human Exome Library v2.0"], "return": "NimGen v2"},
+      {"op": "contains", "field": "platform", "values": ["NimbleGen SeqCap EZ Human Exome Library v3.0"], "return": "NimGen v3"},
+      {"op": "contains", "field": "platform", "values": ["NimbleGen SeqCap EZ HGSC VCRome v2.1"], "return": "NimGen VCRome"},
+      {"op": "contains", "field": "platform", "values": ["NimbleGen SeqCap EZ HGSC VCRome v2.1-PKv1"], "return": "NimGen VCRome-PKv1"},
+      {"op": "contains", "field": "platform", "values": ["SureSelect Human All Exon 38 Mb v2"], "return": "Agilent SS 38Mb"},
+      {"op": "contains", "field": "platform", "values": ["SureSelect Human All Exon 50Mb Kit"], "return": "Agilent SS 50Mb"},
+      {"op": "all", "conditions": [
+        {"op": "equals", "field": "platform", "value": "Agilent"},
+        {"op": "equals", "field": "center", "value": "CCGD"}
+      ], "return": "Agilent CCGD"},
+      {"op": "equals", "field": "platform", "value": "Agilent", "return": "Agilent BI"},
+      {"op": "equals", "field": "platform", "value": "ICE", "return": "ICE"},
+      {"op": "equals", "field": "platform", "value": "TWIST", "return": "TWIST"},
+      {"op": "contains", "field": "platform", "values": ["RNA"], "return": "RNAseq"},
+      {"op": "contains", "field": "platform", "values": ["Transcriptome"], "return": "Transcr"},
+      {"op": "contains", "field": "platform", "values": ["ULP"], "return": "ULP"},
+      {"op": "contains", "field": "platform", "values": ["HISEQ"], "return": "HiSeq"},
+      {"op": "contains", "field": "platform", "values": ["MiSeq"], "return": "MiSeq"},
+      {"op": "contains", "field": "platform", "values": ["Nova"], "return": "NovaSeq"},
+      {"op": "all", "conditions": [
+        {"op": "equals", "field": "platform", "value": "NA"},
+        {"op": "equals", "field": "center", "value": "NA"}
+      ], "return": "unknown"},
+      {"op": "equals", "field": "platform", "value": "NA", "return": "@center"},
+      {"op": "default", "return": "@platform", "transform": "replace_space_dash"}
+    ]
+  },
+  "sample_type": {
+    "fields": ["sample_type", "sample_description"],
+    "rules": [
+      {"op": "na_or_in", "field": "sample_type", "values": ["Unknown", "unknown"], "return": "unknown"},
+      {"op": "equals", "field": "sample_type", "value": "Normal", "return": "N"},
+      {"op": "contains", "field": "sample_type", "values": ["Primary"], "return": "P"},
+      {"op": "contains", "field": "sample_type", "values": ["Brain metastasis", "Brain Metastasis"], "return": "BM"},
+      {"op": "equals", "field": "sample_type", "values": ["Extracranial metastasis", "Extracranial Metastasis", "Metastatic"], "return": "EM"},
+      {"op": "all", "conditions": [
+        {"op": "equals", "field": "sample_type", "value": "Tumor"},
+        {"op": "any", "conditions": [
+          {"op": "contains", "field": "sample_description", "values": ["cfDNA"]},
+          {"op": "equals", "field": "sample_description", "value": "cfDNa"}
+        ]}
+      ], "return": "cfDNA"},
+      {"op": "equals", "field": "sample_type", "value": "Tumor", "return": "T"},
+      {"op": "default", "return": "@sample_type"}
+    ]
+  },
+  "sample_material": {
+    "fields": ["sample_material"],
+    "rules": [
+      {"op": "na_or_in", "field": "sample_material", "values": ["Unknown", "unknown"], "return": "unknown"},
+      {"op": "contains", "field": "sample_material", "values": ["FFPE"], "return": "FFPE"},
+      {"op": "contains", "field": "sample_material", "values": ["FF"], "return": "FF"},
+      {"op": "contains", "field": "sample_material", "values": ["Blood"], "return": "Blood"},
+      {"op": "contains", "field": "sample_material", "values": ["Buffycoat"], "return": "Buffycoat"},
+      {"op": "contains", "field": "sample_material", "values": ["Plasma"], "return": "Plasma"},
+      {"op": "contains", "field": "sample_material", "values": ["CSF"], "return": "CSF"},
+      {"op": "contains", "field": "sample_material", "values": ["Urine"], "return": "Urine"},
+      {"op": "default", "return": "@sample_material"}
+    ]
+  }
+}
+
