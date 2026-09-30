@@ -52,6 +52,22 @@ def validate_args(args):
     if args.gene_meta_data is None:
         remove(ComutPanels.gene_meta_data)
 
+    # Grid stratification keys must be present as metadata rows so they are loaded.
+    if getattr(args, "column_group_by", None):
+        meta_rows = list(args.meta_data_rows) if args.meta_data_rows is not None else []
+        for key in args.column_group_by:
+            if key not in meta_rows:
+                meta_rows.append(key)
+        args.meta_data_rows = meta_rows
+
+    # Explicit column-group labels are only visible when the corresponding panel
+    # is drawn, so requesting labels implies requesting the panel.
+    if getattr(args, "column_group_labels", None):
+        if not getattr(args, "column_group_by", None):
+            raise ValueError("--column-group-labels requires --column-group-by.")
+        if ComutPanels.column_group_label not in args.panels_to_plot:
+            args.panels_to_plot.append(ComutPanels.column_group_label)
+
 
 def print_args(args):
     if args.verbose:
@@ -119,6 +135,13 @@ def parse_ground_truth_genes(value):
     return {k: v.split(",") for k, v in (x.split(":") for x in value.split(";"))}
 
 
+def parse_gene_groups(value):
+    """Parse gene groups for grid rows: 'GroupA:GeneA,GeneB;GroupB:GeneC'."""
+    if not value:
+        return None
+    return {k: v.split(",") for k, v in (x.split(":") for x in value.split(";"))}
+
+
 
 def parse_args():
     """Parse command-line arguments for ComutPlot."""
@@ -151,8 +174,21 @@ def parse_args():
         help="Path to a file containing mutational signature exposures (index: patient, columns: signatures)."
     )
     parser.add_argument(
+        "--group-signatures-by-etiology", default=False, action=argparse.BooleanOptionalAction,
+        help="Aggregate mutational signature exposures by etiology (e.g. 'clock-like', "
+             "'APOBEC', 'MMR', ...), summing all signatures that belong to the same "
+             "etiology into a single stacked-bar category. Signatures that are not part "
+             "of any known etiology keep their own category. Applies to both --signatures "
+             "and --control-signatures."
+    )
+    parser.add_argument(
         "--cohort-label", type=str, default=None,
         help="Name of the cohort for panel title."
+    )
+    parser.add_argument(
+        "--cohort-tag", type=str, default=None,
+        help="Short tag for the cohort, used for in-plot annotations such as the "
+             "fold-change panel arrows. Defaults to 'case'."
     )
 
     parser.add_argument(
@@ -174,6 +210,18 @@ def parse_args():
     parser.add_argument(
         "--control-cohort-label", type=str, default=None,
         help="Name of the control cohort for panel title."
+    )
+    parser.add_argument(
+        "--control-cohort-tag", type=str, default=None,
+        help="Short tag for the control cohort, used for in-plot annotations such "
+             "as the fold-change panel arrows. Defaults to 'control'."
+    )
+    parser.add_argument(
+        "--control-position", type=str, choices=["left", "right"], default="right",
+        help="Side on which to place the control cohort (only relevant when a "
+             "control cohort is supplied). 'right' (default) keeps the current "
+             "layout; 'left' swaps the case and control cohorts, including the "
+             "case/control fold-change arrows."
     )
 
     parser.add_argument(
@@ -219,6 +267,22 @@ def parse_args():
         help="Comma-separated order of 'COMUT', 'TMB', and meta data rows to sort by, in order."
     )
     parser.add_argument(
+        "--index-sort-by", type=str, default="COMUT",
+        choices=["COMUT", "fold-change", "high-fold-change", "low-fold-change"],
+        help="How to sort the gene (row) index. 'COMUT' is the standard mutation-based "
+             "ordering. The 'fold-change' modes require a control cohort and sort genes by "
+             "the case-vs-control fold change: 'fold-change' uses the total fold change across "
+             "all categories; 'high-fold-change' uses the selected high fold change (high/mid "
+             "CNV or SNV); 'low-fold-change' uses the selected low fold change (low CNV). "
+             "For the 'high'/'low' modes only the categories selected by --recurrence-categories "
+             "for each gene are considered."
+    )
+    parser.add_argument(
+        "--index-sort-by-direction", type=str, default="ascending",
+        choices=["ascending", "descending"],
+        help="Direction of the --index-sort-by ordering (default: descending)."
+    )
+    parser.add_argument(
         "--drop-empty-columns", action="store_true",
         help="Exclude samples/patients with no mutation data."
     )
@@ -231,6 +295,10 @@ def parse_args():
         "--meta-data-rows-per-sample", type=parse_comma_separated,
         default=list(_META_ROWS.get("rows_per_sample", [])),
         help="Metadata fields to display per sample."
+    )
+    parser.add_argument(
+        "--meta-data-position", type=str, choices=["top", "bottom"], default="bottom",
+        help="Place the sample metadata panel below the comutation plot, or above it below mutational signatures."
     )
 
     parser.add_argument(
@@ -341,6 +409,59 @@ def parse_args():
     parser.add_argument(
         "--max-xfigsize-scale", type=float, default=1,
         help="Parameter by which xfigsize scales with the number of columns."
+    )
+
+    # --- Grid sub-panels (see GRID_SUBPANELS_PLAN.md) ---
+    parser.add_argument(
+        "--column-group-by", type=parse_comma_separated, default=None,
+        help="Comma-separated metadata keys to stratify samples into grid columns "
+             "(e.g. 'Histology,Platform'). Keys are auto-added to --meta-data-rows."
+    )
+    parser.add_argument(
+        "--hide-grouped-meta-data", action="store_true",
+        help="Hide metadata rows used by --column-group-by from the metadata table."
+    )
+    parser.add_argument(
+        "--gene-groups", type=parse_gene_groups, default=None,
+        help="Explicit gene groups forming grid rows. Format: "
+             "'GroupA:GeneA,GeneB;GroupB:GeneC'. The order of the groups here "
+             "determines the top-to-bottom row order. Ungrouped genes go to a "
+             "trailing 'Other' row."
+    )
+    parser.add_argument(
+        "--group-order", type=parse_comma_separated, default=None,
+        help="Comma-separated ordering of individual GROUP VALUES (not the "
+             "--column-group-by column names, and not joined keys). For column "
+             "groups these are the metadata VALUES (e.g. 'neg,pos'; missing/"
+             "'unknown' values fall under --na-group-label); for gene groups they "
+             "are the group NAMES from --gene-groups. The list is applied at every "
+             "hierarchy level. Grid columns are nested in --column-group-by order "
+             "(first key = outermost split); within each level, listed values come "
+             "first (in this order), then the rest by group size (desc) then name. "
+             "Example: --column-group-by 'HR Status,HER2 Status' "
+             "--group-order 'neg,pos'."
+    )
+    parser.add_argument(
+        "--drop-ungrouped-genes", default=False, action=argparse.BooleanOptionalAction,
+        help="Drop genes not covered by --gene-groups instead of collecting them into 'Other'."
+    )
+    parser.add_argument(
+        "--column-group-labels", type=str, nargs="+", default=None,
+        help="Display labels for the grid columns created by --column-group-by, "
+             "applied positionally in grid-column order (i.e. the order resulting "
+             "from --group-order). Quote labels containing spaces, e.g. "
+             "--column-group-labels 'HR+ / HER2-' 'Triple negative'. Fewer labels "
+             "than grid columns leaves the trailing columns with their "
+             "auto-generated labels; pass '' to keep an individual one. Implies "
+             f"adding the '{ComutPanels.column_group_label}' panel to --panels-to-plot."
+    )
+    parser.add_argument(
+        "--na-group-label", type=str, default="NA",
+        help="Group label for samples with a missing stratification value."
+    )
+    parser.add_argument(
+        "--other-gene-group-label", type=str, default="Other",
+        help="Label for the trailing gene group of ungrouped genes."
     )
 
     args = parser.parse_args()

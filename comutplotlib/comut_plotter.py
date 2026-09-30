@@ -13,6 +13,14 @@ from comutplotlib.sample_annotation import SampleAnnotation as SA
 
 class ComutPlotter(Plotter):
 
+    titlesize = 8
+    groupsize = 6
+    label_size = 5
+    annotation_size = 4
+    subannotation_size = 3
+    ticksize = 4
+    subticksize = 3.5
+
     def __init__(self, output: str = "./comut.pdf", extra_palette=None) -> None:
         super().__init__(output=output, extra_palette=extra_palette)
 
@@ -20,8 +28,8 @@ class ComutPlotter(Plotter):
         ax.text(
             0.5,
             0,
-            label,
-            fontsize=8,
+            label.replace("-", "\N{MINUS SIGN}"),
+            fontsize=self.titlesize,
             # fontweight="bold",
             horizontalalignment="center",
             verticalalignment="bottom",
@@ -29,6 +37,39 @@ class ComutPlotter(Plotter):
         ax.set_xticks([])
         ax.set_yticks([])
         self.no_spines(ax=ax)
+
+    def plot_blank(self, ax):
+        """Render an empty, invisible panel — used for grid scaffold cells whose
+        comutation heatmap is not drawn. Keeps the layout geometry intact without
+        showing default axes spines/ticks."""
+        ax.set_xticks([])
+        ax.set_yticks([])
+        self.no_spines(ax=ax)
+
+    def plot_group_label(self, ax, label, is_top=False, orientation="horizontal", offset=False):
+        """Draw a grid sub-panel group title.
+
+        ``orientation="horizontal"`` is used for column-group headers (drawn
+        above the top marginals); ``orientation="vertical"`` is used for
+        gene-group labels (drawn rotated in the far-left gutter).
+        """
+        rotation = 0 if orientation == "horizontal" else 90
+        _label = label if len(label) < 10 else label.replace(" ", "\n")
+        ax.text(
+            # ((offset + 1) % 2) * 1,
+            0.5 if is_top else 1.5,
+            0.0 if is_top else 0.5,
+            _label.replace("-", "\N{MINUS SIGN}"),
+            fontsize=self.groupsize,
+            # fontweight="heavy",
+            rotation=rotation,
+            horizontalalignment="center" if is_top else "right",
+            verticalalignment="center",
+        )
+        ax.set_xticks([])
+        ax.set_yticks([])
+        self.no_spines(ax=ax)
+        ax.patch.set_alpha(0)
 
     def plot_protein_recurrence(self, ax, snv, genes, columns, snv_recurrence_threshold: int = 5, pad=0.1):
 
@@ -146,7 +187,7 @@ class ComutPlotter(Plotter):
 
         return ax
 
-    def plot_recurrence(self, ax, snv, cnv, genes, cnv_cmap, categories: dict[str, list[str]], pad=0.1, max_xlim=None, invert_x=False, set_joint_title=None, label_bottom=True):
+    def plot_recurrence(self, ax, snv, cnv, genes, cnv_cmap, categories: dict[str, list[str]], pad=0.1, max_xlim=None, invert_x=False, set_joint_title=None, label_bottom=True, label_top=True):
 
         cnv_counts = cnv.get_num_patients_by_gene_by_cn_level().reindex(index=genes).fillna(0)
         snv_counts = snv.get_num_patients_by_gene_by_effect().reindex(index=genes).fillna(0)
@@ -309,6 +350,15 @@ class ComutPlotter(Plotter):
             percent_ax.xaxis.set_minor_formatter(ticker.NullFormatter())
             percent_ax.xaxis.set_major_formatter(ticker.NullFormatter())
             percent_ax.tick_params(axis="x", which="both", length=0)
+
+        if not label_top:
+            # Hide the top (number) tick labels/marks and axis label, but keep
+            # the x gridlines intact (same approach as the TMB panel: null the
+            # formatters and zero the tick length rather than clearing ticks).
+            label_ax.set_xlabel("")
+            ax.xaxis.set_minor_formatter(ticker.NullFormatter())
+            ax.xaxis.set_major_formatter(ticker.NullFormatter())
+            ax.tick_params(axis="x", which="both", length=0)
 
         return ax
 
@@ -474,7 +524,7 @@ class ComutPlotter(Plotter):
             # label_ax.set_xlabel(f"Number\nof {_by}", fontdict=dict(fontsize=4), labelpad=11)
             percent_ax.set_xlabel(f"Fraction\nof {_by}", fontdict=dict(fontsize=4), labelpad=3)
 
-    def plot_recurrence_fold_change(self, ax, fold_change, genes, cnv_cmap, categories, effects, amp_thresholds, del_thresholds, label_x=True, pad=0.1):
+    def plot_recurrence_fold_change(self, ax, fold_change, genes, cnv_cmap, categories, effects, amp_thresholds, del_thresholds, label_x=True, pad=0.1, xmax=None, label_top=True, case_on_left=True, case_label="case", control_label="control"):
 
         thresholds = {
             "snv": effects,
@@ -483,7 +533,8 @@ class ComutPlotter(Plotter):
         }
         cmap = self.palette | cnv_cmap | {None: self.palette.white}
 
-        xmax = max(2.05, 1.2 * max(np.abs(np.min(fold_change["mean"][amp_thresholds + del_thresholds])), np.max(fold_change["mean"][amp_thresholds + del_thresholds])))
+        if xmax is None:
+            xmax = max(2.05, 1.2 * max(np.abs(np.min(fold_change["mean"][amp_thresholds + del_thresholds])), np.max(fold_change["mean"][amp_thresholds + del_thresholds])))
 
         for i, (gene_name, row) in enumerate(fold_change["mean"].iterrows()):
             categories_for_gene = categories.get(gene_name, ["snv", "amp", "del"]) if isinstance(categories, dict) else categories
@@ -558,14 +609,20 @@ class ComutPlotter(Plotter):
 
         ax.axvline(x=0, color=self.palette.black, linewidth=1)
 
-        for x, label in zip([xmax, -xmax], ["case", "control"]):
-            patch = patches.FancyArrowPatch(
-                (0, len(genes) + 0.7), (x, len(genes) + 0.7),
-                arrowstyle="-|>", mutation_scale=5, lw=0.7,
-                color=self.palette.black, clip_on=False, zorder=0
-            )
-            ax.add_patch(patch)
-            ax.text(x / 2, len(genes) + 0.9, label, ha="center", va="bottom", fontsize=4)
+        if label_top:
+            for _i, (x, label) in enumerate(zip([xmax, -xmax], [case_label, control_label])):
+                ha = "right" if _i % 2 else "left"
+                if not label:
+                    continue
+                patch = patches.FancyArrowPatch(
+                    (0, len(genes) + 0.7), (x, len(genes) + 0.7),
+                    arrowstyle="-|>", mutation_scale=5, lw=0.7,
+                    color=self.palette.black, clip_on=False, zorder=0
+                )
+                ax.add_patch(patch)
+                ax.text(x / 10, len(genes) + 0.9, label.replace(" ", "\n"), ha=ha, va="bottom", fontsize=4)
+            n_label_lines = max(case_label.count(" "), control_label.count(" ")) + 1
+            ax.text(0, len(genes) + 1 + n_label_lines * 0.9, "Enrichment", ha="center", va="bottom", fontsize=5)
 
         major_ticks = np.arange(start=-10, stop=10)
         minor_ticks = [np.log2(x) for l, r in zip(major_ticks[:-1], major_ticks[1:]) for x in np.linspace(2. ** l, 2. ** r, num=5) if l >= 0]
@@ -576,13 +633,13 @@ class ComutPlotter(Plotter):
 
         if label_x:
             ax.set_xticklabels([f"{2. ** i:g}" if i >= 0 else f"{2. ** (-i):g}" for i in ax.get_xticks()])
-            ax.set_xlabel("Fraction Fold-Change\n(regularized; with 80% CI)", fontdict=dict(fontsize=4), labelpad=3)
+            ax.set_xlabel("Prevalence Ratio\n(80% CI)", fontdict=dict(fontsize=4), labelpad=3)
         else:
             ax.xaxis.set_minor_formatter(ticker.NullFormatter())
             ax.xaxis.set_major_formatter(ticker.NullFormatter())
             ax.tick_params(axis="x", which="both", length=0)
 
-        ax.set_xlim([xmax, -xmax])
+        ax.set_xlim([xmax, -xmax] if case_on_left else [-xmax, xmax])
         ax.set_ylim([0, len(genes)])
         ax.set_yticks([])
         ax.tick_params(axis="both", labelsize=4, pad=1)
@@ -656,7 +713,7 @@ class ComutPlotter(Plotter):
         ax.set_yticks([])
 
         ax.tick_params(axis="both", labelsize=4, pad=1)
-        ax.set_xlabel("Fraction Fold-Change\n(regularized; with 80% CI)", fontdict=dict(fontsize=4), labelpad=3)
+        ax.set_xlabel("Prevalence Ratio\n(80% CI)", fontdict=dict(fontsize=4), labelpad=3)
         self.grid(ax=ax, axis="x", which="major", zorder=0.5, linewidth=0.4)
         self.grid(
             ax=ax,
@@ -668,19 +725,20 @@ class ComutPlotter(Plotter):
         )
         self.no_spines(ax=ax)
 
-    def plot_cytoband(self, ax, cytobands: pd.Series):
+    def plot_cytoband(self, ax, cytobands: pd.Series, show_title: bool = True):
         for y, (gene, cytoband) in enumerate(cytobands.items()):
             ax.text(
                 0.5,
                 y + 0.4,
                 cytoband,
-                fontsize=3,
+                fontsize=self.subannotation_size,
                 horizontalalignment="center",
                 verticalalignment="center",
             )
         ax.set_ylim([0, cytobands.size])
-        ax.set_xlabel("Cytoband", fontdict=dict(fontsize=5), rotation="vertical")
-        ax.xaxis.set_label_position("top")
+        if show_title:
+            ax.set_xlabel("Cytoband", fontdict=dict(fontsize=self.label_size), rotation="vertical")
+            ax.xaxis.set_label_position("top")
         ax.set_xticks([])
         ax.set_yticks([])
         self.no_spines(ax)
@@ -721,7 +779,13 @@ class ComutPlotter(Plotter):
         ax.set_yticks([])
         self.no_spines(ax)
 
-    def plot_tmb(self, ax, tmb: pd.DataFrame, tmb_threshold=10, ytickpad=0, fontsize=5, aspect_ratio=1, ymin=5 * 1e-1, ymax=1e4, shared_y_ax=None):
+    def plot_tmb(self, ax, tmb: pd.DataFrame, tmb_threshold=10, ytickpad=0, aspect_ratio=1, ymin=5 * 1e-1, ymax=1e4, shared_y_ax=None, median_on_right=None):
+        # The median/percentage annotations are placed on the right by default
+        # (first panel). ``median_on_right`` lets callers force the side without
+        # affecting the shared y-axis (gridlines/ticks). When None it falls back
+        # to the legacy behaviour (right when this panel owns the y-axis).
+        if median_on_right is None:
+            median_on_right = shared_y_ax is None
         if SA.tmb in tmb.columns:
             if SA.n_vars in tmb.columns and SA.n_bases in tmb.columns:
                 # test if tmb is significantly higher than threshold:
@@ -759,7 +823,7 @@ class ComutPlotter(Plotter):
                 **bar_kwargs
             )
             if shared_y_ax is None:
-                ax.set_ylabel(ylabel="TMB\n[/Mb]", fontdict=dict(fontsize=fontsize))
+                ax.set_ylabel(ylabel="TMB\n[/Mb]", fontdict=dict(fontsize=self.label_size))
         else:  # columns are a list of functional effects
             tmb.plot.bar(
                 stacked=True,
@@ -769,7 +833,7 @@ class ComutPlotter(Plotter):
                 legend=False,
             )
             if shared_y_ax is None:
-                ax.set_ylabel(ylabel="Mutation\nBurden", fontdict=dict(fontsize=fontsize))
+                ax.set_ylabel(ylabel="Mutation\nBurden", fontdict=dict(fontsize=self.label_size))
             else:
                 ax.set_yticks(shared_y_ax.get_yticks())  # set ticks for grid
         ax.set_xlim([-0.5, tmb.shape[0] - 0.5])
@@ -780,7 +844,7 @@ class ComutPlotter(Plotter):
         if shared_y_ax is None:
             ax.yaxis.set_minor_locator(ticker.NullLocator())
             ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _: "{:g}".format(y)))
-            ax.tick_params(axis="y", labelsize=5)
+            ax.tick_params(axis="y", labelsize=self.ticksize)
             for tick in ax.yaxis.get_major_ticks():
                 tick.set_pad(ytickpad)
         else:
@@ -794,31 +858,31 @@ class ComutPlotter(Plotter):
             ax.axhline(y=tmb_threshold, color=self.palette.high_tmb, linewidth=0.5, ls="--", zorder=1)
             ax.axhline(y=tmb[SA.tmb].median(), color=self.palette.darkgrey, linewidth=0.5, ls="--", zorder=0)
             median_tmb = f"{tmb[SA.tmb].median():.1f}"
-            median_tmb = " " + median_tmb if shared_y_ax is None else median_tmb + " "
+            median_tmb = " " + median_tmb if median_on_right else median_tmb + " "
             ax.text(
-                x=ax.get_xlim()[1] if shared_y_ax is None else ax.get_xlim()[0],
+                x=ax.get_xlim()[1] if median_on_right else ax.get_xlim()[0],
                 y=tmb[SA.tmb].median(),
                 s=median_tmb,
                 color=self.palette.darkgrey,
-                fontsize=4,
+                fontsize=self.subticksize,
                 verticalalignment="center",
-                horizontalalignment="left" if shared_y_ax is None else "right",
+                horizontalalignment="left" if median_on_right else "right",
             )
             # create yticklabel on the right for the TMB threshold and label it with perc_high_tmb
             ax2 = ax.twinx()
-            if shared_y_ax is not None:
+            if not median_on_right:
                 ax2.yaxis.set_ticks_position("left")
             self.no_spines(ax2)
             ax2.set_ylim(ax.get_ylim())
             ax2.set_yscale("log")
             ax2.set_yticks([tmb_threshold])
             ax2.yaxis.set_minor_locator(ticker.NullLocator())
-            ax2.tick_params(axis="y", pad=0, length=0, labelsize=5, labelcolor=self.palette.high_tmb, labelrotation=90)
+            ax2.tick_params(axis="y", pad=0, length=0, labelsize=self.ticksize, labelcolor=self.palette.high_tmb, labelrotation=90)
             ax2.set_yticklabels([" {:.0f}%".format(perc_high_tmb * 100)], fontdict=dict(verticalalignment="bottom"))
             for tick in ax2.yaxis.get_major_ticks():
                 tick.set_pad(ytickpad)
 
-    def plot_signatures(self, ax, signatures, signatures_cmap, ytickpad=0, fontsize=5, add_ylabel=True):
+    def plot_signatures(self, ax, signatures, signatures_cmap, ytickpad=0, add_ylabel=True):
         fractions = signatures / signatures.sum(axis=1).to_numpy()[:, None]
         fractions = fractions[fractions.columns[::-1]]
         fractions.plot.bar(
@@ -836,9 +900,9 @@ class ComutPlotter(Plotter):
             ax.set_yticks([0, 1])
             ax.set_ylabel(
                 ylabel="Exposure\nFraction",
-                fontdict=dict(fontsize=fontsize),
+                fontdict=dict(fontsize=self.label_size),
             )
-            ax.tick_params(axis="y", labelsize=5)
+            ax.tick_params(axis="y", labelsize=self.ticksize)
             for tick in ax.yaxis.get_major_ticks():
                 tick.set_pad(ytickpad)
         else:
@@ -918,7 +982,7 @@ class ComutPlotter(Plotter):
         ax.tick_params(
             axis="both",
             which="both",
-            labelsize=4,
+            labelsize=self.annotation_size,
             bottom=False,
             top=False,
             labelbottom=labelbottom,
@@ -941,7 +1005,7 @@ class ComutPlotter(Plotter):
                 y + 0.4,
                 gene,
                 color=color,
-                fontsize=4,
+                fontsize=self.annotation_size,
                 fontweight="bold" if gene in ground_truth_palette else "normal",
                 horizontalalignment="right",
                 verticalalignment="center",
@@ -951,7 +1015,7 @@ class ComutPlotter(Plotter):
         ax.set_yticks([])
         self.no_spines(ax)
 
-    def plot_gene_meta_data(self, ax, gene_meta_data, fontsize=5):
+    def plot_gene_meta_data(self, ax, gene_meta_data, show_title=True):
         xmax = gene_meta_data.shape[1]
         ymax = gene_meta_data.shape[0]
         for x, col in enumerate(gene_meta_data.columns):
@@ -978,11 +1042,15 @@ class ComutPlotter(Plotter):
         ax.set_xlim([0, xmax])
         ax.set_ylim([0, ymax])
         ax.set_xticks(np.arange(xmax) + 0.5)
-        ax.set_xticklabels([c.replace("_", " ") for c in gene_meta_data.columns])
         ax.xaxis.set_label_position("top")
         ax.xaxis.set_ticks_position("top")
-        ax.set_xlabel("Pathway", fontdict=dict(fontsize=fontsize))
-        ax.tick_params(axis="x", pad=3, length=0, labelrotation=90, labelsize=4)
+        if show_title:
+            ax.set_xticklabels([c.replace("_", " ") for c in gene_meta_data.columns])
+            ax.set_xlabel("Pathway", fontdict=dict(fontsize=self.annotation_size))
+        else:
+            ax.set_xticklabels([])
+            ax.set_xlabel("")
+        ax.tick_params(axis="x", pad=3, length=0, labelrotation=90, labelsize=self.annotation_size)
         # for tick in ax.xaxis.get_major_ticks():
         #     tick.set_pad(0)
         ax.set_yticks([])
@@ -1019,7 +1087,7 @@ class ComutPlotter(Plotter):
         ax.tick_params(
             axis="both",
             which="both",
-            labelsize=4,
+            labelsize=self.annotation_size,
             bottom=False,
             top=False,
             labelbottom=labelbottom,
@@ -1032,6 +1100,10 @@ class ComutPlotter(Plotter):
         ax.set_ylabel(None)
         ax.invert_yaxis()
         self.no_spines(ax)
+
+    @staticmethod
+    def standardize_meta_labels(label):
+        return label.replace(" inferred", "")
 
     def plot_legend(self, ax, cmap, names=None, title=None, title_loc="top"):
         discrete = isinstance(cmap, Palette)
@@ -1057,14 +1129,14 @@ class ComutPlotter(Plotter):
             ax.set_yticks([_norm.inverse(0), _norm.inverse(1)])
         ax.set_xticks([])
         ax.xaxis.set_major_locator(ticker.NullLocator())
-        ax.tick_params(axis="both", labelsize=4, width=0.5)
+        ax.tick_params(axis="both", labelsize=self.annotation_size, width=0.5)
         ax.yaxis.set_label_position("right")
         ax.yaxis.set_ticks_position("right")
         if title is not None:
             if title_loc == "top":
-                ax.set_title(title, fontsize=4, loc="left", horizontalalignment="left", pad=5)
+                ax.set_title(self.standardize_meta_labels(title), fontsize=self.label_size, loc="left", horizontalalignment="left", pad=5)
             elif title_loc == "bottom":
-                ax.set_title(title, fontsize=4, loc="left", horizontalalignment="left", verticalalignment="top", y=0, pad=-5)
+                ax.set_title(self.standardize_meta_labels(title), fontsize=self.label_size, loc="left", horizontalalignment="left", verticalalignment="top", y=0, pad=-5)
             else:
                 pass
         self.set_spines(ax=ax, linewidth=0.5)
@@ -1088,14 +1160,14 @@ class ComutPlotter(Plotter):
         ax.xaxis.set_major_locator(ticker.NullLocator())
         ax.set_yticks(np.arange(2) + 0.5)
         ax.set_yticklabels(reversed(names))
-        ax.tick_params(axis="both", labelsize=4, width=0.5)
+        ax.tick_params(axis="both", labelsize=self.annotation_size, width=0.5)
         ax.yaxis.set_label_position("right")
         ax.yaxis.set_ticks_position("right")
         if title is not None:
             if title_loc == "top":
-                ax.set_title(title, fontsize=4, loc="left", horizontalalignment="left", pad=5)
+                ax.set_title(title, fontsize=self.label_size, loc="left", horizontalalignment="left", pad=5)
             elif title_loc == "bottom":
-                ax.set_title(title, fontsize=4, loc="left", horizontalalignment="left", verticalalignment="top", y=0, pad=-5)
+                ax.set_title(title, fontsize=self.label_size, loc="left", horizontalalignment="left", verticalalignment="top", y=0, pad=-5)
             else:
                 pass
         self.no_spines(ax)

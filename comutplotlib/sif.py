@@ -162,7 +162,51 @@ class SIF(SampleAnnotation, AnnotationTable):
         else:
             return np.array([])
 
-    def add_annotations(self, inplace: bool = False):
+    def get_entries(
+        self,
+        sample: str | None = None,
+        patient: str | None = None,
+        platform: str | None = None,
+        data_type: str | None = None,
+        histology: str | None = None,
+        sample_type: str | None = None,
+    ) -> pd.DataFrame:
+        mask = True
+        if sample is not None:
+            mask &= self.data[self.sample] == sample
+        if patient is not None:
+            mask &= self.data[self.patient] == patient
+        if data_type is not None:
+            mask &= self.data[self.data_type] == data_type
+        if platform is not None and self.platform_abv in self.data.columns:
+            mask &= self.data[self.platform_abv] == platform
+        if histology is not None and self.histology in self.data.columns:
+            mask &= self.data[self.histology] == histology
+        if sample_type is not None:
+            mask &= self.data[self.sample_type] == sample_type
+        return self.data.loc[mask]
+
+    def get_patient(self, sample: str):
+        patient_series = self.get_entries(sample=sample)[self.patient]
+        if not patient_series.empty:
+            return patient_series.to_numpy()[0]
+        else:
+            return None
+
+    def get_samples(self, patient: str):
+        return self.get_entries(patient=patient)[self.sample].unique()
+
+    def get_matched_normal_sample(self, sample: str):
+        patient = self.get_patient(sample=sample)
+        if patient is not None:
+            normal_samples = self.get_entries(patient=patient, sample_type="N")[
+                self.sample
+            ].to_numpy()
+            if len(normal_samples) and sample not in normal_samples:
+                return normal_samples[0]
+        return None
+
+    def add_annotations(self, force: bool = False, inplace: bool = False):
         sif = self.copy()
         sif.data = sif.data.loc[~sif.data[self.sample].isna()]
         cols_to_drop = sif.data.apply(
@@ -194,14 +238,17 @@ class SIF(SampleAnnotation, AnnotationTable):
         if self.histotype in sif.data.columns:
             sif.data.loc[sif.data[self.histotype].isna(), self.histotype] = "NA"
 
-        if self.histology not in sif.data.columns and (self.cancer_type in sif.data.columns):
-            sif.data[self.histology] = sif.data.apply(
-                lambda s: classify("histology", {
-                    "cancer_type": s.get(self.cancer_type, ""),
-                    "histotype": s.get(self.histotype, ""),
-                }),
-                axis=1,
-            )
+        if self.cancer_type in sif.data.columns:
+            if self.histology in sif.data.columns and not force:
+                pass
+            else:
+                sif.data[self.histology] = sif.data.apply(
+                    lambda s: classify("histology", {
+                        "cancer_type": s.get(self.cancer_type, ""),
+                        "histotype": s.get(self.histotype, ""),
+                    }),
+                    axis=1,
+                )
 
         if self.center in sif.data.columns:
             sif.data.loc[sif.data[self.center].isna(), self.center] = "NA"
@@ -209,26 +256,32 @@ class SIF(SampleAnnotation, AnnotationTable):
         if self.platform in sif.data.columns:
             sif.data.loc[sif.data[self.platform].isna(), self.platform] = "NA"
 
-        if self.platform_abv not in sif.data.columns and (self.platform in sif.data.columns or self.center in sif.data.columns):
-            sif.data[self.platform_abv] = sif.data.apply(
-                lambda s: classify("platform", {
-                    "platform": s.get(self.platform, ""),
-                    "center": s.get(self.center, ""),
-                }),
-                axis=1,
-            )
+        if self.platform in sif.data.columns or self.center in sif.data.columns:
+            if self.platform_abv in sif.data.columns and not force:
+                pass
+            else:
+                sif.data[self.platform_abv] = sif.data.apply(
+                    lambda s: classify("platform", {
+                        "platform": s.get(self.platform, ""),
+                        "center": s.get(self.center, ""),
+                    }),
+                    axis=1,
+                )
 
         if self.data_type in sif.data.columns:
             sif.data.loc[sif.data[self.data_type].isna(), self.data_type] = "NA"
 
-        if self.sample_type not in sif.data.columns and (self.sample_type_long in sif.data.columns):
-            sif.data[self.sample_type] = sif.data.apply(
-                lambda s: classify("sample_type", {
-                    "sample_type": s.get(self.sample_type_long, ""),
-                    "sample_description": s.get(self.sample_description, ""),
-                }),
-                axis=1,
-            )
+        if self.sample_type_long in sif.data.columns:
+            if self.sample_type in sif.data.columns and not force:
+                pass
+            else:
+                sif.data[self.sample_type] = sif.data.apply(
+                    lambda s: classify("sample_type", {
+                        "sample_type": s.get(self.sample_type_long, ""),
+                        "sample_description": s.get(self.sample_description, ""),
+                    }),
+                    axis=1,
+                )
 
         if self.material in sif.data.columns:
             sif.data[self.material] = sif.data.apply(
@@ -248,6 +301,16 @@ class SIF(SampleAnnotation, AnnotationTable):
                 .str.replace("Male", "XY")
                 .str.replace("male", "XY")
                 .fillna("unknown")
+            )
+
+        if self.sample_type in sif.data.columns:
+            sif.data[SIF.is_paired] = sif.data[SIF.sample].apply(
+                lambda s: sif.get_matched_normal_sample(sample=s) is not None
+            )
+
+        if self.sample_type in sif.data.columns:
+            sif.data[SIF.has_metastasis] = sif.data[SIF.sample].apply(
+                lambda s: sif.get_entries(patient=sif.get_patient(sample=s))[SIF.sample_type].isin(["BM", "EM"]).any()
             )
 
         if inplace:

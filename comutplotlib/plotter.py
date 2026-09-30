@@ -1,3 +1,6 @@
+import contextlib
+import logging
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import rcParams, ticker
 import numpy as np
@@ -5,6 +8,41 @@ import os
 from typing import Iterable
 
 from comutplotlib.palette import Palette
+
+
+#: rcParams that make text in vector output remain real, editable text objects
+#: instead of being rendered as outlines/paths. These are evaluated by the
+#: respective backends at save time, so they only need to be active while
+#: ``Figure.savefig`` runs.
+VECTOR_TEXT_RCPARAMS = {
+    "pdf.fonttype": 42,  # TrueType instead of Type 3
+    "ps.fonttype": 42,  # TrueType instead of Type 3
+    "svg.fonttype": "none",  # keep <text> elements, don't convert to paths
+}
+
+
+@contextlib.contextmanager
+def _quiet_fonttools():
+    """Silence fontTools' per-table subsetting chatter while saving.
+
+    With ``pdf.fonttype: 42`` matplotlib subsets embedded fonts via
+    ``fontTools.subset``, which logs a few dozen INFO records per figure. Those
+    are noise for our users, and they become visible because some dependencies
+    (e.g. ``gtfparse``) call ``logging.basicConfig(level=logging.INFO)`` at
+    import time, which forces the root logger to INFO.
+
+    A level that was set explicitly on the ``fontTools`` logger is left alone,
+    so anyone debugging font embedding can still opt back in.
+    """
+    logger = logging.getLogger("fontTools")
+    if logger.level != logging.NOTSET:
+        yield
+        return
+    logger.setLevel(logging.WARNING)
+    try:
+        yield
+    finally:
+        logger.setLevel(logging.NOTSET)
 
 
 class Plotter(object):
@@ -32,7 +70,8 @@ class Plotter(object):
         name = name if name is not None else self.file_name
         if name.endswith(".png"):
             kwargs["dpi"] = kwargs.get("dpi", 600)
-        _fig.savefig(os.path.join(path, name), **kwargs)
+        with mpl.rc_context(rc=VECTOR_TEXT_RCPARAMS), _quiet_fonttools():
+            _fig.savefig(os.path.join(path, name), **kwargs)
 
     @staticmethod
     def close_figure(fig=None, ax=None):

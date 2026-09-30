@@ -30,7 +30,7 @@ class SEG(object):
     _gene_name = "gene_name"
 
     @classmethod
-    def from_file(cls, path_to_file: str, encoding: str = "utf8", columns: list[str] | None = None, log_tCR_base: float = 2):
+    def from_file(cls, path_to_file: str, encoding: str = "utf8", columns: list[str] | None = None, log_tCR_base: float = 2, add_gene_names: bool = False):
         if not os.path.exists(path_to_file):
             raise FileNotFoundError(
                 f"No SEG instance created. No such file or directory: '{path_to_file}'"
@@ -39,7 +39,7 @@ class SEG(object):
         with open_func(path_to_file, mode="rt", encoding=encoding) as f:
             data = pd.read_csv(filepath_or_buffer=f, sep="\t", engine="c", comment="#", header=0, names=columns)
         data[cls._log2_tCR] *= np.log(log_tCR_base) / np.log(2)
-        return SEG(data=data)
+        return SEG(data=data, add_gene_names=add_gene_names)
 
     def __init__(self, data=None, add_gene_names=True):
         self.data = (
@@ -48,6 +48,10 @@ class SEG(object):
         )
         if add_gene_names:
             self.add_gene_name()
+
+    @property
+    def empty(self) -> bool:
+        return self.data.empty
 
     def add_gene_name(self, verbose=False):
         data_is_incomplete = (
@@ -125,3 +129,14 @@ class SEG(object):
     def join(self, other: "SEG") -> "SEG":
         joined = pd.concat([self.data, other.data], ignore_index=True)
         return SEG(data=joined)
+
+    def to_csv(self, path_to_file: str, **kwargs) -> None:
+        self.data.to_csv(
+            path_or_buf=path_to_file,
+            header=True,
+            index=False,
+            sep="\t",
+            na_rep="nan",
+            mode="w+",
+            **kwargs,
+        )

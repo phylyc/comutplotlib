@@ -22,10 +22,11 @@ class MutationalSignatureSet(object):
         ],
         "HRD": [
             "SBS3",
+            "DBS13",
+            "ID6",
         ],
         "MMR": [
             "SBS6",
-            "SBS8",
             "SBS14",
             "SBS15",
             "SBS20",
@@ -36,8 +37,6 @@ class MutationalSignatureSet(object):
             "SBS44",
             "DBS7",
             "DBS10",
-            "DBS13",
-            "ID6",
             "ID7",
             "ID8",  # TOP2A
             "ID17",  # TOP2A
@@ -94,10 +93,58 @@ class MutationalSignatureSet(object):
             "DBS14"
         ],
         "Unknown": [
+            "SBS8",
+            "SBS16",
+            "SBS34",
+            "SBS41",
             "SBS41b",
             "SBS41c"
         ]
     }
+
+    @classmethod
+    def get_signature_to_set_map(cls) -> dict[str, str]:
+        """Map every known signature name onto the name of its etiology set.
+
+        The etiology names themselves are included as identity entries so that
+        grouping is idempotent: exposures that are already aggregated by
+        etiology (or supplied that way) are passed through unchanged.
+        """
+        mapping = {set_name: set_name for set_name in cls.signature_sets}
+        for set_name, sig_list in cls.signature_sets.items():
+            for sig in sig_list:
+                mapping[sig] = set_name
+        return mapping
+
+    @classmethod
+    def sort_signature_sets(cls, signature_sets: pd.Index) -> pd.Index:
+        """Sort etiology names by the order in which they are declared above.
+
+        Unknown names are appended at the end, keeping their relative order
+        (``sorted`` is stable), mirroring ``sort_signatures``.
+        """
+        order = {name: i for i, name in enumerate(cls.signature_sets)}
+        sorted_sets = sorted(signature_sets, key=lambda s: order.get(s, len(order)))
+        return pd.Index(sorted_sets, dtype=signature_sets.dtype, name=signature_sets.name)
+
+    @classmethod
+    def group_by_etiology(cls, signatures: pd.DataFrame | None) -> pd.DataFrame | None:
+        """Aggregate signature exposures by their etiology (``signature_sets`` keys).
+
+        Columns belonging to the same etiology are summed. Signatures that are
+        not part of any set are kept as their own column (and sorted to the end)
+        so no exposure is silently dropped.
+        """
+        if signatures is None:
+            return None
+        mapping = cls.get_signature_to_set_map()
+        groups = pd.Index(
+            [mapping.get(c, c) for c in signatures.columns],
+            name=signatures.columns.name,
+        )
+        grouped = signatures.T.groupby(groups, sort=False).sum().T
+        grouped.columns.name = signatures.columns.name
+        return grouped.reindex(columns=cls.sort_signature_sets(grouped.columns))
 
     @classmethod
     def sort_signatures(cls, signatures: pd.Index) -> pd.Index:

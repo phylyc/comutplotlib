@@ -13,6 +13,7 @@ from comutplotlib.cnv import CNV
 from comutplotlib.maf import MAF, join_mafs
 from comutplotlib.maf_encoding import MAFEncoding
 from comutplotlib.mutation_annotation import MutationAnnotation
+from comutplotlib.mutational_signature_set import MutationalSignatureSet
 from comutplotlib.snv import SNV
 
 from comutplotlib.sif import SIF, join_sifs

@@ -1,6 +1,7 @@
 {
   "_comment": "HGNC-based mapping of deprecated/aliased gene symbols to current approved symbols, applied to GISTIC gene indices. Provenance: curated against the HGNC approved symbol database (https://www.genenames.org). Update the mapping here (or via an override in $COMUTPLOTLIB_CONFIG_DIR) rather than in source code; please record the HGNC release used when editing.",
   "aliases": {
+    "BAI2": "ADGRB2",
     "BRP44L": "MPC1",
     "C1orf187": "DRAXIN",
     "C2orf89": "TRABD2A",
@@ -46,15 +47,21 @@
     "IL8": "CXCL8",
     "IGHG3": "HDC",
     "JMJD5": "KDM8",
+    "KDELC2": "POGLUT3",
     "LRRC33": "NRROS",
     "MLL": "KMT2A",
     "MLL1": "KMT2A",
     "MLL2": "KMT2D",
     "MLL3": "KMT2C",
+    "MLLT4": "AFDN",
+    "MYCL1": "MYCL",
     "NEURL": "NEURL1",
     "O3FAR1": "FFAR4",
     "PHF17": "JADE1",
     "RDBP": "NELFE",
+    "SGK223": "PRAG1",
+    "SUV420H2": "KMT5C",
+    "TPL2": "MAP3K8",
     "ZNF238": "ZBTB18"
   }
 }

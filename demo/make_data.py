@@ -100,19 +100,20 @@ def make_gistic(sif, genes, name):
 
 def make_mutsig(sif, name):
     signatures = ["clock-like", "APOBEC", "Smoking", "UV", "Treatment"]
+    unif = len(signatures) * [1]
     entries = []
     for patient in sif.patients:
         histology = sif.select({SIF.patient: patient}).data[SIF.histology].unique()[0]
         if histology == "BRCA":
-            exposures = np.random.gamma([1, 1, 1, 1, 1], [5, 5, 1, 1, 1])
+            exposures = np.random.gamma(unif, [5, 5, 1, 1, 1])
         elif histology == "LUAD":
-            exposures = np.random.gamma([1, 1, 1, 1, 1], [1, 1, 20, 1, 1])
+            exposures = np.random.gamma(unif, [1, 1, 20, 1, 1])
         elif histology == "MEL":
-            exposures = np.random.gamma([1, 1, 1, 1, 1], [1, 1, 1, 50, 1])
+            exposures = np.random.gamma(unif, [1, 1, 1, 50, 1])
         elif histology == "RCC":
-            exposures = np.random.gamma([1, 1, 1, 1, 1], [1, 1, 1, 1, 2])
+            exposures = np.random.gamma(unif, [1, 1, 1, 1, 2])
         else:
-            exposures = np.random.gamma([1, 1, 1, 1, 1])
+            exposures = np.random.gamma(unif)
         entries.append(exposures)
 
     mutsig = pd.DataFrame(entries, columns=signatures, index=sif.patients)

@@ -4,24 +4,60 @@
     "fields": ["cancer_type", "histotype"],
     "rules": [
       {"op": "contains", "field": "cancer_type", "values": ["Breast"], "return": "BRCA"},
-      {"op": "contains", "field": "histotype", "values": ["Lung adenocarcinoma", "Lung Adenocarcinoma"], "return": "LUAD"},
+      {"op": "any", "conditions": [
+        {"op": "all", "conditions": [
+          {"op": "contains", "field": "cancer_type", "values": ["Lung cancer"]},
+          {"op": "contains", "field": "histotype", "values": ["Lung adenocarcinoma"]}
+        ]},
+        {"op": "contains", "field": "cancer_type", "values": ["Lung Adenocarcinoma"]}
+      ], "return": "LUAD"},
+      {"op": "any", "conditions": [
+        {"op": "all", "conditions": [
+          {"op": "contains", "field": "cancer_type", "values": ["Lung cancer"]},
+          {"op": "contains", "field": "histotype", "values": ["Squamous Cell Carcinoma", "Squamous cell carcinoma"]}
+        ]},
+        {"op": "contains", "field": "cancer_type", "values": ["Lung Squamous Cell Carcinoma"]}
+      ], "return": "LUSC"},
+      {"op": "all", "conditions": [
+        {"op": "contains", "field": "cancer_type", "values": ["Lung cancer"]},
+        {"op": "contains", "field": "histotype", "values": ["Adenosquamous lung carcinoma", "NSCLC (Non-small cell lung carcinoma)", "Large cell lung carcinoma"]}
+      ], "return": "NSCLC"},
       {"op": "contains", "field": "cancer_type", "values": ["Lung cancer"], "return": "LUCA"},
       {"op": "contains", "field": "cancer_type", "values": ["Melanoma"], "return": "MEL"},
-      {"op": "contains", "field": "cancer_type", "values": ["Renal cell carcinoma", "Renal Clear Cell Carcinoma"], "return": "RCC"},
+      {"op": "any", "conditions": [
+        {"op": "all", "conditions": [
+          {"op": "contains", "field": "cancer_type", "values": ["Renal cell carcinoma"]},
+          {"op": "contains", "field": "histotype", "values": ["Clear cell"]}
+        ]},
+        {"op": "contains", "field": "cancer_type", "values": ["Kidney Renal Clear Cell Carcinoma"]}
+      ], "return": "KIRC"},
+      {"op": "any", "conditions": [
+        {"op": "all", "conditions": [
+          {"op": "contains", "field": "cancer_type", "values": ["Renal cell carcinoma"]},
+          {"op": "contains", "field": "histotype", "values": ["Papillary"]}
+        ]},
+        {"op": "contains", "field": "cancer_type", "values": ["Kidney Renal Papillary Cell Carcinoma"]}
+      ], "return": "KIRP"},
+      {"op": "contains", "field": "cancer_type", "values": ["Renal cell carcinoma"], "return": "RCC"},
       {"op": "contains", "field": "cancer_type", "values": ["Glioma"], "return": "GLIO"},
       {"op": "contains", "field": "cancer_type", "values": ["Ependymoma"], "return": "GLIO"},
+      {"op": "contains", "field": "cancer_type", "values": ["Glioblastoma Multiforme"], "return": "GBM"},
       {"op": "contains", "field": "cancer_type", "values": ["Central Neurocytoma"], "return": "CNC"},
       {"op": "contains", "field": "cancer_type", "values": ["Meningioma"], "return": "MEN"},
+      {"op": "contains", "field": "cancer_type", "values": ["Stomach Adenocarcinoma"], "return": "GI"},
+      {"op": "contains", "field": "cancer_type", "values": ["Colon Adenoma"], "return": "GI"},
       {"op": "contains", "field": "cancer_type", "values": ["Colon cancer"], "return": "GI"},
       {"op": "contains", "field": "cancer_type", "values": ["Rectal cancer"], "return": "GI"},
+      {"op": "contains", "field": "cancer_type", "values": ["Rectum Adenocarcinoma"], "return": "GI"},
       {"op": "contains", "field": "cancer_type", "values": ["Colorectal cancer"], "return": "GI"},
       {"op": "contains", "field": "cancer_type", "values": ["Duodenal cancer"], "return": "GI"},
       {"op": "contains", "field": "cancer_type", "values": ["Esophageal cancer"], "return": "GI"},
       {"op": "contains", "field": "cancer_type", "values": ["Pancreatic cancer"], "return": "GI"},
+      {"op": "contains", "field": "cancer_type", "values": ["Pancreatic Adenocarcinoma"], "return": "GI"},
       {"op": "contains", "field": "cancer_type", "values": ["GI cancer"], "return": "GI"},
       {"op": "contains", "field": "cancer_type", "values": ["Gastric cancer"], "return": "GI"},
-      {"op": "contains", "field": "cancer_type", "values": ["Head & neck cancer"], "return": "HNC"},
-      {"op": "contains", "field": "cancer_type", "values": ["Oral cancer"], "return": "HNC"},
+      {"op": "contains", "field": "cancer_type", "values": ["Head & neck cancer", "Head and Neck Squamous Cell Carcinoma"], "return": "HNC"},
+      {"op": "contains", "field": "cancer_type", "values": ["Oral cancer", "Oral Cancer"], "return": "HNC"},
       {"op": "contains", "field": "cancer_type", "values": ["Laryngeal cancer"], "return": "LACA"},
       {"op": "contains", "field": "cancer_type", "values": ["Leukemia"], "return": "LEUK"},
       {"op": "contains", "field": "histotype", "values": ["PCNSL"], "return": "PCNSL"},
@@ -30,15 +66,26 @@
         {"op": "contains", "field": "histotype", "values": ["Sarcoma"]},
         {"op": "contains", "field": "cancer_type", "values": ["Sarcoma"]}
       ], "return": "SARC"},
-      {"op": "contains", "field": "cancer_type", "values": ["Pituitary tumor"], "return": "PITT"},
+      {"op": "contains", "field": "cancer_type", "values": ["Pituitary tumor", "Pituitary Adenoma"], "return": "PITT"},
       {"op": "contains", "field": "cancer_type", "values": ["Thyroid cancer"], "return": "THCA"},
-      {"op": "contains", "field": "cancer_type", "values": ["Cholangiocarcinoma (Bile duct cancer)"], "return": "CHOL"},
+      {"op": "contains", "field": "cancer_type", "values": ["Cholangiocarcinoma"], "return": "CHOL"},
       {"op": "contains", "field": "cancer_type", "values": ["Endocrine"], "return": "ECRI"},
-      {"op": "contains", "field": "cancer_type", "values": ["Urothelial cancer"], "return": "BLCA"},
-      {"op": "contains", "field": "cancer_type", "values": ["Prostate cancer"], "return": "PRAD"},
+      {"op": "all", "conditions": [
+        {"op": "contains", "field": "cancer_type", "values": ["neuroendocrine"]},
+        {"op": "contains", "field": "cancer_type", "values": ["High-grade"]}
+      ], "return": "HGnECRI"},
+      {"op": "all", "conditions": [
+        {"op": "contains", "field": "cancer_type", "values": ["neuroendocrine"]},
+        {"op": "contains", "field": "cancer_type", "values": ["Low-grade"]}
+      ], "return": "LGnECRI"},
+      {"op": "contains", "field": "cancer_type", "values": ["neuroendocrine"], "return": "nECRI"},
+      {"op": "contains", "field": "cancer_type", "values": ["Bladder cancer", "Bladder Urothelial Carcinoma", "Urothelial cancer"], "return": "BLCA"},
+      {"op": "contains", "field": "cancer_type", "values": ["Prostate cancer", "Prostate Adenocarcinoma"], "return": "PRAD"},
       {"op": "contains", "field": "cancer_type", "values": ["Testicular cancer"], "return": "TECA"},
+      {"op": "contains", "field": "cancer_type", "values": ["Cervical cancer"], "return": "GynOnc"},
       {"op": "contains", "field": "cancer_type", "values": ["Ovarian cancer"], "return": "GynOnc"},
       {"op": "contains", "field": "cancer_type", "values": ["Ovarian  cancer"], "return": "GynOnc"},
+      {"op": "contains", "field": "cancer_type", "values": ["Ovarian Serous Cystadenocarcinoma"], "return": "GynOnc"},
       {"op": "contains", "field": "histotype", "values": ["Serous ovarian carcinoma"], "return": "GynOnc"},
       {"op": "contains", "field": "cancer_type", "values": ["Endometrial cancer"], "return": "GynOnc"},
       {"op": "contains", "field": "cancer_type", "values": ["Uterine"], "return": "GynOnc"},
@@ -70,6 +117,7 @@
       {"op": "equals", "field": "platform", "value": "Agilent", "return": "Agilent BI"},
       {"op": "equals", "field": "platform", "value": "ICE", "return": "ICE"},
       {"op": "equals", "field": "platform", "value": "TWIST", "return": "TWIST"},
+      {"op": "equals", "field": "platform", "value": "PanCancer", "return": "PanCanPanel"},
       {"op": "contains", "field": "platform", "values": ["RNA"], "return": "RNAseq"},
       {"op": "contains", "field": "platform", "values": ["Transcriptome"], "return": "Transcr"},
       {"op": "contains", "field": "platform", "values": ["ULP"], "return": "ULP"},
@@ -109,6 +157,7 @@
       {"op": "na_or_in", "field": "sample_material", "values": ["Unknown", "unknown"], "return": "unknown"},
       {"op": "contains", "field": "sample_material", "values": ["FFPE"], "return": "FFPE"},
       {"op": "contains", "field": "sample_material", "values": ["FF"], "return": "FF"},
+      {"op": "equals", "field": "sample_material", "value": "Solid Tissue", "return": "FF"},
       {"op": "contains", "field": "sample_material", "values": ["Blood"], "return": "Blood"},
       {"op": "contains", "field": "sample_material", "values": ["Buffycoat"], "return": "Buffycoat"},
       {"op": "contains", "field": "sample_material", "values": ["Plasma"], "return": "Plasma"},

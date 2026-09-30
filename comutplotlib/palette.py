@@ -105,6 +105,19 @@ class Palette(UserDict):
     teal = (102 / 255, 194 / 255, 165 / 255)
     salmon = (252 / 255, 141 / 255, 98 / 255)
 
+    _CYAN = "#00ffff"
+    _MAGENTA = "#ff00ff"
+    _YELLOW = "#ffff00"
+    _BLACK = "#000000"
+
+    # 50% = FF / 2 = 80
+    _CYAN5020 = "#66cccc"  # #80ffff + 0.2 * #000000
+    _CYAN5040 = "#4d9999"
+    _MAGENTA5020 = "#cc66cc"
+    _MAGENTA5040 = "#994d99"
+    _YELLOW5020 = "#cccc66"
+    _YELLOW5040 = "#99994d"
+
     # for everyone their favo(u)rite spelling:
     gray = grey
     lightgray = lightgrey
@@ -119,7 +132,17 @@ class Palette(UserDict):
 
     @classmethod
     def mix(cls, c1, c2, weight=0.5):
+        c1 = mc.to_rgb(c1) if isinstance(c1, str) else c1
+        c2 = mc.to_rgb(c2) if isinstance(c2, str) else c2
         return tuple(weight * np.array(c1) + (1 - weight) * np.array(c2))
+
+    @staticmethod
+    def to_rgb(color):
+        """Normalize any matplotlib-compatible color spec (hex string, named
+        color, or RGB(A) tuple) to an ``(r, g, b)`` float tuple. This keeps the
+        palette serialization (``hash``/``from_hash``) robust to hex strings.
+        """
+        return tuple(mc.to_rgb(color))
 
     @classmethod
     def from_hash(cls, hash):
@@ -213,15 +236,43 @@ class Palette(UserDict):
                 "Chemotherapy": self.green,
 
                 # SAMPLE TYPE
-                "BM": self.pink,  # brain metastasis
+                "BM": self._MAGENTA5020,  # brain metastasis
+                "BM.DARK": self._MAGENTA5040,
+                "brain metastasis": self._MAGENTA5020,
+                "Brain metastasis": self._MAGENTA5020,
+                "Brain Metastasis": self._MAGENTA5020,
+                "brain metastases": self._MAGENTA5020,
+                "Brain metastases": self._MAGENTA5020,
+                "Brain Metastases": self._MAGENTA5020,
                 "cfDNA": self.violet,  # cell-free DNA
-                "EM": self.yellow,  # extra-cranial metastasis
-                "ECM": self.yellow,  # extra-cranial metastasis
+                "EM": self._YELLOW5020,  # extra-cranial metastasis
+                "ECM": self._YELLOW5020,  # extra-cranial metastasis
+                "EM.DARK": self._YELLOW5040,
+                "ECM.DARK": self._YELLOW5040,
+                "extra-cranial metastasis": self._YELLOW5020,
+                "Extra-cranial metastasis": self._YELLOW5020,
+                "Extra-cranial Metastasis": self._YELLOW5020,
+                "extra-cranial metastases": self._YELLOW5020,
+                "Extra-cranial metastases": self._YELLOW5020,
+                "Extra-cranial Metastases": self._YELLOW5020,
+                "extracranial metastasis": self._YELLOW5020,
+                "Extracranial metastasis": self._YELLOW5020,
+                "Extracranial Metastasis": self._YELLOW5020,
+                "extracranial metastases": self._YELLOW5020,
+                "Extracranial metastases": self._YELLOW5020,
+                "Extracranial Metastases": self._YELLOW5020,
                 "Metastasis": self.brown,
                 "N": self.black,  # normal
-                "Normal": self.black,  # normal
-                "P": self.cyan,  # primary
-                "Primary": self.cyan,  # primary
+                "Normal": self.black,
+                "normal": self.black,
+                "P": self._CYAN5020,  # primary
+                "P.DARK": self._CYAN5040,
+                "Primary": self._CYAN5020,
+                "primary": self._CYAN5020,
+                "Primary Tumor": self._CYAN5020,
+                "Primary tumor": self._CYAN5020,
+                "Primary Tumors": self._CYAN5020,
+                "Primary tumors": self._CYAN5020,
                 "N/A": self.grey,
 
                 # SAMPLE MATERIAL
@@ -340,6 +391,9 @@ class Palette(UserDict):
                 "HR-/HER2+": self.red,
                 "HR+/HER2-": self.blue,
                 "HR-/HER2-": self.darkviolet,
+                "HR\N{MINUS SIGN}/HER2+": self.red,
+                "HR+/HER2\N{MINUS SIGN}": self.blue,
+                "HR\N{MINUS SIGN}/HER2\N{MINUS SIGN}": self.darkviolet,
                 "TN": self.darkviolet,
                 "pos": self.normalizeRGB(102, 194, 165),  # teal
                 "neg": self.normalizeRGB(252, 141,  98),  # salmon
@@ -396,7 +450,7 @@ class Palette(UserDict):
         })
 
     def hash(self):
-        return ";".join([f"{k}:" + ",".join([str(c) for c in self[k]]) for k in self.keys()])
+        return ";".join([f"{k}:" + ",".join([str(c) for c in self.to_rgb(self[k])]) for k in self.keys()])
 
     @staticmethod
     def adjust_lightness(color, amount):
