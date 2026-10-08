@@ -79,6 +79,9 @@ class MutationAnnotation(object):
     stop_codon_ins = "Stop_Codon_Ins"
     stop_codon_del = "Stop_Codon_Del"
     translation_start_site = "Translation_Start_Site"
+    
+    non_coding = "non-coding"
+    coding = "coding"
 
     # pooled effects
     structural = "Structural"
