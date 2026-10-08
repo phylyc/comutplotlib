@@ -17,6 +17,7 @@ class FunctionalEffect(object):
         None: 1e308,
 
         MutA.gain_of_function: 1000,
+        MutA.coding: 101,
         MutA.missense: 100,
         MutA.in_frame_ins: 52,
         MutA.in_frame_del: 51,
@@ -27,6 +28,7 @@ class FunctionalEffect(object):
         MutA.silent: 5,
         MutA.synonymous: 0,
         MutA.intron: 0,
+        MutA.non_coding: -1,
         MutA.flank5: -3,
         MutA.flank3: -4,
         MutA.igr: -5,
