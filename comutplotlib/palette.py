@@ -193,7 +193,7 @@ class Palette(UserDict):
                 MutA.stop_codon_del: self.brown,
                 MutA.rna: self.yellow,
                 MutA.linc_rna: self.yellow,
-                MutA.coding: self.mix(self.gree, self.grey, 0.35),
+                MutA.coding: self.mix(self.green, self.grey, 0.35),
                 MutA.non_coding: self.grey,
 
                 "Amplification": self.red,

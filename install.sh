@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This script is to be executed within the folder.
-# First: download and install e.g. miniconda: https://docs.conda.io/projects/miniconda/en/latest/
+# First: download and install e.g. miniforge: https://github.com/conda-forge/miniforge
 # Then: run this script.
 #conda create -n comutplotlib -y python=3.12
 #conda activate comutplotlib
