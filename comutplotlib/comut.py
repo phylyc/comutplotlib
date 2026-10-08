@@ -1076,10 +1076,6 @@ class Comut(object):
                     )
                     if tmb_ref["ax"] is None:
                         tmb_ref["ax"] = panel_ax(tmb_name)
-                self.layout.set_plot_func(
-                    grid_col_panel(ComutPanels.cohort_label + label, j),
-                    self.plotter.plot_cohort_label, label=data.name,
-                )
                 if data.meta is not None and not data.meta.df.empty:
                     self.layout.set_plot_func(
                         grid_col_panel(ComutPanels.meta_data + label, j),
@@ -1092,6 +1088,12 @@ class Comut(object):
                         labelbottom=self.layout.show_patient_names and self._meta_data_position == "bottom",
                         add_ylabel=on_left and j == 0,
                     )
+            # The cohort title spans all column groups of the cohort, so it is
+            # placed and drawn once rather than per column group.
+            self.layout.set_plot_func(
+                ComutPanels.cohort_label + label,
+                self.plotter.plot_cohort_label, label=data.name,
+            )
 
         cohorts = [(self.case, self.case.grid, True)]
         if has_control and self.control.grid is not None and not self.control.grid.is_trivial():

@@ -361,6 +361,26 @@ class ComutLayout(Layout):
             return ref
         return Layout.add_panel(self, name=name, width=width, height=height, **kwargs)
 
+    def _add_cohort_label(self, name, top_panels):
+        """Place a single cohort title spanning all column groups of one cohort.
+
+        In the grid layout the sample-axis marginals are tiled per column group,
+        but the cohort title must appear only once, centred above the whole
+        cohort block instead of being repeated over every group.
+        """
+        if name not in self.panels_to_plot:
+            return None
+        panels = [p for p in top_panels if p is not None]
+        if not panels:
+            return None
+        _, h = self._fixed_dim(ComutPanels.cohort_label)
+        x = min(p.x for p in panels)
+        width = max(p.x + p.width for p in panels) - x
+        y = min(p.y for p in panels) - h - self.pad
+        if width <= 0 or h <= 0:
+            return None
+        return Layout.add_panel(self, name=name, width=width, height=h, x=x, y=y)
+
     def add_panels_grid(self):
         N = self.grid.n_rows
         comut_height = sum(self.gene_group_heights) + (N - 1) * self.pad
@@ -410,27 +430,35 @@ class ComutLayout(Layout):
                 blocks[(i, j)] = p
 
         # --- top marginals (per left-cohort column group) ---
-        top_panels = [ComutPanels.mutational_signatures, ComutPanels.coverage, ComutPanels.tmb, ComutPanels.cohort_label]
+        # The cohort title is NOT tiled per column group: it is added once per
+        # cohort, spanning all of its column groups (see ``_add_cohort_label``).
+        top_panels = [ComutPanels.mutational_signatures, ComutPanels.coverage, ComutPanels.tmb]
         _, meta_h = self._fixed_dim(ComutPanels.meta_data)
+        left_tops = []
         for j in range(M_left):
             p_ref = blocks[(0, j)]
+            left_tops.append(p_ref)
             wj = left_widths[j]
             if self.meta_data_position == "top":
                 p_ref = self._grid_add(
                     grid_col_panel(left_name(ComutPanels.meta_data), j), wj, meta_h,
                     ref=p_ref, above=p_ref, align="left",
                 )
+                left_tops.append(p_ref)
             for base in top_panels:
                 _, h = self._fixed_dim(base)
                 p_ref = self._grid_add(grid_col_panel(left_name(base), j), wj, h, ref=p_ref, above=p_ref, align="left")
+                left_tops.append(p_ref)
             # column-group header (drawn only for labelled groups, and only when
             # the ``column_group_label`` panel is requested in panels_to_plot)
             if j < len(left_labels) and left_labels[j] and ComutPanels.column_group_label in self.panels_to_plot:
                 _, lh = self._fixed_dim(left_name(ComutPanels.column_group_label))
-                self._grid_add(
+                p_ref = self._grid_add(
                     grid_col_panel(left_name(ComutPanels.column_group_label), j), wj, lh,
                     ref=p_ref, above=p_ref, pad=self.pad, align="left", force=True,
                 )
+                left_tops.append(p_ref)
+        self._add_cohort_label(left_name(ComutPanels.cohort_label), left_tops)
 
         # --- bottom marginal: meta data (per left-cohort column group) ---
         if self.meta_data_position == "bottom":
@@ -500,6 +528,7 @@ class ComutLayout(Layout):
             right_col_pad = self.pad if draw_right_comut else 0
             Mc = len(right_widths)
             cblocks = {}
+            right_tops = []
             for i in range(N):
                 hi = self.gene_group_heights[i]
                 p_row_ref = right_refs[i]
@@ -514,22 +543,27 @@ class ComutLayout(Layout):
                 rightmost[i] = p_row_ref
             for j in range(Mc):
                 p_ref = cblocks[(0, j)]
+                right_tops.append(p_ref)
                 wj = right_widths[j]
                 if self.meta_data_position == "top":
                     p_ref = self._grid_add(
                         grid_col_panel(right_name(ComutPanels.meta_data), j), wj, meta_h,
                         ref=p_ref, above=p_ref, align="left",
                     )
+                    right_tops.append(p_ref)
                 for base in top_panels:
                     _, h = self._fixed_dim(base)
                     p_ref = self._grid_add(grid_col_panel(right_name(base), j), wj, h, ref=p_ref, above=p_ref, align="left")
+                    right_tops.append(p_ref)
                 label = right_labels[j] if j < len(right_labels) else ""
                 if label and ComutPanels.column_group_label in self.panels_to_plot:
                     _, lh = self._fixed_dim(right_name(ComutPanels.column_group_label))
-                    self._grid_add(
+                    p_ref = self._grid_add(
                         grid_col_panel(right_name(ComutPanels.column_group_label), j), wj, lh,
                         ref=p_ref, above=p_ref, pad=self.pad, align="left", force=True,
                     )
+                    right_tops.append(p_ref)
+            self._add_cohort_label(right_name(ComutPanels.cohort_label), right_tops)
             if self.meta_data_position == "bottom":
                 for j in range(Mc):
                     self._grid_add(
@@ -560,11 +594,16 @@ class ComutLayout(Layout):
         # is at the bottom. If metadata is moved to the top, keep its legends
         # below the comutation area so they do not separate metadata from comut.
         if ComutPanels.meta_data_legend in self.panels_to_plot and self.meta_data_legend_titles:
+            # Anchor to the left-most cohort, which is the control when
+            # ``control_position="left"`` (mirrors the non-grid layout).
+            def left_name(name):
+                return control(name) if self.control_on_left else name
+
             anchor = None
             if self.meta_data_position == "bottom":
-                anchor = self.panels.get(grid_col_panel(ComutPanels.meta_data, 0))
+                anchor = self.panels.get(grid_col_panel(left_name(ComutPanels.meta_data), 0))
             if anchor is None:
-                anchor = self.panels.get(block(ComutPanels.comutation, self.grid.n_rows - 1, 0))
+                anchor = self.panels.get(block(left_name(ComutPanels.comutation), self.grid.n_rows - 1, 0))
             pad = self.pad + (self.column_names_height if self.show_patient_names else 0)
             m_ref = None
             for title in self.meta_data_legend_titles:
