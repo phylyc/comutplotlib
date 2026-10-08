@@ -1,10 +1,13 @@
 #!/bin/bash
 
+suffix="pdf"
+
 python make_data.py
 python ../call.py \
-  -o "comut_test.png" \
+  -o "comut_test.$suffix" \
   --maf "test.maf.tsv" \
   --gistic "test.all_thresholded.by_genes.txt" \
+  --mark "test.marks.by_genes.txt" \
   --sif "test.sif.tsv" \
   --signatures "test.mutsig.tsv" \
   --snv-interesting-genes "Gene 1,Gene 2,Gene 3,Gene 4,Gene 5,Gene 6,Gene 7,Gene 8,Gene 9,Gene 10,Gene 11,Gene 12" \
@@ -17,9 +20,10 @@ python ../call.py \
   --max-xfigsize 8
 
 python ../call.py \
-  -o "comut_test.tiny.png" \
+  -o "comut_test.tiny.$suffix" \
   --maf "test.maf.tsv" \
   --gistic "test.all_thresholded.by_genes.txt" \
+  --mark "test.marks.by_genes.txt" \
   --sif "test.sif.tsv" \
   --signatures "test.mutsig.tsv" \
   --snv-interesting-genes "Gene 1,Gene 2,Gene 3,Gene 4,Gene 5,Gene 6,Gene 7,Gene 8,Gene 9,Gene 10,Gene 11,Gene 12" \
@@ -33,15 +37,17 @@ python ../call.py \
   --max-xfigsize 8
 
 python ../call.py \
-  -o "comut_test.control.png" \
+  -o "comut_test.control.$suffix" \
   --maf "test.maf.tsv" \
   --gistic "test.all_thresholded.by_genes.txt" \
+  --mark "test.marks.by_genes.txt" \
   --sif "test.sif.tsv" \
   --signatures "test.mutsig.tsv" \
   --cohort-label "CASE" \
   --control-cohort-label "CONTROL" \
   --control-maf "control.maf.tsv" \
   --control-gistic "control.all_thresholded.by_genes.txt" \
+  --control-mark "control.marks.by_genes.txt" \
   --control-sif "control.sif.tsv" \
   --control-signatures "control.mutsig.tsv" \
   --snv-interesting-genes "Gene 1,Gene 2,Gene 3,Gene 4,Gene 5,Gene 6,Gene 7,Gene 8,Gene 9,Gene 10,Gene 11,Gene 12" \
@@ -56,15 +62,17 @@ python ../call.py \
 # Same control comparison, but with the control cohort placed on the LEFT
 # (case and control swapped, including the fold-change "case"/"control" arrows).
 python ../call.py \
-  -o "comut_test.control.left.png" \
+  -o "comut_test.control.left.$suffix" \
   --maf "test.maf.tsv" \
   --gistic "test.all_thresholded.by_genes.txt" \
+  --mark "test.marks.by_genes.txt" \
   --sif "test.sif.tsv" \
   --signatures "test.mutsig.tsv" \
   --cohort-label "CASE" \
   --control-cohort-label "CONTROL" \
   --control-maf "control.maf.tsv" \
   --control-gistic "control.all_thresholded.by_genes.txt" \
+  --control-mark "control.marks.by_genes.txt" \
   --control-sif "control.sif.tsv" \
   --control-signatures "control.mutsig.tsv" \
   --control-position left \
@@ -81,9 +89,10 @@ python ../call.py \
 # stratified by a sample metadata key (grid columns) and explicit gene sets
 # (grid rows). Ungrouped genes are collected into a trailing "Other" row.
 python ../call.py \
-  -o "comut_test.grid.png" \
+  -o "comut_test.grid.$suffix" \
   --maf "test.maf.tsv" \
   --gistic "test.all_thresholded.by_genes.txt" \
+  --mark "test.marks.by_genes.txt" \
   --sif "test.sif.tsv" \
   --signatures "test.mutsig.tsv" \
   --snv-interesting-genes "Gene 1,Gene 2,Gene 3,Gene 4,Gene 5,Gene 6,Gene 7,Gene 8,Gene 9,Gene 10,Gene 11,Gene 12" \

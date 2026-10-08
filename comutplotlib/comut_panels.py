@@ -51,6 +51,7 @@ class ComutPanels:
     mutational_signatures_legend = "mutational signatures legend"
     snv_legend = "snv legend"
     cnv_legend = "cnv legend"
+    epi_legend = "epi legend"
     model_annotation_legend = "model annotation legend"
     meta_data_legend = "meta data legend"
 
@@ -152,6 +153,7 @@ PANEL_AXIS = {
     ComutPanels.mutational_signatures_legend: AXIS_NONE,
     ComutPanels.snv_legend: AXIS_NONE,
     ComutPanels.cnv_legend: AXIS_NONE,
+    ComutPanels.epi_legend: AXIS_NONE,
     ComutPanels.model_annotation_legend: AXIS_NONE,
     ComutPanels.meta_data_legend: AXIS_NONE,
 }
@@ -197,6 +199,7 @@ DEFAULT_PANELS = [
     # Right
     ComutPanels.snv_legend,
     ComutPanels.cnv_legend,
+    ComutPanels.epi_legend,
     ComutPanels.model_annotation_legend,
     ComutPanels.meta_data_legend,
 ]

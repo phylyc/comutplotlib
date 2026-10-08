@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from comutplotlib.gistic import Gistic
+from comutplotlib.mark import Mark
 from comutplotlib.maf import MAF
 from comutplotlib.sif import SIF
 
@@ -98,6 +99,23 @@ def make_gistic(sif, genes, name):
     return gistic
 
 
+def make_mark(sif, genes, name):
+    n_genes = len(genes)
+    genes = pd.Index(genes, name=Mark._gene_symbol)
+    columns = []
+    marks = []
+    offset = 0 if name == "test" else -0.1
+    for patient in sif.patients:
+        columns.append(patient)
+        # Most genes are unmarked; a minority carries a partial to full mark.
+        is_marked = np.random.binomial(1, 0.15 + offset / 2, size=n_genes)
+        marks.append(is_marked * np.round(np.random.beta(2, 2, size=n_genes), 2))
+
+    mark = Mark(data=pd.DataFrame(marks, columns=genes, index=columns).T)
+    mark.to_csv(f"{name}.marks.by_genes.txt")
+    return mark
+
+
 def make_mutsig(sif, name):
     signatures = ["clock-like", "APOBEC", "Smoking", "UV", "Treatment"]
     unif = len(signatures) * [1]
@@ -126,9 +144,11 @@ if __name__ == "__main__":
     genes = make_genes()
     maf = make_maf(sif, genes, name="test")
     gistic = make_gistic(sif, genes, name="test")
+    mark = make_mark(sif, genes, name="test")
     mutsig = make_mutsig(sif, name="test")
 
     control_sif = make_sif(name="control")
     control_maf = make_maf(control_sif, genes, name="control")
     control_gistic = make_gistic(control_sif, genes, name="control")
+    control_mark = make_mark(control_sif, genes, name="control")
     control_mutsig = make_mutsig(control_sif, name="control")

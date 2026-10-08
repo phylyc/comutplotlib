@@ -21,7 +21,7 @@ class ComutLayout(Layout):
         n_genes: int, n_samples: int, n_samples_control: int = 0, n_meta: int = 0, n_meta_genes: int = 0, pad: int = 1,
         xfigsize: float | None = None, max_xfigsize: float | None = None, max_xfigsize_scale: float = 1, yfigsize: float | None = None,
         label_columns=False,
-        tmb_cmap=(), snv_cmap=(), cnv_cmap=(), mutsig_cmap=(), meta_cmaps=None,
+        tmb_cmap=(), snv_cmap=(), cnv_cmap=(), epi_alphas=(), mutsig_cmap=(), meta_cmaps=None,
         grid=None, control_column_group_sizes=None, control_column_group_labels=None,
         meta_data_position: str = "bottom",
         control_position: str = "right",
@@ -55,6 +55,7 @@ class ComutLayout(Layout):
         tmb_legend_height = len(tmb_cmap)
         snv_legend_height = len(snv_cmap)
         cnv_legend_height = len(cnv_cmap)
+        epi_legend_height = len(epi_alphas)
         mutsig_legend_height = len(mutsig_cmap)
         model_annotation_legend_height = 2
         meta_height = n_meta
@@ -89,7 +90,7 @@ class ComutLayout(Layout):
         if ComutPanels.model_annotation in panels_to_plot:
             left_of_comut_width += model_annotation_width
 
-        right_panel_legends = [ComutPanels.tmb_legend, ComutPanels.mutational_signatures_legend, ComutPanels.snv_legend, ComutPanels.cnv_legend, ComutPanels.model_annotation_legend]
+        right_panel_legends = [ComutPanels.tmb_legend, ComutPanels.mutational_signatures_legend, ComutPanels.snv_legend, ComutPanels.cnv_legend, ComutPanels.epi_legend, ComutPanels.model_annotation_legend]
 
         non_heatmap_width = left_of_comut_width
         if any([part in panels_to_plot for part in right_panel_legends]):
@@ -148,6 +149,7 @@ class ComutLayout(Layout):
                 control(ComutPanels.comutation): [comut_width_control, comut_height],
                 ComutPanels.snv_legend: [legend_width, snv_legend_height],
                 ComutPanels.cnv_legend: [legend_width, cnv_legend_height],
+                ComutPanels.epi_legend: [legend_width, epi_legend_height],
 
                 ComutPanels.model_significance: [model_significance_width, comut_height],
 
@@ -332,7 +334,7 @@ class ComutLayout(Layout):
                 )
                 p_ref_top = p_ref if p_ref_top is None else p_ref_top
                 has_legend = True
-        for panel in [ComutPanels.cnv_legend, ComutPanels.snv_legend, ComutPanels.model_annotation_legend]:
+        for panel in [ComutPanels.cnv_legend, ComutPanels.snv_legend, ComutPanels.epi_legend, ComutPanels.model_annotation_legend]:
             if panel in self.panels_to_plot:
                 p_ref = (
                     first_legend_panel(name=panel, p_ref=p_ref)
@@ -543,7 +545,7 @@ class ComutLayout(Layout):
     def _add_grid_legends(self, ref):
         legend_panels = [
             ComutPanels.tmb_legend, ComutPanels.mutational_signatures_legend,
-            ComutPanels.cnv_legend, ComutPanels.snv_legend, ComutPanels.model_annotation_legend,
+            ComutPanels.cnv_legend, ComutPanels.snv_legend, ComutPanels.epi_legend, ComutPanels.model_annotation_legend,
         ]
         names = [b for b in legend_panels if b in self.panels_to_plot]
         p_ref = None

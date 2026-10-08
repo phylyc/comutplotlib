@@ -17,6 +17,7 @@ from comutplotlib.palette import Palette
 from comutplotlib.sample_annotation import SampleAnnotation as SA
 
 from comutplotlib.gistic import join_gistics
+from comutplotlib.mark import join_marks
 from comutplotlib.maf import join_mafs
 from comutplotlib.seg import join_segs
 from comutplotlib.sif import join_sifs
@@ -41,6 +42,9 @@ class Comut(object):
         seg: list[str] | None = None,
         gistic: list[str] | None = None,
 
+        mark: list[str] | None = None,
+        mark_label: str = "Epigenetic\nMarks",
+
         signatures: list[str] | None = None,
         group_signatures_by_etiology: bool = False,
 
@@ -60,6 +64,7 @@ class Comut(object):
         control_maf: list[str] | None = None,
         control_seg: list[str] | None = None,
         control_gistic: list[str] | None = None,
+        control_mark: list[str] | None = None,
         control_sif: list[str] | None = None,
         control_signatures: list[str] | None = None,
         control_cohort_label: str | None = None,
@@ -134,6 +139,8 @@ class Comut(object):
         self._maf_pool_as = maf_pool_as
         self._seg = seg
         self._gistic = gistic
+        self._mark = mark
+        self._mark_label = mark_label
         self._signatures = signatures
         self._group_signatures_by_etiology = group_signatures_by_etiology
         self._sif = sif
@@ -149,6 +156,7 @@ class Comut(object):
         self._control_maf = control_maf
         self._control_seg = control_seg
         self._control_gistic = control_gistic
+        self._control_mark = control_mark
         self._control_sif = control_sif
         self._control_signatures = control_signatures
         self._control_cohort_label = control_cohort_label
@@ -234,6 +242,7 @@ class Comut(object):
             maf_pool_as=self._maf_pool_as,
             seg_paths=self._seg,
             gistic_paths=self._gistic,
+            mark_paths=self._mark,
             signatures_paths=self._signatures,
             group_signatures_by_etiology=self._group_signatures_by_etiology,
             sif_paths=self._sif,
@@ -277,6 +286,7 @@ class Comut(object):
             maf_pool_as=self._maf_pool_as,
             seg_paths=self._control_seg,
             gistic_paths=self._control_gistic,
+            mark_paths=self._control_mark,
             signatures_paths=self._control_signatures,
             group_signatures_by_etiology=self._group_signatures_by_etiology,
             sif_paths=self._control_sif,
@@ -320,6 +330,7 @@ class Comut(object):
 
         self.joint = deepcopy(self.case)
         self.joint.gistic = join_gistics([self.case.gistic, self.control.gistic])
+        self.joint.mark = join_marks([self.case.mark, self.control.mark])
         self.joint.seg = join_segs([self.case.seg, self.control.seg])
         self.joint.maf = join_mafs([self.case.maf, self.control.maf])
         self.joint.sif = join_sifs([self.case.sif, self.control.sif])
@@ -383,6 +394,7 @@ class Comut(object):
         self.tmb_cmap = self.plotter.palette.get_tmb_cmap(self.joint.tmb)
         self.snv_cmap = self.plotter.palette.get_snv_cmap(self.joint.snv)
         self.cnv_cmap, self.cnv_names = self.plotter.palette.get_cnv_cmap(self.joint.cnv)
+        self.epi_alphas = self.joint.epi.legend_alphas
         self.signatures_cmap = self.plotter.palette.get_signatures_cmap(self.joint.signatures)
         self.meta_cmaps = self.plotter.palette.get_meta_cmaps(self.joint.meta)
         if self._palette is not None:
@@ -414,6 +426,8 @@ class Comut(object):
         if self.joint.signatures is None:
             remove(ComutPanels.mutational_signatures)
             remove(ComutPanels.mutational_signatures_legend)
+        if self.joint.epi.empty:
+            remove(ComutPanels.epi_legend)
 
         if self._gene_meta_data is not None:
             self.gene_meta_data = (
@@ -502,6 +516,7 @@ class Comut(object):
             tmb_cmap=self.tmb_cmap,
             snv_cmap=self.snv_cmap,
             cnv_cmap=self.cnv_cmap,
+            epi_alphas=self.epi_alphas,
             mutsig_cmap=self.signatures_cmap,
             meta_cmaps=self.meta_cmaps_condensed,
             grid=grid,
@@ -681,6 +696,12 @@ class Comut(object):
                     inter_heatmap_linewidth=self.layout.inter_heatmap_linewidth,
                     aspect_ratio=self.layout.aspect_ratio
                 )
+                self.plotter.plot_epi_heatmap(
+                    ax=ax,
+                    epi=data.epi.df,
+                    inter_heatmap_linewidth=self.layout.inter_heatmap_linewidth,
+                    aspect_ratio=self.layout.aspect_ratio
+                )
                 self.plotter.plot_snv_heatmap(
                     ax=ax,
                     snv=data.snv.df,
@@ -756,7 +777,11 @@ class Comut(object):
                 pad=0.01,
             )
 
-        for data, label, is_case, special in zip([self.case, self.control], ["", " control"], [True, False], [has_control, False]):
+        tmb_ref = {"ax": None}
+        cohorts = [(self.case, "", True, has_control), (self.control, " control", False, False)]
+        if control_on_left:
+            cohorts = cohorts[::-1]
+        for data, label, is_case, special in cohorts:
             if len(data.columns) == 0:
                 continue
 
@@ -781,18 +806,23 @@ class Comut(object):
                 self.plotter.plot_signatures,
                 signatures=data.signatures,
                 signatures_cmap=self.signatures_cmap,
-                add_ylabel=is_case,
+                add_ylabel=on_left,
             )
+            tmb_name = ComutPanels.tmb + label
             self.layout.set_plot_func(
-                ComutPanels.tmb + label,
+                tmb_name,
                 self.plotter.plot_tmb,
                 tmb=data.tmb,
                 ytickpad=0,
-                shared_y_ax=self.layout.panels.get(ComutPanels.tmb).ax if ComutPanels.tmb in self.layout.panels and self.layout.panels.get(ComutPanels.tmb).plot_func is not None else None,
+                shared_y_ax=tmb_ref["ax"],
                 aspect_ratio=self.layout.aspect_ratio,
                 ymin=tmb_ymin,
-                ymax=tmb_ymax
+                ymax=tmb_ymax,
+                median_on_right=on_left,
             )
+            if tmb_ref["ax"] is None:
+                tmb_panel = self.layout.panels.get(tmb_name)
+                tmb_ref["ax"] = tmb_panel.ax if tmb_panel is not None and tmb_panel.plot_func is not None else None
             # self.layout.set_plot_func("tmb legend", self.plotter.plot_legend, cmap=self.tmb_cmap)
             self.layout.set_plot_func(
                 ComutPanels.recurrence + label,
@@ -834,7 +864,7 @@ class Comut(object):
                 inter_heatmap_linewidth=self.layout.inter_heatmap_linewidth,
                 aspect_ratio=self.layout.aspect_ratio,
                 labelbottom=self.layout.show_patient_names and self._meta_data_position == "bottom",
-                add_ylabel=is_case,
+                add_ylabel=on_left,
             )
 
         self.layout.set_plot_func(
@@ -882,6 +912,12 @@ class Comut(object):
             cmap=self.cnv_cmap,
             names=self.cnv_names,
             title="Copy Number\nVariations"
+        )
+        self.layout.set_plot_func(
+            ComutPanels.epi_legend,
+            self.plotter.plot_epi_legend,
+            alphas=self.epi_alphas,
+            title=self._mark_label
         )
         self.layout.set_plot_func(
             ComutPanels.model_annotation_legend,
@@ -957,10 +993,15 @@ class Comut(object):
                 df = df.reindex(columns=columns)
             return df
 
-        def make_plot_comut(cnv_df, snv_df, labelbottom):
+        def make_plot_comut(cnv_df, snv_df, epi_df, labelbottom):
             def _p(ax):
                 self.plotter.plot_cnv_heatmap(
                     ax=ax, cnv=cnv_df, cnv_cmap=self.cnv_cmap,
+                    inter_heatmap_linewidth=self.layout.inter_heatmap_linewidth,
+                    aspect_ratio=self.layout.aspect_ratio,
+                )
+                self.plotter.plot_epi_heatmap(
+                    ax=ax, epi=epi_df,
                     inter_heatmap_linewidth=self.layout.inter_heatmap_linewidth,
                     aspect_ratio=self.layout.aspect_ratio,
                 )
@@ -974,7 +1015,7 @@ class Comut(object):
 
         tmb_ref = {"ax": None}
 
-        def set_cohort(data, grid, is_case):
+        def set_cohort(data, grid, is_case, on_left):
             label = "" if is_case else " control"
             # The comut blocks are always placed as scaffold; only draw the
             # heatmap into them when the comutation panel is actually requested,
@@ -991,6 +1032,7 @@ class Comut(object):
                     cols_j = list(col_group.members)
                     cnv_df = slice_df(data.cnv.df, index=genes_i, columns=cols_j)
                     snv_df = slice_df(data.snv.df, index=genes_i, columns=cols_j)
+                    epi_df = slice_df(data.epi.df, index=genes_i, columns=cols_j)
                     labelbottom = (
                         self.layout.show_patient_names
                         and (
@@ -1001,7 +1043,7 @@ class Comut(object):
                     )
                     self.layout.set_plot_func(
                         block_name,
-                        make_plot_comut(cnv_df, snv_df, labelbottom),
+                        make_plot_comut(cnv_df, snv_df, epi_df, labelbottom),
                     )
             for j, col_group in enumerate(grid.column_groups):
                 cols_j = list(col_group.members)
@@ -1019,7 +1061,7 @@ class Comut(object):
                         self.plotter.plot_signatures,
                         signatures=slice_df(data.signatures, index=cols_j),
                         signatures_cmap=self.signatures_cmap,
-                        add_ylabel=is_case and j == 0,
+                        add_ylabel=on_left and j == 0,
                     )
                 if data.tmb is not None:
                     tmb_name = grid_col_panel(ComutPanels.tmb + label, j)
@@ -1030,7 +1072,7 @@ class Comut(object):
                         shared_y_ax=tmb_ref["ax"],
                         aspect_ratio=self.layout.aspect_ratio,
                         ymin=tmb_ymin, ymax=tmb_ymax,
-                        median_on_right=is_case,
+                        median_on_right=on_left,
                     )
                     if tmb_ref["ax"] is None:
                         tmb_ref["ax"] = panel_ax(tmb_name)
@@ -1048,12 +1090,15 @@ class Comut(object):
                         inter_heatmap_linewidth=self.layout.inter_heatmap_linewidth,
                         aspect_ratio=self.layout.aspect_ratio,
                         labelbottom=self.layout.show_patient_names and self._meta_data_position == "bottom",
-                        add_ylabel=is_case and j == 0,
+                        add_ylabel=on_left and j == 0,
                     )
 
-        set_cohort(self.case, self.case.grid, is_case=True)
+        cohorts = [(self.case, self.case.grid, True)]
         if has_control and self.control.grid is not None and not self.control.grid.is_trivial():
-            set_cohort(self.control, self.control.grid, is_case=False)
+            cohorts.insert(0 if control_on_left else 1, (self.control, self.control.grid, False))
+        # The left-most cohort owns the shared y-axis labels/ticks.
+        for _k, (_data, _grid, _is_case) in enumerate(cohorts):
+            set_cohort(_data, _grid, is_case=_is_case, on_left=_k == 0)
 
         gene_name = self.case.genes.name
         n_gene_rows = self.case.grid.n_rows
@@ -1203,6 +1248,10 @@ class Comut(object):
         self.layout.set_plot_func(
             ComutPanels.cnv_legend, self.plotter.plot_legend,
             cmap=self.cnv_cmap, names=self.cnv_names, title="Copy Number\nVariations",
+        )
+        self.layout.set_plot_func(
+            ComutPanels.epi_legend, self.plotter.plot_epi_legend,
+            alphas=self.epi_alphas, title=self._mark_label,
         )
         self.layout.set_plot_func(
             ComutPanels.model_annotation_legend, self.plotter.plot_model_annotation_legend,

@@ -173,6 +173,17 @@ ComutPlotLib requires at least one of the following input files:
    - From GISTIC 2.0
    - Provides copy number alteration calls (file: all_thresholded.by_gene.txt)
 
+Epigenetic marks can optionally be overlaid via
+- **Mark file** (`--mark`, `--control-mark`):
+  - Tab-separated table of genes (rows) by samples or patients (columns)
+  - Same syntax as the GISTIC input, but without the `Gene ID`, `Locus ID`, and
+    `Cytoband` columns
+  - Values are floats between 0 and 1
+  - Each mark is drawn as a black rectangle outline around the corresponding
+    comutation cell, with its opacity set to the mark value. Marks are a pure
+    overlay: they do not affect gene/column selection, sorting, or recurrence.
+  - The legend title can be changed with `--mark-label`.
+
 Sample information can be provided via
 - **Sample Information File (SIF)**:
   - Tab-separated metadata file

@@ -7,8 +7,10 @@ from comutplotlib.comut_plotter import ComutPlotter
 from comutplotlib.functional_effect import sort_functional_effects
 
 from comutplotlib.gistic import Gistic, join_gistics
+from comutplotlib.mark import Mark, join_marks
 from comutplotlib.seg import SEG, join_segs
 from comutplotlib.cnv import CNV
+from comutplotlib.epi import EPI
 
 from comutplotlib.maf import MAF, join_mafs
 from comutplotlib.maf_encoding import MAFEncoding

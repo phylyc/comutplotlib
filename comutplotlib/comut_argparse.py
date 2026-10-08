@@ -17,6 +17,9 @@ def validate_args(args):
     if args.maf is None and args.gistic is None:
         raise ValueError("Either --maf or --gistic must be specified.")
 
+    if args.mark is None and args.control_mark is None:
+        remove(ComutPanels.epi_legend)
+
     if args.control_maf is None and args.control_gistic is None:
         remove(ComutPanels.recurrence_fold_change)
         for panel in args.panels_to_plot:
@@ -170,6 +173,17 @@ def parse_args():
         help="Path to a GISTIC output file (e.g., 'all_thresholded.by_gene.txt')."
     )
     parser.add_argument(
+        "--mark", type=str, action='append', default=None,
+        help="Path to an epigenetic mark file: a tab-separated table of genes (rows) by "
+             "samples or patients (columns) with float values between 0 and 1. Same syntax "
+             "as --gistic, but without the 'Gene ID', 'Locus ID', and 'Cytoband' columns. "
+             "Can be specified multiple times."
+    )
+    parser.add_argument(
+        "--mark-label", type=str, default="Epigenetic\nMarks",
+        help="Title of the epigenetic mark legend."
+    )
+    parser.add_argument(
         "--signatures", type=str, action='append', default=None,
         help="Path to a file containing mutational signature exposures (index: patient, columns: signatures)."
     )
@@ -202,6 +216,10 @@ def parse_args():
     parser.add_argument(
         "--control-gistic", type=str, action='append', default=None,
         help="Path to a GISTIC output file (e.g., 'all_thresholded.by_gene.txt')."
+    )
+    parser.add_argument(
+        "--control-mark", type=str, action='append', default=None,
+        help="Path to an epigenetic mark file. See --mark for format details."
     )
     parser.add_argument(
         "--control-signatures", type=str, action='append', default=None,
@@ -403,7 +421,7 @@ def parse_args():
              "'key1:r,g,b;key2:r,g,b|metaColumn1>key3:r,g,b;key4:r,g,b|metaColumn2>key5:r,g,b'."
     )
     parser.add_argument(
-        "--max-xfigsize", type=int, default=None,
+        "--max-xfigsize", type=float, default=None,
         help="Maximum x-axis figure size; the comutation plot scales to fit."
     )
     parser.add_argument(

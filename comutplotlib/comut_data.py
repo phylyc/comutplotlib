@@ -10,10 +10,12 @@ from scipy.spatial.distance import squareform
 
 from comutplotlib.gistic import Gistic, join_gistics
 from comutplotlib.maf import MAF, join_mafs
+from comutplotlib.mark import Mark, join_marks
 from comutplotlib.seg import SEG, join_segs
 from comutplotlib.sif import SIF, join_sifs
 from comutplotlib.snv import SNV
 from comutplotlib.cnv import CNV
+from comutplotlib.epi import EPI
 from comutplotlib.mutational_signature_set import MutationalSignatureSet
 from comutplotlib.meta import Meta
 from comutplotlib.grid import (
@@ -40,6 +42,8 @@ class ComutData(object):
 
         seg_paths: list[str] | None = None,
         gistic_paths: list[str] | None = None,
+
+        mark_paths: list[str] | None = None,
 
         signatures_paths: list[str] | None = None,
         group_signatures_by_etiology: bool = False,
@@ -97,6 +101,8 @@ class ComutData(object):
                 .replace([high_del_threshold], mid_del_threshold)
             )
 
+        self.mark = join_marks([Mark.from_file(path_to_file=mark) for mark in mark_paths]) if mark_paths is not None else Mark()
+
         self.signatures = pd.concat([
             pd.read_csv(path_to_file, index_col=0, sep="," if path_to_file.endswith(".csv") else "\t").fillna(0)
             for path_to_file in signatures_paths]
@@ -110,6 +116,7 @@ class ComutData(object):
 
         self.snv = None
         self.cnv = None
+        self.epi = None
         self.tmb = None
         self.meta = None
 
@@ -182,6 +189,7 @@ class ComutData(object):
         self.cnv = CNV(seg=self.seg, gistic=self.gistic, baseline=self.baseline,
                        low_amp_threshold=self.low_amp_threshold, mid_amp_threshold=self.mid_amp_threshold, high_amp_threshold=self.high_amp_threshold,
                        low_del_threshold=self.low_del_threshold, mid_del_threshold=self.mid_del_threshold, high_del_threshold=self.high_del_threshold)
+        self.epi = EPI(mark=self.mark)
         self.meta = Meta(sif=self.sif, by=self.columns.name, rows=self.meta_data_rows, rows_per_sample=self.meta_data_rows_per_sample)
         self.reindex_data()
         self.genes = self.get_genes()
@@ -380,14 +388,17 @@ class ComutData(object):
         if self.genes is not None:
             self.snv.reindex(index=self.genes)
             self.cnv.reindex(index=self.genes)
+            self.epi.reindex(index=self.genes)
         else:
             genes = self.snv.df.index.union(self.cnv.df.index)
             self.snv.reindex(index=genes)
             self.cnv.reindex(index=genes)
+            self.epi.reindex(index=genes)
 
         if self.columns is not None:
             self.snv.reindex(columns=self.columns)
             self.cnv.reindex(columns=self.columns)
+            self.epi.reindex(columns=self.columns)
             self.meta.reindex(columns=self.columns)
             if self.signatures is not None:
                 self.signatures = self.signatures.reindex(index=self.columns)
@@ -397,6 +408,7 @@ class ComutData(object):
             columns = self.snv.df.columns.union(self.cnv.df.columns).union(self.meta.df.columns)
             self.snv.reindex(columns=columns)
             self.cnv.reindex(columns=columns)
+            self.epi.reindex(columns=columns)
             self.meta.reindex(columns=columns)
             if self.signatures is not None:
                 self.signatures = self.signatures.reindex(index=columns)
@@ -408,8 +420,10 @@ class ComutData(object):
             entity = self.sif
         elif not self.maf.empty:
             entity = self.maf
-        else:
+        elif not self.gistic.data.empty:
             entity = self.gistic
+        else:
+            entity = self.mark
 
         if self.by == MAF.sample:
             columns = pd.Index(entity.samples, name=SIF.sample)

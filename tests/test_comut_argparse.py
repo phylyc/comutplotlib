@@ -67,8 +67,10 @@ def test_validate_args_does_not_duplicate_the_label_panel():
     class Args:
         maf = ["in.maf"]
         gistic = None
+        mark = None
         control_maf = None
         control_gistic = None
+        control_mark = None
         cohort_label = None
         control_cohort_label = None
         snv_interesting_genes = None

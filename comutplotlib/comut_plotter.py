@@ -610,8 +610,11 @@ class ComutPlotter(Plotter):
         ax.axvline(x=0, color=self.palette.black, linewidth=1)
 
         if label_top:
-            for _i, (x, label) in enumerate(zip([xmax, -xmax], [case_label, control_label])):
-                ha = "right" if _i % 2 else "left"
+            # Positive fold change always marks case enrichment, but the x-axis is
+            # reversed when the case cohort is drawn on the left, so the horizontal
+            # alignment of the labels has to follow the screen side, not the sign.
+            for x, label, on_left in zip([xmax, -xmax], [case_label, control_label], [case_on_left, not case_on_left]):
+                ha = "right" if on_left else "left"
                 if not label:
                     continue
                 patch = patches.FancyArrowPatch(
@@ -761,6 +764,18 @@ class ComutPlotter(Plotter):
             facecolor=self.palette.white,
             edgecolor=self.palette.black,
             linewidth=0.25,
+        )
+        return patch
+
+    def epi_annotation(self, x, y, alpha=1, width=0.75, height=0.75, linewidth=0.5):
+        patch = patches.Rectangle(
+            xy=(x + (1 - width) / 2, y + (1 - height) / 2),
+            width=width,
+            height=height,
+            facecolor="none",
+            edgecolor=self.palette.black,
+            alpha=alpha,
+            linewidth=linewidth,
         )
         return patch
 
@@ -920,6 +935,28 @@ class ComutPlotter(Plotter):
                 height=height,
                 facecolor=color,
                 edgecolor=None,
+            )
+            ax.add_patch(rect)
+
+    def plot_epi_heatmap(self, ax, epi, inter_heatmap_linewidth, aspect_ratio, linewidth=0.5):
+        if epi is None or epi.empty:
+            return
+        values = epi.T.to_numpy(dtype=float)
+        if not np.isfinite(values).any():
+            return
+        for (x, y), val in np.ndenumerate(values):
+            if not np.isfinite(val) or val <= 0:
+                continue
+            width = 1 - 2 * inter_heatmap_linewidth
+            height = 1 - 2 * inter_heatmap_linewidth * aspect_ratio
+            rect = patches.Rectangle(
+                xy=(x + (1 - width) / 2, y + (1 - height) / 2),
+                width=width,
+                height=height,
+                facecolor="none",
+                edgecolor=self.palette.black,
+                alpha=min(val, 1),
+                linewidth=linewidth,
             )
             ax.add_patch(rect)
 
@@ -1143,6 +1180,30 @@ class ComutPlotter(Plotter):
 
     def plot_model_significance(self, ax):
         pass
+
+    def plot_epi_legend(self, ax, alphas=(1,), names=None, title=None, title_loc="top"):
+        n = len(alphas)
+        # Descending alphas are drawn top to bottom, matching the label order.
+        for i, alpha in enumerate(sorted(alphas, reverse=True)):
+            patch = self.epi_annotation(0, n - 1 - i, alpha=alpha)
+            ax.add_patch(patch)
+        ax.set_xlim([-0.5, 1.5])
+        ax.set_ylim([0, n])
+        ax.set_xticks([])
+        ax.xaxis.set_major_locator(ticker.NullLocator())
+        ax.set_yticks(np.arange(n) + 0.5)
+        ax.set_yticklabels(names if names is not None else [f"{a:g}" for a in sorted(alphas)])
+        ax.tick_params(axis="both", labelsize=self.annotation_size, width=0.5)
+        ax.yaxis.set_label_position("right")
+        ax.yaxis.set_ticks_position("right")
+        if title is not None:
+            if title_loc == "top":
+                ax.set_title(title, fontsize=self.label_size, loc="left", horizontalalignment="left", pad=5)
+            elif title_loc == "bottom":
+                ax.set_title(title, fontsize=self.label_size, loc="left", horizontalalignment="left", verticalalignment="top", y=0, pad=-5)
+            else:
+                pass
+        self.no_spines(ax)
 
     def plot_model_annotation_legend(self, ax, names=("CNV", "SNV"), title=None, title_loc="top"):
         # width = 0.5
