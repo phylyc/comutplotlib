@@ -186,9 +186,16 @@ class ComutData(object):
         self.align_signatures()
         self.columns = self.get_columns()
         self.snv = SNV(maf=self.maf, by=self.by)
-        self.cnv = CNV(seg=self.seg, gistic=self.gistic, baseline=self.baseline,
-                       low_amp_threshold=self.low_amp_threshold, mid_amp_threshold=self.mid_amp_threshold, high_amp_threshold=self.high_amp_threshold,
-                       low_del_threshold=self.low_del_threshold, mid_del_threshold=self.mid_del_threshold, high_del_threshold=self.high_del_threshold)
+        self.cnv = CNV(
+            seg=self.seg, gistic=self.gistic,
+            baseline=self.baseline,
+            low_amp_threshold=self.low_amp_threshold,
+            mid_amp_threshold=self.mid_amp_threshold,
+            high_amp_threshold=self.high_amp_threshold,
+            low_del_threshold=self.low_del_threshold,
+            mid_del_threshold=self.mid_del_threshold,
+            high_del_threshold=self.high_del_threshold
+        )
         self.epi = EPI(mark=self.mark)
         self.meta = Meta(sif=self.sif, by=self.columns.name, rows=self.meta_data_rows, rows_per_sample=self.meta_data_rows_per_sample)
         self.reindex_data()
@@ -215,11 +222,6 @@ class ComutData(object):
         if self.signatures.index.name == SIF.patient:
             return None
         sample_to_patient_map = self.sif.data[[SIF.sample, SIF.patient]].set_index(SIF.sample)[SIF.patient].to_dict()
-        # Map sample-indexed signatures to patients and aggregate. Entries that
-        # are not known sample ids are assumed to already be patient ids and keep
-        # their own id (``.get(s, s)``); using ``.get(s)`` would map them to
-        # ``None``, and the subsequent ``groupby`` would silently drop every row
-        # (NaN group keys), wiping out signatures that were provided per patient.
         self.signatures[SIF.patient] = self.signatures.index.map(lambda s: sample_to_patient_map.get(s, s))
         self.signatures = self.signatures.groupby(SIF.patient).agg("sum")
 

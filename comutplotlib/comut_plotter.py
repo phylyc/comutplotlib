@@ -1171,9 +1171,9 @@ class ComutPlotter(Plotter):
         ax.yaxis.set_ticks_position("right")
         if title is not None:
             if title_loc == "top":
-                ax.set_title(self.standardize_meta_labels(title), fontsize=self.label_size, loc="left", horizontalalignment="left", pad=5)
+                ax.set_title(self.standardize_meta_labels(title), fontsize=self.label_size, loc="left", horizontalalignment="left", pad=4)
             elif title_loc == "bottom":
-                ax.set_title(self.standardize_meta_labels(title), fontsize=self.label_size, loc="left", horizontalalignment="left", verticalalignment="top", y=0, pad=-5)
+                ax.set_title(self.standardize_meta_labels(title), fontsize=self.label_size, loc="left", horizontalalignment="left", verticalalignment="top", y=0, pad=-4)
             else:
                 pass
         self.set_spines(ax=ax, linewidth=0.5)
@@ -1198,9 +1198,9 @@ class ComutPlotter(Plotter):
         ax.yaxis.set_ticks_position("right")
         if title is not None:
             if title_loc == "top":
-                ax.set_title(title, fontsize=self.label_size, loc="left", horizontalalignment="left", pad=5)
+                ax.set_title(title, fontsize=self.label_size, loc="left", horizontalalignment="left", pad=4)
             elif title_loc == "bottom":
-                ax.set_title(title, fontsize=self.label_size, loc="left", horizontalalignment="left", verticalalignment="top", y=0, pad=-5)
+                ax.set_title(title, fontsize=self.label_size, loc="left", horizontalalignment="left", verticalalignment="top", y=0, pad=-4)
             else:
                 pass
         self.no_spines(ax)
@@ -1226,9 +1226,9 @@ class ComutPlotter(Plotter):
         ax.yaxis.set_ticks_position("right")
         if title is not None:
             if title_loc == "top":
-                ax.set_title(title, fontsize=self.label_size, loc="left", horizontalalignment="left", pad=5)
+                ax.set_title(title, fontsize=self.label_size, loc="left", horizontalalignment="left", pad=4)
             elif title_loc == "bottom":
-                ax.set_title(title, fontsize=self.label_size, loc="left", horizontalalignment="left", verticalalignment="top", y=0, pad=-5)
+                ax.set_title(title, fontsize=self.label_size, loc="left", horizontalalignment="left", verticalalignment="top", y=0, pad=-4)
             else:
                 pass
         self.no_spines(ax)
