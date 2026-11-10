@@ -229,6 +229,8 @@ class ComutData(object):
         # Write columns and genes to file, each comma separated
         # This can be read into the bash script using
         # --column_order $(cat <filename>.columns.txt) --index_order $(cat <filename>.genes.txt)
+        if out_dir:
+            os.makedirs(out_dir, exist_ok=True)
         with open(os.path.join(out_dir, f"{name}.columns.txt"), "w+") as f:
             f.write(",".join(self.columns))
         with open(os.path.join(out_dir, f"{name}.genes.txt"), "w+") as f:

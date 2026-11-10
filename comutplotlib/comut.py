@@ -399,8 +399,10 @@ class Comut(object):
         self.meta_cmaps = self.plotter.palette.get_meta_cmaps(self.joint.meta)
         if self._palette is not None:
             for col, pal in self._palette["local"].items():
-                if col in self.meta_cmaps:
-                    self.meta_cmaps[col] |= pal
+                if isinstance(self.meta_cmaps.get(col), Palette):
+                    # The local palette's order is the legend's order; values it does not name follow.
+                    rest = {k: v for k, v in self.meta_cmaps[col].items() if k not in pal}
+                    self.meta_cmaps[col] = Palette(dict(pal) | rest)
                 else:
                     self.meta_cmaps[col] = pal
         self.meta_cmaps_condensed = self.plotter.palette.condense(self.meta_cmaps)

@@ -6,7 +6,13 @@ class MutationalSignatureSet(object):
     signature_sets = {
         "clock-like": [
             "SBS1",
-            "SBS5"
+            "SBS5",
+            "ID1",  # slippage during replication, replicated strand (COSMIC); correlates with age
+            "ID2",  # slippage during replication, template strand (COSMIC); correlates with age
+            "ID5",  # unknown (COSMIC); correlates with age
+        ],
+        "ROS": [
+            "SBS18",  # damage by reactive oxygen species (COSMIC)
         ],
         "APOBEC": [
             "SBS2",
@@ -42,7 +48,6 @@ class MutationalSignatureSet(object):
             "ID17",  # TOP2A
         ],
         "Other": [
-            "SBS18",  # Oxog
             "SBS22a",  # Aristolochic acid
             "SBS22b",  # Aristolochic acid
             "SBS24",  # aflatoxin
@@ -74,7 +79,6 @@ class MutationalSignatureSet(object):
         "Treatment": [
             "SBS17a", # gamma irradiation
             "SBS17b", # gamma irradiation
-            "SBS40",  # gamma irradiation
             "SBS25",  # Chemotherapy
             "SBS31",  # Platinum chemotherapy
             "SBS35",  # Platinum chemotherapy
@@ -93,6 +97,10 @@ class MutationalSignatureSet(object):
             "DBS14"
         ],
         "Unknown": [
+            "SBS40",  # unknown (COSMIC); split into SBS40a, b and c in COSMIC v3.4
+            "SBS40a",
+            "SBS40b",
+            "SBS40c",
             "SBS8",
             "SBS16",
             "SBS34",

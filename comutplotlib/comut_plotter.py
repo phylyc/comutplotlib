@@ -926,7 +926,7 @@ class ComutPlotter(Plotter):
 
     def plot_cnv_heatmap(self, ax, cnv, cnv_cmap, inter_heatmap_linewidth, aspect_ratio):
         for (x, y), val in np.ndenumerate(cnv.T):
-            color = cnv_cmap.get(val, self.palette.white)
+            color = cnv_cmap.get(val, self.palette.get("missing", self.palette.white))
             width = 1 - inter_heatmap_linewidth
             height = 1 - inter_heatmap_linewidth * aspect_ratio
             rect = patches.Rectangle(

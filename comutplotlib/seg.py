@@ -41,7 +41,7 @@ class SEG(object):
         data[cls._log2_tCR] *= np.log(log_tCR_base) / np.log(2)
         return SEG(data=data, add_gene_names=add_gene_names)
 
-    def __init__(self, data=None, add_gene_names=True):
+    def __init__(self, data=None, add_gene_names=False):
         self.data = (
             data if data is not None
             else pd.DataFrame(None, columns=pd.Index([self._sample, self._contig, self._start, self._end, self._log2_tCR, self._gene_name]))

@@ -160,6 +160,7 @@ class Palette(UserDict):
                 np.nan: self.white,
                 "nan": self.white,
                 "unknown": self.white,
+                "missing": self.white,  # cells without a matching value, e.g. unavailable
 
                 # FUNCTIONAL EFFECTS
                 MutA.synonymous: self.darkgrey,
@@ -526,6 +527,7 @@ class Palette(UserDict):
         signature_sets = MutationalSignatureSet.signature_sets
         signature_set_palette = {
             "clock-like": self.brown,
+            "ROS": self.teal,
             "APOBEC": self.red,
             "MMR": self.green,
             "HRD": self.cyan,

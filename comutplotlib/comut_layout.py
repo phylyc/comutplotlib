@@ -1,3 +1,5 @@
+import math
+
 import pandas as pd
 
 from comutplotlib.layout import Layout
@@ -40,6 +42,11 @@ class ComutLayout(Layout):
         self._control_column_group_labels = list(control_column_group_labels) if control_column_group_labels is not None else []
 
         self.meta_data_legend_titles = list(meta_cmaps.keys())
+        # Longest label per meta-data legend, to estimate how far its text reaches (see _meta_legend_extent).
+        self.meta_legend_label_chars = {
+            title: max((len(str(k)) for k in cmap.drop_undefined().keys()), default=0) if isinstance(cmap, Palette) else 3
+            for title, cmap in meta_cmaps.items()
+        }
 
         self.small_inter_legend_width = 2
         self.inter_legend_width = 5
@@ -270,13 +277,7 @@ class ComutLayout(Layout):
         p_ref = p_anchor
         if self.meta_data_position == "bottom":
             p_ref = self.add_panel(name=left_panel(ComutPanels.meta_data), ref=p_ref, below=p_ref, align="left")
-        if ComutPanels.meta_data_legend in self.panels_to_plot and len(self.meta_data_legend_titles):
-            pad = self.pad + (self.column_names_height if self.show_patient_names else 0)
-            p_ref = self.add_panel(
-                name=meta_legend(self.meta_data_legend_titles[0]), ref=p_ref, force_add=True, below=p_ref, pad=pad, align="left"
-            )
-            for title in self.meta_data_legend_titles[1:]:
-                p_ref = self.add_panel(name=meta_legend(title), ref=p_ref, force_add=True, right_of=p_ref, pad=self.inter_legend_width, align="top")
+        meta_legend_anchor = p_ref  # placed below, once the width of both cohorts is known
 
         # RIGHT PANELS: left-cohort recurrence -> fold change -> right-cohort recurrence -> right-cohort comut
         p_ref = p_comut
@@ -294,6 +295,16 @@ class ComutLayout(Layout):
 
         p_ref = self.add_panel(name=right_panel(ComutPanels.comutation), ref=p_ref, right_of=p_ref)
         p_comut_control = p_ref
+
+        # The meta-data legends wrap within the comut panel, or with two cohorts within both and the recurrence panels
+        # between them, which leave the space below the meta data free.
+        if ComutPanels.meta_data_legend in self.panels_to_plot and len(self.meta_data_legend_titles):
+            pad = self.pad + (self.column_names_height if self.show_patient_names else 0)
+            if right_panel(ComutPanels.comutation) in self.panels_to_plot and p_comut_control.width:
+                max_width = p_comut_control.x + p_comut_control.width - p_comut.x
+            else:
+                max_width = self._fixed_dim(left_panel(ComutPanels.comutation))[0]
+            self._add_meta_legends(anchor=meta_legend_anchor, pad=pad, max_width=max_width)
 
         # TOP PANELS (right cohort)
         p_ref = p_comut_control
@@ -315,7 +326,8 @@ class ComutLayout(Layout):
         # p_ref = p_rec_control
 
         def first_legend_panel(name, p_ref):
-            return self.add_panel(name=name, ref=p_ref, right_of=p_ref, pad=self.small_inter_legend_width, align="top")
+            panel = self.add_panel(name=name, ref=p_ref, right_of=p_ref, pad=self.small_inter_legend_width, align="top")
+            return self._align_with_signatures(panel)
 
         def above_legend_panel(name, p_ref):
             return self.add_panel(name=name, ref=p_ref, above=p_ref, pad=self.inter_legend_height, align="left")
@@ -572,11 +584,61 @@ class ComutLayout(Layout):
                     )
 
         # --- legends (global, stacked to the right of the top row) ---
-        self._add_grid_legends(ref=rightmost.get(0, blocks[(0, M_left - 1)]))
+        # The meta-data legends wrap within the comut panel, or with two cohorts within both and the recurrence panels
+        # between them, which leave the space below the meta data free.
+        last_row = [p for p in (rightmost.get(N - 1), blocks[(N - 1, M_left - 1)]) if p is not None and p.width]
+        left_x = blocks[(N - 1, 0)].x
+        if right_widths and last_row:
+            meta_legend_max_width = max(p.x + p.width for p in last_row) - left_x
+        else:
+            meta_legend_max_width = (sum(left_widths) + (M_left - 1) * left_col_pad) if draw_left_comut else 0
+        self._add_grid_legends(ref=rightmost.get(0, blocks[(0, M_left - 1)]), meta_legend_max_width=meta_legend_max_width)
 
         self.place_panels_on_gridspec(autoscale_figsize=True, scale=0.1)
 
-    def _add_grid_legends(self, ref):
+    def _align_with_signatures(self, panel):
+        """Raise the first right-hand legend to the top of the mutational signature panel when one is drawn, so that
+        the legends start beside the signatures rather than at the comut's first gene row."""
+        tops = [p.y for name, p in self.panels.items()
+                if parse_grid_panel(name)[0] in (ComutPanels.mutational_signatures,
+                                                 control(ComutPanels.mutational_signatures))
+                and p.width and p.height]
+        if tops and panel is not None and min(tops) < panel.y:
+            panel.y = min(tops)
+        return panel
+
+    def _meta_legend_extent(self, title: str) -> int:
+        """Grid units a meta-data legend takes across, gap included.
+
+        The panel itself is only the colour bar; its labels (annotation size, 4 pt) run to the right of it and its
+        title (label size, 5 pt) above it. Their reach is estimated from the text at about 0.33 and 0.42 units per
+        character, with one unit for the ticks. Short labels keep the usual spacing (``inter_legend_width``).
+        """
+        w, _ = self._fixed_dim(meta_legend(title))
+        labels = w + 1 + 0.33 * self.meta_legend_label_chars.get(title, 0)
+        heading = 0.42 * len(str(title))
+        return max(w + self.inter_legend_width, math.ceil(max(labels, heading)) + self.small_inter_legend_width)
+
+    def _add_meta_legends(self, anchor, pad: int, max_width: int):
+        """Place the meta-data legends left to right below ``anchor``, wrapped into rows no wider than ``max_width``
+        grid units (the comut panel's width), so that they stay clear of the recurrence panels and of the legends to the
+        right of the comut. A row holds at least one legend; the next row starts below the tallest legend of the last,
+        leaving room for its titles."""
+        x0 = anchor.x
+        x, y = x0, anchor.y + anchor.height + pad
+        row_bottom = y
+        title_height = 2
+        for title in self.meta_data_legend_titles:
+            name = meta_legend(title)
+            w, h = self._fixed_dim(name)
+            extent = self._meta_legend_extent(title)
+            if x > x0 and x - x0 + extent - self.small_inter_legend_width > max_width:
+                x, y = x0, row_bottom + self.inter_legend_height + title_height
+            Layout.add_panel(self, name=name, width=w, height=h, x=x, y=y)
+            row_bottom = max(row_bottom, y + h)
+            x += extent
+
+    def _add_grid_legends(self, ref, meta_legend_max_width: int = 0):
         legend_panels = [
             ComutPanels.tmb_legend, ComutPanels.mutational_signatures_legend,
             ComutPanels.cnv_legend, ComutPanels.snv_legend, ComutPanels.epi_legend, ComutPanels.model_annotation_legend,
@@ -586,7 +648,8 @@ class ComutLayout(Layout):
         for name in names:
             w, h = self._fixed_dim(name)
             if p_ref is None:
-                p_ref = Layout.add_panel(self, name=name, width=w, height=h, right_of=ref, pad=self.pad, align="top")
+                p_ref = self._align_with_signatures(
+                    Layout.add_panel(self, name=name, width=w, height=h, right_of=ref, pad=self.pad, align="top"))
             else:
                 p_ref = Layout.add_panel(self, name=name, width=w, height=h, below=p_ref, pad=self.inter_legend_height, align="left")
 
@@ -605,14 +668,7 @@ class ComutLayout(Layout):
             if anchor is None:
                 anchor = self.panels.get(block(left_name(ComutPanels.comutation), self.grid.n_rows - 1, 0))
             pad = self.pad + (self.column_names_height if self.show_patient_names else 0)
-            m_ref = None
-            for title in self.meta_data_legend_titles:
-                name = meta_legend(title)
-                w, h = self._fixed_dim(name)
-                if m_ref is None:
-                    m_ref = Layout.add_panel(self, name=name, width=w, height=h, below=anchor, pad=pad, align="left")
-                else:
-                    m_ref = Layout.add_panel(self, name=name, width=w, height=h, right_of=m_ref, pad=self.inter_legend_width, align="top")
+            self._add_meta_legends(anchor=anchor, pad=pad, max_width=meta_legend_max_width)
 
     def set_plot_func(self, panel: str, plot_func, *args, **kwargs):
         if panel in self.panels:
